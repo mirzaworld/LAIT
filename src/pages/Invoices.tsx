@@ -1,0 +1,342 @@
+import React, { useState } from 'react';
+import { Upload, Search, Filter, Download, Eye, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
+
+const Invoices: React.FC = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedInvoices, setSelectedInvoices] = useState<string[]>([]);
+
+  const invoices = [
+    {
+      id: 'INV-2024-001',
+      vendor: 'Morrison & Foerster LLP',
+      amount: 45750,
+      status: 'approved',
+      date: '2024-01-15',
+      dueDate: '2024-02-14',
+      matter: 'IP Litigation - TechCorp vs CompetitorX',
+      riskScore: 15,
+      category: 'Litigation',
+      description: 'Discovery and motion practice for Q4 2024'
+    },
+    {
+      id: 'INV-2024-002',
+      vendor: 'Baker McKenzie',
+      amount: 23400,
+      status: 'pending',
+      date: '2024-01-14',
+      dueDate: '2024-02-13',
+      matter: 'M&A Advisory - Acquisition of StartupY',
+      riskScore: 45,
+      category: 'Corporate',
+      description: 'Due diligence and transaction documentation'
+    },
+    {
+      id: 'INV-2024-003',
+      vendor: 'Latham & Watkins',
+      amount: 67800,
+      status: 'flagged',
+      date: '2024-01-13',
+      dueDate: '2024-02-12',
+      matter: 'Regulatory Compliance - FDA Approval',
+      riskScore: 85,
+      category: 'Regulatory',
+      description: '340% increase from previous billing period'
+    },
+    {
+      id: 'INV-2024-004',
+      vendor: 'Skadden Arps',
+      amount: 34200,
+      status: 'processing',
+      date: '2024-01-12',
+      dueDate: '2024-02-11',
+      matter: 'Employment Law - Class Action Defense',
+      riskScore: 25,
+      category: 'Employment',
+      description: 'Motion to dismiss and initial discovery'
+    },
+    {
+      id: 'INV-2024-005',
+      vendor: 'White & Case',
+      amount: 52300,
+      status: 'approved',
+      date: '2024-01-11',
+      dueDate: '2024-02-10',
+      matter: 'International Trade - Export Compliance',
+      riskScore: 35,
+      category: 'Trade',
+      description: 'Regulatory analysis and compliance audit'
+    }
+  ];
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <CheckCircle className="w-4 h-4 text-success-500" />;
+      case 'flagged':
+        return <AlertTriangle className="w-4 h-4 text-danger-500" />;
+      case 'rejected':
+        return <XCircle className="w-4 h-4 text-danger-500" />;
+      case 'pending':
+      case 'processing':
+        return <Clock className="w-4 h-4 text-warning-500" />;
+      default:
+        return <Clock className="w-4 h-4 text-gray-400" />;
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const baseClasses = "px-2 py-1 text-xs font-medium rounded-full";
+    switch (status) {
+      case 'approved':
+        return `${baseClasses} bg-success-100 text-success-700`;
+      case 'flagged':
+        return `${baseClasses} bg-danger-100 text-danger-700`;
+      case 'rejected':
+        return `${baseClasses} bg-danger-100 text-danger-700`;
+      case 'pending':
+        return `${baseClasses} bg-warning-100 text-warning-700`;
+      case 'processing':
+        return `${baseClasses} bg-primary-100 text-primary-700`;
+      default:
+        return `${baseClasses} bg-gray-100 text-gray-700`;
+    }
+  };
+
+  const getRiskColor = (score: number) => {
+    if (score >= 70) return 'text-danger-600 bg-danger-100';
+    if (score >= 40) return 'text-warning-600 bg-warning-100';
+    return 'text-success-600 bg-success-100';
+  };
+
+  const filteredInvoices = invoices.filter(invoice => {
+    const matchesSearch = invoice.vendor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         invoice.matter.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         invoice.id.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const toggleInvoiceSelection = (invoiceId: string) => {
+    setSelectedInvoices(prev => 
+      prev.includes(invoiceId) 
+        ? prev.filter(id => id !== invoiceId)
+        : [...prev, invoiceId]
+    );
+  };
+
+  const selectAllInvoices = () => {
+    if (selectedInvoices.length === filteredInvoices.length) {
+      setSelectedInvoices([]);
+    } else {
+      setSelectedInvoices(filteredInvoices.map(inv => inv.id));
+    }
+  };
+
+  return (
+    <div className="p-6 space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Invoice Management</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Review, analyze, and approve legal invoices
+          </p>
+        </div>
+        <div className="mt-4 sm:mt-0 flex items-center space-x-3">
+          <button className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors duration-200">
+            <Download className="w-4 h-4 mr-2" />
+            Export
+          </button>
+          <button className="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors duration-200">
+            <Upload className="w-4 h-4 mr-2" />
+            Upload Invoice
+          </button>
+        </div>
+      </div>
+
+      {/* Upload Area */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 border-dashed">
+        <div className="text-center">
+          <Upload className="mx-auto h-12 w-12 text-gray-400" />
+          <div className="mt-4">
+            <p className="text-lg font-medium text-gray-900">Upload invoices for AI analysis</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Drag and drop your PDF invoices or click to browse
+            </p>
+          </div>
+          <div className="mt-6">
+            <button className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700">
+              Select Files
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters and Search */}
+      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search invoices..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Filter className="w-4 h-4 text-gray-400" />
+              <select 
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              >
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="flagged">Flagged</option>
+                <option value="processing">Processing</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-gray-500">
+              {filteredInvoices.length} invoices
+            </span>
+            {selectedInvoices.length > 0 && (
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-primary-600">
+                  {selectedInvoices.length} selected
+                </span>
+                <button className="px-3 py-1 bg-success-600 text-white text-xs font-medium rounded-full hover:bg-success-700">
+                  Approve
+                </button>
+                <button className="px-3 py-1 bg-danger-600 text-white text-xs font-medium rounded-full hover:bg-danger-700">
+                  Reject
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Invoice Table */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left">
+                  <input
+                    type="checkbox"
+                    checked={selectedInvoices.length === filteredInvoices.length && filteredInvoices.length > 0}
+                    onChange={selectAllInvoices}
+                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  />
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Invoice
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Vendor
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Amount
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Risk Score
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredInvoices.map((invoice, index) => (
+                <tr 
+                  key={invoice.id} 
+                  className="hover:bg-gray-50 transition-colors duration-200 animate-slide-up"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={selectedInvoices.includes(invoice.id)}
+                      onChange={() => toggleInvoiceSelection(invoice.id)}
+                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                    />
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{invoice.id}</div>
+                      <div className="text-sm text-gray-500">{invoice.date}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="max-w-xs">
+                      <div className="text-sm font-medium text-gray-900 truncate">{invoice.vendor}</div>
+                      <div className="text-sm text-gray-500 truncate">{invoice.matter}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">
+                      ${invoice.amount.toLocaleString()}
+                    </div>
+                    <div className="text-sm text-gray-500">{invoice.category}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center space-x-2">
+                      {getStatusIcon(invoice.status)}
+                      <span className={getStatusBadge(invoice.status)}>
+                        {invoice.status}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getRiskColor(invoice.riskScore)}`}>
+                      {invoice.riskScore}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button className="text-primary-600 hover:text-primary-900 mr-3">
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button className="text-success-600 hover:text-success-900 mr-3">
+                      <CheckCircle className="w-4 h-4" />
+                    </button>
+                    <button className="text-danger-600 hover:text-danger-900">
+                      <XCircle className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Pagination would go here */}
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-gray-500">
+          Showing 1 to {filteredInvoices.length} of {filteredInvoices.length} results
+        </div>
+        <div className="flex items-center space-x-2">
+          <button className="px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50">
+            Previous
+          </button>
+          <button className="px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50">
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Invoices;
