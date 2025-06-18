@@ -1,0 +1,1318 @@
+line_item_id,invoice_id,description,timekeeper_name,timekeeper_title,hours,rate,amount,is_flagged
+1,1,Client Meeting - Litigation,Bob Smith,Partner,7.288985203102523,550.0,4008.9418617063875,False
+2,1,Drafting - Litigation,John Smith,Paralegal,4.5535462655807235,220.0,1001.7801784277592,False
+3,1,Drafting - Litigation,John Williams,Paralegal,0.6183809094355787,220.0,136.0438000758273,False
+4,1,Client Meeting - Litigation,Bob Smith,Associate,0.5418196470939408,330.0,178.80048354100046,False
+5,1,Drafting - Litigation,Alice Williams,Associate,1.3547696775069564,330.0,447.0739935772956,False
+6,1,Court Appearance - Litigation,John Brown,Paralegal,1.1190452763623528,220.0,246.18996079971762,False
+7,1,Court Appearance - Litigation,John Smith,Partner,6.648346849886615,550.0,3656.5907674376385,False
+8,1,Court Appearance - Litigation,Bob Williams,Partner,5.34674688850441,550.0,2940.7107886774256,False
+9,1,Court Appearance - Litigation,Alice Johnson,Paralegal,6.451795347078487,220.0,1419.394976357267,False
+10,1,Client Meeting - Litigation,John Brown,Associate,6.9824144714599266,330.0,2304.196775581776,False
+11,2,Drafting - Patent Filing,Jane Smith,Senior Associate,48.81356413257606,480.0,23430.51078363651,True
+12,2,Document Review - Patent Filing,John Williams,Partner,4.385989354340535,600.0,2631.593612604321,False
+13,2,Research - Patent Filing,Jane Johnson,Partner,6.869664532182263,600.0,4121.798719309358,False
+14,2,Research - Patent Filing,Jane Smith,Senior Associate,3.359146143557509,480.0,1612.3901489076043,False
+15,2,Document Review - Patent Filing,Jane Johnson,Paralegal,1.8813125210064472,240.0,451.51500504154734,False
+16,2,Court Appearance - Patent Filing,Bob Johnson,Paralegal,1.4209042458539596,240.0,341.01701900495027,False
+17,2,Client Meeting - Patent Filing,John Brown,Partner,7.278701647716227,600.0,4367.220988629736,False
+18,3,Document Review - Patent Filing,Jane Brown,Partner,5.243201971472389,450.0,2359.440887162575,False
+19,3,Research - Patent Filing,Jane Williams,Partner,5.829284084624824,450.0,2623.1778380811706,False
+20,3,Research - Patent Filing,John Smith,Senior Associate,2.22515983272548,360.0,801.0575397811727,False
+21,3,Research - Patent Filing,Bob Smith,Paralegal,5.28406974969056,180.0,951.1325549443008,False
+22,3,Client Meeting - Patent Filing,Jane Johnson,Senior Associate,5.170129576417043,360.0,1861.2466475101355,False
+23,4,Drafting - Contract Review,John Smith,Senior Associate,7.853984916037927,480.0,3769.912759698205,False
+24,4,Court Appearance - Contract Review,John Williams,Paralegal,6.21192378129009,240.0,1490.8617075096215,False
+25,4,Client Meeting - Contract Review,John Williams,Partner,5.175787495764393,600.0,3105.4724974586356,False
+26,4,Client Meeting - Contract Review,John Smith,Partner,7.2601369453817215,600.0,4356.082167229033,False
+27,4,Document Review - Contract Review,Alice Johnson,Partner,3.6590434008135118,600.0,2195.426040488107,False
+28,4,Court Appearance - Contract Review,Bob Brown,Partner,3.8239842961163477,600.0,2294.3905776698084,False
+29,4,Document Review - Contract Review,Jane Smith,Paralegal,2.280761768473261,240.0,547.3828244335826,False
+30,4,Document Review - Contract Review,Alice Brown,Partner,0.8709086255594043,600.0,522.5451753356426,False
+31,4,Research - Contract Review,John Johnson,Partner,2.7403673346243105,600.0,1644.2204007745863,False
+32,5,Client Meeting - Patent Filing,Alice Williams,Paralegal,7.685179343649553,220.0,1690.7394556029017,False
+33,5,Court Appearance - Patent Filing,Bob Brown,Paralegal,3.0172151770439273,220.0,663.787338949664,False
+34,5,Research - Patent Filing,John Brown,Associate,6.284927605399448,330.0,2074.026109781818,False
+35,5,Court Appearance - Patent Filing,John Johnson,Paralegal,6.079829082013565,220.0,1337.5623980429843,False
+36,6,Drafting - Litigation,John Smith,Associate,1.0535996684938205,300.0,316.07990054814616,False
+37,6,Court Appearance - Litigation,Bob Johnson,Paralegal,5.424579463221743,200.0,1084.9158926443486,False
+38,6,Research - Litigation,John Williams,Associate,4.573386171665907,300.0,1372.0158514997722,False
+39,6,Court Appearance - Litigation,Bob Williams,Senior Associate,3.220206472477839,400.0,1288.0825889911357,False
+40,6,Drafting - Litigation,Jane Johnson,Associate,2.6487929348942196,300.0,794.6378804682658,False
+41,6,Drafting - Litigation,Jane Smith,Partner,6.375851162843845,500.0,3187.9255814219223,False
+42,7,Document Review - Regulatory Compliance,Alice Smith,Associate,6.322091919705865,270.0,1706.9648183205834,False
+43,7,Court Appearance - Regulatory Compliance,Jane Brown,Associate,3.805489855351137,270.0,1027.482260944807,False
+44,7,Court Appearance - Regulatory Compliance,John Smith,Associate,6.605045398271914,270.0,1783.3622575334166,False
+45,7,Research - Regulatory Compliance,Jane Brown,Senior Associate,6.407592442879555,360.0,2306.73327943664,False
+46,7,Drafting - Regulatory Compliance,John Johnson,Partner,3.743621986410769,450.0,1684.629893884846,False
+47,8,Court Appearance - Litigation,Alice Johnson,Partner,1.8543632007212982,550.0,1019.899760396714,False
+48,8,Research - Litigation,Alice Brown,Paralegal,4.290436389148107,220.0,943.8960056125836,False
+49,8,Court Appearance - Litigation,Jane Johnson,Senior Associate,45.849907676189574,440.0,20173.959377523413,True
+50,8,Document Review - Litigation,Alice Smith,Senior Associate,2.0940007089209436,440.0,921.3603119252152,False
+51,8,Client Meeting - Litigation,Jane Williams,Partner,6.98869972100237,550.0,3843.7848465513034,False
+52,8,Research - Litigation,Bob Johnson,Paralegal,1.167817127934778,220.0,256.9197681456512,False
+53,9,Research - Contract Review,Jane Johnson,Partner,6.182393493117158,400.0,2472.9573972468634,False
+54,9,Document Review - Contract Review,Alice Johnson,Associate,32.43014727757898,240.0,7783.235346618956,True
+55,9,Research - Contract Review,Jane Brown,Associate,5.661524464614545,240.0,1358.7658715074908,False
+56,9,Document Review - Contract Review,Bob Smith,Associate,6.073595358642677,240.0,1457.6628860742426,False
+57,9,Client Meeting - Contract Review,Jane Brown,Paralegal,21.07911678403009,160.0,3372.6586854448146,True
+58,10,Court Appearance - Regulatory Compliance,John Williams,Paralegal,7.616426084855203,160.0,1218.6281735768325,False
+59,10,Client Meeting - Regulatory Compliance,Alice Smith,Partner,1.7484322177228055,400.0,699.3728870891222,False
+60,10,Drafting - Regulatory Compliance,Bob Smith,Paralegal,7.311784577283198,160.0,1169.8855323653117,False
+61,10,Drafting - Regulatory Compliance,Bob Johnson,Associate,2.146482234746016,240.0,515.1557363390439,False
+62,10,Research - Regulatory Compliance,Alice Johnson,Senior Associate,2.419072852128953,320.0,774.1033126812649,False
+63,10,Research - Regulatory Compliance,Jane Johnson,Senior Associate,7.493094834431824,320.0,2397.7903470181836,False
+64,10,Court Appearance - Regulatory Compliance,John Johnson,Associate,1.9410393684808116,240.0,465.8494484353948,False
+65,10,Document Review - Regulatory Compliance,Bob Johnson,Partner,2.341449374871888,400.0,936.5797499487552,False
+66,10,Client Meeting - Regulatory Compliance,Alice Johnson,Partner,1.048645137187328,400.0,419.4580548749312,False
+67,10,Drafting - Regulatory Compliance,Alice Johnson,Associate,4.607179080663642,240.0,1105.7229793592742,False
+68,11,Research - Contract Review,Alice Brown,Associate,5.523298424568947,360.0,1988.3874328448208,False
+69,11,Court Appearance - Contract Review,Jane Smith,Partner,5.324304381160205,600.0,3194.5826286961233,False
+70,11,Document Review - Contract Review,John Brown,Senior Associate,7.670440744631932,480.0,3681.8115574233275,False
+71,11,Drafting - Contract Review,Alice Smith,Associate,7.936555214381317,360.0,2857.159877177274,False
+72,11,Court Appearance - Contract Review,Jane Smith,Paralegal,6.398767482427199,240.0,1535.7041957825277,False
+73,11,Research - Contract Review,Jane Williams,Paralegal,6.047758469308199,240.0,1451.4620326339677,False
+74,11,Court Appearance - Contract Review,Bob Williams,Paralegal,5.665031399342735,240.0,1359.6075358422563,False
+75,11,Research - Contract Review,John Williams,Paralegal,1.3099925339703828,240.0,314.39820815289187,False
+76,11,Research - Contract Review,Bob Smith,Associate,5.739408695063503,360.0,2066.187130222861,False
+77,12,Drafting - Contract Review,Jane Johnson,Partner,0.9690813161064258,400.0,387.63252644257034,False
+78,12,Drafting - Contract Review,Alice Brown,Associate,2.8455799434833313,240.0,682.9391864359995,False
+79,12,Research - Contract Review,John Smith,Paralegal,0.5583017639050085,160.0,89.32828222480137,False
+80,12,Research - Contract Review,John Smith,Paralegal,3.924586606455597,160.0,627.9338570328955,False
+81,12,Court Appearance - Contract Review,Alice Brown,Paralegal,5.792006541626437,160.0,926.7210466602298,False
+82,12,Court Appearance - Contract Review,Bob Williams,Partner,7.436954666912862,400.0,2974.781866765145,False
+83,13,Client Meeting - Regulatory Compliance,Bob Johnson,Partner,4.562483457852318,600.0,2737.4900747113907,False
+84,13,Research - Regulatory Compliance,John Smith,Associate,3.1448230850599534,360.0,1132.1363106215833,False
+85,13,Document Review - Regulatory Compliance,Jane Johnson,Senior Associate,6.388714530485324,480.0,3066.5829746329555,False
+86,13,Research - Regulatory Compliance,Jane Smith,Partner,2.8577652505754694,600.0,1714.6591503452817,False
+87,14,Research - Regulatory Compliance,John Johnson,Paralegal,3.1460935152777716,200.0,629.2187030555543,False
+88,14,Research - Regulatory Compliance,Alice Smith,Partner,0.8258332200950333,500.0,412.91661004751666,False
+89,14,Client Meeting - Regulatory Compliance,Bob Williams,Paralegal,5.788178982787434,200.0,1157.6357965574869,False
+90,14,Client Meeting - Regulatory Compliance,Alice Brown,Associate,1.4802642546453744,300.0,444.0792763936123,False
+91,14,Court Appearance - Regulatory Compliance,Alice Smith,Partner,5.313265662121966,500.0,2656.632831060983,False
+92,14,Research - Regulatory Compliance,John Smith,Senior Associate,0.7387739446519141,400.0,295.50957786076566,False
+93,14,Research - Regulatory Compliance,John Brown,Associate,2.0225052063698543,300.0,606.7515619109563,False
+94,14,Research - Regulatory Compliance,Jane Johnson,Senior Associate,3.9165324607765166,400.0,1566.6129843106066,False
+95,15,Research - Litigation,Alice Williams,Paralegal,38.24824396141046,160.0,6119.719033825673,True
+96,15,Research - Litigation,John Johnson,Associate,6.820895035708887,240.0,1637.0148085701328,False
+97,15,Document Review - Litigation,Bob Brown,Senior Associate,6.578045038414102,320.0,2104.9744122925126,False
+98,16,Drafting - Patent Filing,John Smith,Associate,1.0033232912077599,330.0,331.0966860985608,False
+99,16,Court Appearance - Patent Filing,Jane Brown,Paralegal,3.9580496475732465,220.0,870.7709224661143,False
+100,16,Document Review - Patent Filing,Jane Brown,Senior Associate,33.35815454734297,440.0,14677.588000830907,True
+101,16,Document Review - Patent Filing,Alice Brown,Senior Associate,0.83051114332659,440.0,365.4249030636996,False
+102,17,Client Meeting - Regulatory Compliance,Jane Brown,Senior Associate,2.3086624725161564,400.0,923.4649890064626,False
+103,17,Court Appearance - Regulatory Compliance,Alice Brown,Senior Associate,30.517151206603074,400.0,12206.86048264123,True
+104,17,Drafting - Regulatory Compliance,Bob Smith,Paralegal,3.319237805243498,200.0,663.8475610486996,False
+105,17,Court Appearance - Regulatory Compliance,Bob Brown,Associate,2.325398254910752,300.0,697.6194764732256,False
+106,17,Court Appearance - Regulatory Compliance,Bob Brown,Paralegal,5.9024339375545996,200.0,1180.4867875109198,False
+107,17,Drafting - Regulatory Compliance,Jane Williams,Senior Associate,33.56294990251144,400.0,13425.179961004576,True
+108,18,Court Appearance - Contract Review,Alice Williams,Associate,7.723622480415017,330.0,2548.7954185369554,False
+109,18,Research - Contract Review,Alice Brown,Partner,3.936589762390352,550.0,2165.1243693146935,False
+110,18,Court Appearance - Contract Review,Jane Johnson,Partner,4.0019255809156125,550.0,2201.0590695035867,False
+111,19,Document Review - Patent Filing,Bob Brown,Associate,4.366726374749002,330.0,1441.0197036671707,False
+112,19,Client Meeting - Patent Filing,John Williams,Associate,5.965434246780719,330.0,1968.5933014376371,False
+113,19,Drafting - Patent Filing,Jane Smith,Paralegal,6.122429479375239,220.0,1346.9344854625526,False
+114,19,Research - Patent Filing,Jane Williams,Associate,6.412234041845621,330.0,2116.037233809055,False
+115,20,Document Review - M&A,Alice Smith,Paralegal,3.608245015246122,240.0,865.9788036590693,False
+116,20,Client Meeting - M&A,Jane Williams,Associate,2.513287860431327,360.0,904.7836297552777,False
+117,20,Court Appearance - M&A,Bob Smith,Partner,3.0743380113872445,600.0,1844.6028068323467,False
+118,20,Court Appearance - M&A,Bob Smith,Senior Associate,5.789479961908278,480.0,2778.9503817159734,False
+119,20,Drafting - M&A,Alice Smith,Senior Associate,5.85007786611677,480.0,2808.0373757360494,False
+120,20,Court Appearance - M&A,John Johnson,Associate,6.117536267229204,360.0,2202.3130562025135,False
+121,20,Client Meeting - M&A,Alice Johnson,Associate,29.434517572414222,360.0,10596.42632606912,True
+122,20,Court Appearance - M&A,Jane Smith,Senior Associate,24.74484249463904,480.0,11877.52439742674,True
+123,20,Research - M&A,Bob Williams,Partner,2.0657544484706785,600.0,1239.452669082407,False
+124,20,Research - M&A,John Johnson,Partner,4.8345189529254755,600.0,2900.711371755285,False
+125,21,Drafting - Litigation,Jane Smith,Paralegal,7.191112706944648,200.0,1438.2225413889296,False
+126,21,Research - Litigation,Jane Smith,Associate,7.190600067742729,300.0,2157.1800203228186,False
+127,21,Court Appearance - Litigation,Alice Williams,Paralegal,5.140058666255769,200.0,1028.0117332511536,False
+128,21,Research - Litigation,Jane Brown,Partner,7.146643883697017,500.0,3573.3219418485087,False
+129,21,Drafting - Litigation,John Smith,Paralegal,20.78768518150245,200.0,4157.53703630049,True
+130,22,Drafting - Contract Review,Alice Williams,Associate,5.662015600679088,240.0,1358.8837441629812,False
+131,22,Client Meeting - Contract Review,Jane Brown,Partner,3.1905842483273186,400.0,1276.2336993309275,False
+132,22,Court Appearance - Contract Review,Jane Brown,Associate,2.7503939452492445,240.0,660.0945468598187,False
+133,22,Drafting - Contract Review,John Williams,Partner,6.8958361030879285,400.0,2758.334441235171,False
+134,22,Court Appearance - Contract Review,Jane Smith,Partner,5.718722307617625,400.0,2287.48892304705,False
+135,22,Court Appearance - Contract Review,John Smith,Paralegal,5.9576108680862125,160.0,953.217738893794,False
+136,22,Document Review - Contract Review,Bob Smith,Associate,1.8186898036849828,240.0,436.4855528843959,False
+137,22,Drafting - Contract Review,John Williams,Senior Associate,1.5657057850141567,320.0,501.0258512045301,False
+138,22,Drafting - Contract Review,Bob Smith,Associate,4.351491421521278,240.0,1044.3579411651067,False
+139,23,Client Meeting - Regulatory Compliance,John Smith,Paralegal,3.1001737392160655,200.0,620.0347478432132,False
+140,23,Drafting - Regulatory Compliance,Jane Williams,Associate,2.9237938236687175,300.0,877.1381471006152,False
+141,23,Research - Regulatory Compliance,Bob Smith,Senior Associate,36.89761325504449,400.0,14759.045302017796,True
+142,23,Court Appearance - Regulatory Compliance,Alice Williams,Senior Associate,7.117255461826844,400.0,2846.9021847307376,False
+143,23,Court Appearance - Regulatory Compliance,Alice Williams,Paralegal,3.802914479056885,200.0,760.582895811377,False
+144,23,Document Review - Regulatory Compliance,Bob Johnson,Senior Associate,7.014576352000146,400.0,2805.8305408000583,False
+145,24,Drafting - M&A,Jane Johnson,Partner,7.193408924630117,500.0,3596.7044623150587,False
+146,24,Client Meeting - M&A,Alice Johnson,Senior Associate,1.7487179164617763,400.0,699.4871665847105,False
+147,24,Drafting - M&A,Jane Williams,Associate,1.8020186343335993,300.0,540.6055903000798,False
+148,24,Court Appearance - M&A,Bob Johnson,Partner,5.764000600805551,500.0,2882.000300402776,False
+149,24,Document Review - M&A,Alice Brown,Associate,0.7883253988948908,300.0,236.49761966846725,False
+150,24,Research - M&A,Jane Williams,Senior Associate,3.291223710169864,400.0,1316.4894840679456,False
+151,24,Research - M&A,Bob Johnson,Associate,3.715586200297193,300.0,1114.6758600891578,False
+152,25,Court Appearance - Regulatory Compliance,John Williams,Associate,3.9760089989653182,360.0,1431.3632396275145,False
+153,25,Research - Regulatory Compliance,Jane Brown,Paralegal,3.0813290540346756,240.0,739.5189729683221,False
+154,25,Document Review - Regulatory Compliance,Bob Johnson,Associate,5.599708699126646,360.0,2015.8951316855926,False
+155,25,Client Meeting - Regulatory Compliance,John Brown,Paralegal,1.0918825554108085,240.0,262.051813298594,False
+156,25,Court Appearance - Regulatory Compliance,Alice Johnson,Senior Associate,3.9338102908528008,480.0,1888.2289396093443,False
+157,25,Document Review - Regulatory Compliance,Alice Williams,Partner,4.1829554899561465,600.0,2509.773293973688,False
+158,25,Client Meeting - Regulatory Compliance,John Brown,Senior Associate,2.224588795661921,480.0,1067.802621917722,False
+159,25,Client Meeting - Regulatory Compliance,John Williams,Partner,0.913664996453616,600.0,548.1989978721696,False
+160,25,Drafting - Regulatory Compliance,Alice Brown,Partner,7.418543005154912,600.0,4451.125803092947,False
+161,26,Research - Regulatory Compliance,John Johnson,Partner,3.0614596430958967,400.0,1224.5838572383586,False
+162,26,Drafting - Regulatory Compliance,Alice Brown,Senior Associate,7.010969885859002,320.0,2243.5103634748807,False
+163,26,Client Meeting - Regulatory Compliance,Bob Smith,Associate,5.251685466483538,240.0,1260.4045119560492,False
+164,26,Court Appearance - Regulatory Compliance,Jane Brown,Paralegal,35.66087041019357,160.0,5705.739265630971,True
+165,26,Client Meeting - Regulatory Compliance,Bob Brown,Associate,1.4818514523717554,240.0,355.6443485692213,False
+166,26,Client Meeting - Regulatory Compliance,Bob Johnson,Partner,6.565226368810965,400.0,2626.090547524386,False
+167,26,Drafting - Regulatory Compliance,Alice Smith,Senior Associate,4.2235213307224155,320.0,1351.526825831173,False
+168,26,Court Appearance - Regulatory Compliance,Alice Johnson,Senior Associate,7.605558773716733,320.0,2433.7788075893545,False
+169,27,Client Meeting - M&A,Bob Smith,Associate,1.2468198313357741,270.0,336.641354460659,False
+170,27,Drafting - M&A,John Smith,Paralegal,6.998454820531031,180.0,1259.7218676955856,False
+171,27,Client Meeting - M&A,Jane Brown,Associate,2.7565263070922152,270.0,744.2621029148982,False
+172,27,Research - M&A,Bob Brown,Partner,5.606027426698122,450.0,2522.712342014155,False
+173,27,Drafting - M&A,Bob Williams,Senior Associate,4.510159977037794,360.0,1623.6575917336056,False
+174,27,Research - M&A,Alice Smith,Senior Associate,1.4688842718922182,360.0,528.7983378811986,False
+175,28,Document Review - Litigation,Jane Brown,Paralegal,1.356807381128351,180.0,244.22532860310318,False
+176,28,Research - Litigation,Jane Brown,Paralegal,2.7820925523131343,180.0,500.77665941636417,False
+177,28,Document Review - Litigation,John Williams,Associate,6.900655431736253,270.0,1863.1769665687884,False
+178,28,Court Appearance - Litigation,Alice Johnson,Partner,6.8134984348090954,450.0,3066.074295664093,False
+179,28,Drafting - Litigation,Alice Johnson,Partner,6.693059321908189,450.0,3011.876694858685,False
+180,28,Client Meeting - Litigation,Alice Smith,Paralegal,7.199708649896903,180.0,1295.9475569814424,False
+181,29,Client Meeting - Litigation,Bob Johnson,Senior Associate,5.562935769028101,480.0,2670.2091691334886,False
+182,29,Client Meeting - Litigation,Bob Williams,Senior Associate,7.084315780623317,480.0,3400.4715746991924,False
+183,29,Client Meeting - Litigation,Alice Smith,Partner,6.698341804787351,600.0,4019.00508287241,False
+184,29,Document Review - Litigation,John Williams,Partner,7.550451006346515,600.0,4530.270603807909,False
+185,29,Client Meeting - Litigation,John Williams,Associate,3.910605478994922,360.0,1407.8179724381719,False
+186,29,Client Meeting - Litigation,Bob Brown,Associate,1.5423000803724816,360.0,555.2280289340933,False
+187,29,Research - Litigation,Bob Brown,Senior Associate,0.7939282812927979,480.0,381.085575020543,False
+188,29,Court Appearance - Litigation,Alice Johnson,Associate,3.1430235054008784,360.0,1131.4884619443162,False
+189,30,Client Meeting - Regulatory Compliance,Bob Johnson,Partner,6.037266415046812,600.0,3622.359849028087,False
+190,30,Document Review - Regulatory Compliance,Jane Johnson,Partner,4.484667784789343,600.0,2690.8006708736057,False
+191,30,Research - Regulatory Compliance,Alice Smith,Associate,6.688680219546451,360.0,2407.9248790367224,False
+192,30,Court Appearance - Regulatory Compliance,John Williams,Paralegal,3.1646220734426374,240.0,759.509297626233,False
+193,30,Client Meeting - Regulatory Compliance,Alice Johnson,Associate,2.9486179486474557,360.0,1061.502461513084,False
+194,31,Court Appearance - Contract Review,Alice Brown,Senior Associate,6.373357192786944,320.0,2039.4743016918221,False
+195,31,Document Review - Contract Review,John Johnson,Senior Associate,1.139048909246843,320.0,364.49565095898976,False
+196,31,Client Meeting - Contract Review,Alice Williams,Partner,2.70443314863908,400.0,1081.7732594556321,False
+197,31,Client Meeting - Contract Review,Jane Johnson,Partner,2.6751519596806115,400.0,1070.0607838722447,False
+198,31,Document Review - Contract Review,Bob Smith,Associate,2.881532363783766,240.0,691.5677673081038,False
+199,31,Research - Contract Review,John Johnson,Partner,6.418080144061744,400.0,2567.2320576246975,False
+200,31,Court Appearance - Contract Review,Alice Johnson,Partner,1.5124308853791295,400.0,604.9723541516518,False
+201,31,Document Review - Contract Review,Jane Williams,Partner,6.211150402359055,400.0,2484.460160943622,False
+202,31,Document Review - Contract Review,Alice Johnson,Senior Associate,4.624072327463199,320.0,1479.7031447882237,False
+203,32,Drafting - Litigation,Jane Smith,Paralegal,7.387641199183834,180.0,1329.7754158530902,False
+204,32,Drafting - Litigation,Jane Smith,Partner,0.8000462718189184,450.0,360.0208223185133,False
+205,32,Drafting - Litigation,Bob Johnson,Partner,6.6393312006937135,450.0,2987.6990403121713,False
+206,32,Research - Litigation,John Brown,Partner,7.0727384994298115,450.0,3182.732324743415,False
+207,32,Client Meeting - Litigation,Jane Brown,Senior Associate,2.5298529543261408,360.0,910.7470635574107,False
+208,32,Research - Litigation,Jane Johnson,Associate,4.9861690690061655,270.0,1346.2656486316646,False
+209,32,Client Meeting - Litigation,John Brown,Senior Associate,0.7152839715543126,360.0,257.5022297595525,False
+210,32,Research - Litigation,John Williams,Paralegal,4.412402057618979,180.0,794.2323703714162,False
+211,33,Document Review - Patent Filing,John Johnson,Associate,5.571348703368941,300.0,1671.4046110106824,False
+212,33,Client Meeting - Patent Filing,John Brown,Paralegal,2.9366512670973113,200.0,587.3302534194622,False
+213,33,Court Appearance - Patent Filing,Jane Brown,Partner,7.339373880222738,500.0,3669.686940111369,False
+214,33,Document Review - Patent Filing,Jane Smith,Paralegal,0.7742986072888662,200.0,154.85972145777325,False
+215,33,Document Review - Patent Filing,Bob Williams,Paralegal,3.6338307517426998,200.0,726.7661503485399,False
+216,33,Document Review - Patent Filing,Bob Johnson,Partner,6.9873361549224695,500.0,3493.6680774612346,False
+217,33,Research - Patent Filing,Alice Williams,Partner,6.268175985060676,500.0,3134.087992530338,False
+218,34,Court Appearance - M&A,Alice Williams,Senior Associate,2.9866508662192506,320.0,955.7282771901602,False
+219,34,Client Meeting - M&A,John Smith,Partner,4.880788703598924,400.0,1952.3154814395696,False
+220,34,Research - M&A,Jane Smith,Senior Associate,0.7013458937111762,320.0,224.43068598757637,False
+221,34,Court Appearance - M&A,John Williams,Senior Associate,6.556190981645667,320.0,2097.9811141266136,False
+222,34,Research - M&A,Alice Williams,Paralegal,6.958442313227456,160.0,1113.350770116393,False
+223,34,Research - M&A,Alice Johnson,Associate,7.017844932873562,240.0,1684.2827838896549,False
+224,34,Drafting - M&A,Jane Williams,Senior Associate,6.031665329610898,320.0,1930.1329054754874,False
+225,34,Drafting - M&A,Jane Brown,Senior Associate,7.482487964408766,320.0,2394.396148610805,False
+226,35,Court Appearance - Litigation,Jane Smith,Senior Associate,3.3222843420473107,320.0,1063.1309894551393,False
+227,35,Document Review - Litigation,Alice Smith,Associate,5.8699052476903955,240.0,1408.7772594456949,False
+228,35,Client Meeting - Litigation,John Williams,Senior Associate,4.2983343142926795,320.0,1375.4669805736576,False
+229,35,Court Appearance - Litigation,Alice Johnson,Senior Associate,1.160647473996253,320.0,371.4071916788009,False
+230,35,Document Review - Litigation,Alice Johnson,Associate,2.959423506614181,240.0,710.2616415874035,False
+231,35,Drafting - Litigation,Jane Johnson,Senior Associate,6.546147222510101,320.0,2094.7671112032326,False
+232,35,Document Review - Litigation,Bob Johnson,Senior Associate,1.2862786563331272,320.0,411.60917002660074,False
+233,36,Drafting - Patent Filing,Bob Williams,Associate,6.063127829953208,330.0,2000.8321838845586,False
+234,36,Drafting - Patent Filing,Jane Williams,Senior Associate,7.051175037477121,440.0,3102.517016489933,False
+235,36,Client Meeting - Patent Filing,Bob Smith,Paralegal,5.904614019618455,220.0,1299.01508431606,False
+236,36,Drafting - Patent Filing,Bob Brown,Associate,3.4854057349535865,330.0,1150.1838925346835,False
+237,36,Research - Patent Filing,Alice Brown,Senior Associate,2.16352641843059,440.0,951.9516241094595,False
+238,37,Court Appearance - Regulatory Compliance,John Johnson,Senior Associate,4.201195221735329,440.0,1848.5258975635447,False
+239,37,Court Appearance - Regulatory Compliance,John Smith,Associate,2.7404900993190138,330.0,904.3617327752745,False
+240,37,Drafting - Regulatory Compliance,Bob Smith,Senior Associate,6.596953400807697,440.0,2902.6594963553866,False
+241,37,Court Appearance - Regulatory Compliance,Bob Smith,Paralegal,4.108750657271361,220.0,903.9251445996994,False
+242,37,Research - Regulatory Compliance,Bob Johnson,Partner,1.202171240586305,550.0,661.1941823224678,False
+243,37,Document Review - Regulatory Compliance,John Brown,Paralegal,3.31062897077982,220.0,728.3383735715604,False
+244,37,Document Review - Regulatory Compliance,Alice Smith,Associate,5.762152693663101,330.0,1901.5103889088232,False
+245,38,Research - Regulatory Compliance,John Brown,Partner,1.4791039045651773,450.0,665.5967570543297,False
+246,38,Court Appearance - Regulatory Compliance,John Johnson,Senior Associate,3.032060267616226,360.0,1091.5416963418413,False
+247,38,Court Appearance - Regulatory Compliance,John Brown,Paralegal,2.779337856520335,180.0,500.2808141736603,False
+248,38,Court Appearance - Regulatory Compliance,John Williams,Senior Associate,5.040611550539425,360.0,1814.620158194193,False
+249,38,Document Review - Regulatory Compliance,Jane Smith,Paralegal,1.2145892906898617,180.0,218.62607232417508,False
+250,38,Document Review - Regulatory Compliance,John Brown,Paralegal,5.166955820760224,180.0,930.0520477368403,False
+251,38,Court Appearance - Regulatory Compliance,John Williams,Senior Associate,3.751089677820458,360.0,1350.3922840153648,False
+252,38,Drafting - Regulatory Compliance,John Brown,Paralegal,2.2235674938881687,180.0,400.24214889987036,False
+253,38,Document Review - Regulatory Compliance,Jane Johnson,Partner,2.5264430728948293,450.0,1136.8993828026732,False
+254,38,Court Appearance - Regulatory Compliance,Jane Brown,Associate,6.001577935380185,270.0,1620.42604255265,False
+255,39,Research - Patent Filing,Jane Johnson,Associate,6.061949790772245,360.0,2182.301924678008,False
+256,39,Research - Patent Filing,Jane Williams,Partner,5.098784314493572,600.0,3059.270588696143,False
+257,39,Research - Patent Filing,John Johnson,Partner,34.21611818039386,600.0,20529.67090823632,True
+258,39,Drafting - Patent Filing,John Brown,Paralegal,3.700495068980243,240.0,888.1188165552583,False
+259,39,Drafting - Patent Filing,Bob Johnson,Senior Associate,6.070313219061794,480.0,2913.7503451496614,False
+260,39,Drafting - Patent Filing,Jane Smith,Associate,4.2150935011697825,360.0,1517.4336604211217,False
+261,40,Research - Litigation,John Smith,Paralegal,1.2699548914001797,180.0,228.59188045203234,False
+262,40,Research - Litigation,Alice Brown,Senior Associate,1.115074299849267,360.0,401.42674794573617,False
+263,40,Court Appearance - Litigation,Alice Johnson,Senior Associate,2.240155907518381,360.0,806.4561267066172,False
+264,40,Court Appearance - Litigation,Bob Smith,Partner,5.152076163240513,450.0,2318.4342734582306,False
+265,40,Research - Litigation,Bob Smith,Partner,1.8500592051168745,450.0,832.5266423025935,False
+266,40,Drafting - Litigation,Bob Smith,Paralegal,7.6934006336610015,180.0,1384.8121140589803,False
+267,40,Drafting - Litigation,Alice Williams,Senior Associate,2.8277535972020895,360.0,1017.9912949927523,False
+268,40,Court Appearance - Litigation,Jane Johnson,Partner,1.999915399513624,450.0,899.9619297811308,False
+269,40,Client Meeting - Litigation,Bob Smith,Senior Associate,4.870461032071064,360.0,1753.3659715455829,False
+270,40,Drafting - Litigation,Jane Johnson,Associate,7.15894006858218,270.0,1932.9138185171887,False
+271,41,Court Appearance - Litigation,Alice Smith,Senior Associate,4.155089184779156,440.0,1828.2392413028285,False
+272,41,Research - Litigation,Jane Brown,Paralegal,1.7860139993169257,220.0,392.92307984972365,False
+273,41,Client Meeting - Litigation,Alice Smith,Paralegal,45.10797984665915,220.0,9923.755566265012,True
+274,41,Document Review - Litigation,Alice Johnson,Partner,2.9836515822033407,550.0,1641.0083702118375,False
+275,41,Court Appearance - Litigation,John Johnson,Partner,7.842631411006885,550.0,4313.4472760537865,False
+276,41,Drafting - Litigation,Bob Williams,Partner,1.6656668376475487,550.0,916.1167607061518,False
+277,41,Client Meeting - Litigation,John Brown,Senior Associate,3.67861574937682,440.0,1618.5909297258008,False
+278,42,Drafting - Regulatory Compliance,Alice Brown,Associate,7.304583668579696,360.0,2629.6501206886905,False
+279,42,Document Review - Regulatory Compliance,Jane Johnson,Senior Associate,6.50887658428579,480.0,3124.2607604571795,False
+280,42,Document Review - Regulatory Compliance,Bob Johnson,Associate,0.6001674441320838,360.0,216.06027988755017,False
+281,43,Client Meeting - Contract Review,Jane Brown,Senior Associate,6.543709900826118,440.0,2879.2323563634923,False
+282,43,Client Meeting - Contract Review,John Brown,Senior Associate,2.7695122275628354,440.0,1218.5853801276476,False
+283,43,Drafting - Contract Review,Alice Johnson,Paralegal,4.3253983678991315,220.0,951.5876409378089,False
+284,43,Research - Contract Review,Bob Johnson,Paralegal,46.993245318686924,220.0,10338.513970111124,True
+285,43,Drafting - Contract Review,Bob Smith,Associate,1.7290644785339415,330.0,570.5912779162007,False
+286,43,Document Review - Contract Review,John Smith,Partner,3.0211227889655543,550.0,1661.6175339310548,False
+287,43,Drafting - Contract Review,Jane Williams,Senior Associate,2.41060653259522,440.0,1060.6668743418968,False
+288,43,Research - Contract Review,Jane Brown,Partner,2.1439770072264537,550.0,1179.1873539745495,False
+289,43,Document Review - Contract Review,Alice Williams,Partner,2.598707354819109,550.0,1429.2890451505098,False
+290,44,Court Appearance - Regulatory Compliance,Alice Smith,Senior Associate,1.404066413209115,320.0,449.3012522269168,False
+291,44,Court Appearance - Regulatory Compliance,Alice Smith,Partner,3.3732356729290656,400.0,1349.2942691716262,False
+292,44,Court Appearance - Regulatory Compliance,Alice Williams,Associate,4.330751907596543,240.0,1039.3804578231702,False
+293,44,Drafting - Regulatory Compliance,Alice Williams,Senior Associate,2.7332349740096484,320.0,874.6351916830874,False
+294,44,Drafting - Regulatory Compliance,Bob Brown,Senior Associate,1.6648162910020625,320.0,532.74121312066,False
+295,44,Document Review - Regulatory Compliance,Jane Williams,Associate,6.439947935483357,240.0,1545.5875045160055,False
+296,44,Court Appearance - Regulatory Compliance,Alice Williams,Partner,3.4514800794852976,400.0,1380.592031794119,False
+297,44,Court Appearance - Regulatory Compliance,Jane Johnson,Partner,4.91548414257541,400.0,1966.193657030164,False
+298,44,Court Appearance - Regulatory Compliance,Alice Smith,Partner,2.8190783168243243,400.0,1127.6313267297296,False
+299,45,Drafting - M&A,Alice Johnson,Associate,4.817001292885833,240.0,1156.0803102926,False
+300,45,Research - M&A,Jane Johnson,Partner,39.08409727855779,400.0,15633.638911423117,True
+301,45,Document Review - M&A,John Williams,Associate,4.300751805686843,240.0,1032.1804333648422,False
+302,45,Client Meeting - M&A,Jane Smith,Paralegal,3.2491942206018622,160.0,519.8710752962979,False
+303,45,Court Appearance - M&A,Alice Johnson,Associate,6.012752364577436,240.0,1443.0605674985845,False
+304,45,Court Appearance - M&A,Bob Smith,Associate,46.11608494468532,240.0,11067.860386724476,True
+305,46,Document Review - Patent Filing,Bob Brown,Partner,6.443639422272603,400.0,2577.455768909041,False
+306,46,Court Appearance - Patent Filing,Bob Brown,Partner,1.494701476151338,400.0,597.8805904605351,False
+307,46,Drafting - Patent Filing,John Smith,Paralegal,1.8394752765894469,160.0,294.3160442543115,False
+308,46,Court Appearance - Patent Filing,John Johnson,Paralegal,5.275777184532985,160.0,844.1243495252776,False
+309,46,Client Meeting - Patent Filing,Bob Williams,Partner,6.239513328147401,400.0,2495.8053312589605,False
+310,47,Client Meeting - Patent Filing,Bob Johnson,Partner,2.475272850309167,450.0,1113.872782639125,False
+311,47,Drafting - Patent Filing,Bob Johnson,Paralegal,7.281554358193576,180.0,1310.6797844748437,False
+312,47,Drafting - Patent Filing,Alice Brown,Paralegal,1.4323126770617554,180.0,257.81628187111596,False
+313,47,Client Meeting - Patent Filing,Jane Williams,Associate,1.7982691306808039,270.0,485.53266528381704,False
+314,47,Court Appearance - Patent Filing,Bob Williams,Partner,5.751161674753226,450.0,2588.022753638952,False
+315,47,Client Meeting - Patent Filing,Alice Brown,Senior Associate,0.759906456860193,360.0,273.5663244696695,False
+316,47,Document Review - Patent Filing,Alice Smith,Senior Associate,7.287083432723001,360.0,2623.3500357802805,False
+317,47,Document Review - Patent Filing,Bob Smith,Partner,0.6522681202732951,450.0,293.52065412298276,False
+318,47,Document Review - Patent Filing,John Smith,Senior Associate,6.564951776958897,360.0,2363.382639705203,False
+319,47,Drafting - Patent Filing,John Smith,Senior Associate,5.510027157507061,360.0,1983.609776702542,False
+320,48,Client Meeting - Litigation,Bob Smith,Partner,3.6020001135107,450.0,1620.9000510798148,False
+321,48,Court Appearance - Litigation,Alice Williams,Senior Associate,2.685737072149718,360.0,966.8653459738985,False
+322,48,Document Review - Litigation,Alice Brown,Senior Associate,6.044476264690667,360.0,2176.0114552886403,False
+323,48,Research - Litigation,Jane Smith,Senior Associate,3.0583458484600303,360.0,1101.004505445611,False
+324,48,Document Review - Litigation,John Williams,Partner,5.229666813268227,450.0,2353.350065970702,False
+325,48,Drafting - Litigation,Jane Williams,Senior Associate,3.6866040010141368,360.0,1327.1774403650893,False
+326,48,Drafting - Litigation,Jane Brown,Paralegal,5.686410277018829,180.0,1023.5538498633891,False
+327,48,Drafting - Litigation,John Johnson,Associate,1.709284782760232,270.0,461.50689134526266,False
+328,48,Court Appearance - Litigation,Bob Williams,Paralegal,3.260641400858073,180.0,586.9154521544532,False
+329,48,Court Appearance - Litigation,Jane Brown,Associate,6.7821080970977246,270.0,1831.1691862163857,False
+330,49,Drafting - Contract Review,John Johnson,Senior Associate,5.897551903371315,480.0,2830.824913618231,False
+331,49,Document Review - Contract Review,Jane Johnson,Partner,1.9697924961092403,600.0,1181.8754976655441,False
+332,49,Document Review - Contract Review,Alice Johnson,Paralegal,4.295291693211274,240.0,1030.8700063707058,False
+333,49,Client Meeting - Contract Review,Bob Johnson,Senior Associate,3.86636669372762,480.0,1855.8560129892576,False
+334,49,Research - Contract Review,Bob Smith,Paralegal,6.679847777415704,240.0,1603.163466579769,False
+335,49,Court Appearance - Contract Review,Bob Williams,Associate,6.506115077148324,360.0,2342.2014277733965,False
+336,49,Research - Contract Review,Jane Johnson,Senior Associate,2.3466299018482855,480.0,1126.382352887177,False
+337,49,Court Appearance - Contract Review,Jane Williams,Partner,6.248244304410098,600.0,3748.9465826460587,False
+338,49,Research - Contract Review,Bob Brown,Senior Associate,5.0764066388542854,480.0,2436.675186650057,False
+339,49,Court Appearance - Contract Review,John Brown,Paralegal,2.2387200250319763,240.0,537.2928060076744,False
+340,50,Drafting - Regulatory Compliance,Alice Brown,Associate,6.544555607274497,330.0,2159.703350400584,False
+341,50,Client Meeting - Regulatory Compliance,Jane Brown,Partner,7.0931604874930745,550.0,3901.238268121191,False
+342,50,Client Meeting - Regulatory Compliance,Alice Williams,Associate,3.808648900778543,330.0,1256.8541372569193,False
+343,50,Client Meeting - Regulatory Compliance,John Smith,Paralegal,6.19337811854239,220.0,1362.5431860793258,False
+344,50,Document Review - Regulatory Compliance,Bob Williams,Paralegal,2.2706611195886746,220.0,499.5454463095084,False
+345,50,Client Meeting - Regulatory Compliance,Bob Johnson,Partner,3.7469765433446525,550.0,2060.837098839559,False
+346,50,Client Meeting - Regulatory Compliance,John Williams,Partner,6.131044721838889,550.0,3372.074597011389,False
+347,51,Document Review - M&A,Jane Smith,Senior Associate,5.918778237376465,400.0,2367.511294950586,False
+348,51,Court Appearance - M&A,Bob Brown,Paralegal,4.989914838585684,200.0,997.9829677171368,False
+349,51,Client Meeting - M&A,Alice Smith,Partner,7.131500603991268,500.0,3565.750301995634,False
+350,51,Court Appearance - M&A,Jane Johnson,Senior Associate,2.8961105515701018,400.0,1158.4442206280407,False
+351,51,Research - M&A,John Brown,Partner,1.7321126302262955,500.0,866.0563151131478,False
+352,52,Drafting - M&A,Jane Johnson,Paralegal,1.6751866646405185,220.0,368.54106622091405,False
+353,52,Research - M&A,Jane Johnson,Partner,5.773466904303274,550.0,3175.4067973668007,False
+354,52,Client Meeting - M&A,John Johnson,Associate,3.0067936097961256,330.0,992.2418912327215,False
+355,52,Court Appearance - M&A,Alice Brown,Partner,7.424453101632418,550.0,4083.44920589783,False
+356,53,Drafting - Contract Review,Bob Smith,Associate,7.28398644285398,300.0,2185.195932856194,False
+357,53,Drafting - Contract Review,Bob Brown,Partner,3.2484072774634516,500.0,1624.2036387317257,False
+358,53,Document Review - Contract Review,Bob Smith,Paralegal,0.6352532828102804,200.0,127.05065656205608,False
+359,53,Drafting - Contract Review,Bob Smith,Senior Associate,0.567641386810118,400.0,227.0565547240472,False
+360,53,Document Review - Contract Review,Jane Williams,Partner,4.067241613579382,500.0,2033.620806789691,False
+361,53,Court Appearance - Contract Review,Bob Brown,Partner,1.5319149040190645,500.0,765.9574520095323,False
+362,54,Drafting - Regulatory Compliance,Alice Johnson,Partner,2.8523328487642647,450.0,1283.5497819439192,False
+363,54,Drafting - Regulatory Compliance,Jane Smith,Partner,7.75396099740913,450.0,3489.2824488341084,False
+364,54,Client Meeting - Regulatory Compliance,Jane Brown,Paralegal,6.262561845862512,180.0,1127.2611322552523,False
+365,54,Client Meeting - Regulatory Compliance,Jane Williams,Senior Associate,3.3833165439952415,360.0,1217.9939558382869,False
+366,54,Drafting - Regulatory Compliance,Bob Brown,Paralegal,3.0060411727492946,180.0,541.087411094873,False
+367,54,Document Review - Regulatory Compliance,Bob Smith,Partner,3.4005810526432,450.0,1530.26147368944,False
+368,54,Document Review - Regulatory Compliance,John Brown,Partner,5.409168635425383,450.0,2434.1258859414224,False
+369,54,Court Appearance - Regulatory Compliance,Jane Brown,Associate,4.66651104126083,270.0,1259.9579811404242,False
+370,54,Document Review - Regulatory Compliance,Alice Smith,Senior Associate,7.83998044613145,360.0,2822.392960607322,False
+371,55,Document Review - Patent Filing,Alice Smith,Partner,2.126641330766102,450.0,956.9885988447459,False
+372,55,Client Meeting - Patent Filing,Alice Smith,Associate,7.903227217855824,270.0,2133.8713488210724,False
+373,55,Research - Patent Filing,Bob Brown,Associate,2.4871340008341383,270.0,671.5261802252173,False
+374,55,Court Appearance - Patent Filing,Bob Johnson,Paralegal,0.5175419870504145,180.0,93.15755766907462,False
+375,56,Research - M&A,John Johnson,Partner,4.929283921760794,450.0,2218.1777647923573,False
+376,56,Court Appearance - M&A,Bob Johnson,Senior Associate,5.404988107634946,360.0,1945.7957187485804,False
+377,56,Document Review - M&A,Jane Williams,Associate,3.7903550468100105,270.0,1023.3958626387029,False
+378,56,Document Review - M&A,Alice Smith,Paralegal,5.8253044479753076,180.0,1048.5548006355555,False
+379,56,Court Appearance - M&A,John Johnson,Partner,3.134071768738985,450.0,1410.3322959325433,False
+380,56,Research - M&A,Alice Brown,Associate,6.896101310161775,270.0,1861.9473537436793,False
+381,56,Client Meeting - M&A,Jane Williams,Senior Associate,0.7723050273625116,360.0,278.0298098505042,False
+382,56,Court Appearance - M&A,Alice Johnson,Paralegal,7.679224926967882,180.0,1382.2604868542187,False
+383,57,Client Meeting - Contract Review,John Williams,Paralegal,5.58529013076742,160.0,893.6464209227871,False
+384,57,Client Meeting - Contract Review,Jane Williams,Associate,4.403129788698433,240.0,1056.7511492876238,False
+385,57,Drafting - Contract Review,Alice Smith,Paralegal,7.357356866129622,160.0,1177.1770985807395,False
+386,58,Client Meeting - Contract Review,Alice Brown,Associate,6.2581947508839875,270.0,1689.7125827386767,False
+387,58,Document Review - Contract Review,Alice Johnson,Partner,47.68548893920945,450.0,21458.47002264425,True
+388,58,Document Review - Contract Review,Alice Smith,Paralegal,0.9940304287591537,180.0,178.92547717664766,False
+389,59,Drafting - Litigation,Bob Smith,Partner,3.3080941695671897,450.0,1488.6423763052353,False
+390,59,Document Review - Litigation,John Williams,Paralegal,1.2574462746164787,180.0,226.34032943096616,False
+391,59,Research - Litigation,John Williams,Senior Associate,6.416132668907629,360.0,2309.8077608067465,False
+392,59,Document Review - Litigation,John Johnson,Senior Associate,7.449016904886382,360.0,2681.646085759098,False
+393,59,Drafting - Litigation,Alice Williams,Partner,4.101176878015275,450.0,1845.5295951068738,False
+394,59,Drafting - Litigation,Jane Smith,Senior Associate,7.484720286114496,360.0,2694.4993030012183,False
+395,59,Client Meeting - Litigation,Jane Smith,Associate,0.9454065296189957,270.0,255.25976299712886,False
+396,60,Drafting - Patent Filing,Jane Smith,Associate,2.429213299206151,240.0,583.0111918094761,False
+397,60,Drafting - Patent Filing,Bob Smith,Partner,5.452290174176545,400.0,2180.916069670618,False
+398,60,Document Review - Patent Filing,John Smith,Senior Associate,7.305145750089906,320.0,2337.64664002877,False
+399,60,Document Review - Patent Filing,Bob Williams,Senior Associate,7.100877185395066,320.0,2272.280699326421,False
+400,60,Court Appearance - Patent Filing,Alice Williams,Partner,0.8123786427926347,400.0,324.9514571170539,False
+401,61,Client Meeting - Patent Filing,John Johnson,Paralegal,5.191176773879467,180.0,934.4118192983041,False
+402,61,Court Appearance - Patent Filing,Alice Brown,Partner,2.7589237550862333,450.0,1241.515689788805,False
+403,61,Client Meeting - Patent Filing,Alice Brown,Associate,6.213364851989538,270.0,1677.6085100371752,False
+404,61,Research - Patent Filing,Alice Williams,Paralegal,3.700698781745727,180.0,666.1257807142308,False
+405,61,Client Meeting - Patent Filing,Bob Smith,Associate,5.350405768184011,270.0,1444.609557409683,False
+406,61,Drafting - Patent Filing,Jane Smith,Paralegal,7.8909430822639735,180.0,1420.3697548075152,False
+407,62,Drafting - M&A,Alice Williams,Partner,6.84439843687874,500.0,3422.1992184393703,False
+408,62,Research - M&A,Bob Smith,Paralegal,5.0082089200510085,200.0,1001.6417840102017,False
+409,62,Client Meeting - M&A,John Williams,Associate,6.910882898423997,300.0,2073.264869527199,False
+410,62,Research - M&A,Jane Smith,Associate,4.899231625586644,300.0,1469.7694876759933,False
+411,62,Client Meeting - M&A,Jane Johnson,Partner,0.9237434910342761,500.0,461.87174551713804,False
+412,62,Research - M&A,Jane Smith,Partner,3.0395626450249473,500.0,1519.7813225124737,False
+413,62,Client Meeting - M&A,John Williams,Partner,0.904439626597777,500.0,452.2198132988885,False
+414,62,Document Review - M&A,John Smith,Paralegal,7.060272656124117,200.0,1412.0545312248234,False
+415,62,Research - M&A,Jane Williams,Senior Associate,26.550193960125696,400.0,10620.07758405028,True
+416,62,Court Appearance - M&A,Jane Smith,Associate,33.841148155772444,300.0,10152.344446731733,True
+417,63,Court Appearance - Contract Review,Alice Johnson,Senior Associate,5.153353099997622,360.0,1855.2071159991438,False
+418,63,Research - Contract Review,John Brown,Senior Associate,2.4704978986945223,360.0,889.379243530028,False
+419,63,Client Meeting - Contract Review,John Williams,Senior Associate,4.665615719274565,360.0,1679.6216589388434,False
+420,63,Court Appearance - Contract Review,Bob Johnson,Associate,7.775485027419398,270.0,2099.3809574032375,False
+421,63,Client Meeting - Contract Review,John Johnson,Partner,1.0915147648833217,450.0,491.18164419749473,False
+422,63,Court Appearance - Contract Review,Jane Smith,Paralegal,0.5541266130570137,180.0,99.74279035026247,False
+423,63,Document Review - Contract Review,John Johnson,Associate,3.1644800593475013,270.0,854.4096160238254,False
+424,63,Document Review - Contract Review,Jane Williams,Senior Associate,7.054337071204543,360.0,2539.5613456336355,False
+425,64,Document Review - Regulatory Compliance,Bob Johnson,Partner,3.1802081291491207,600.0,1908.1248774894723,False
+426,64,Research - Regulatory Compliance,Bob Smith,Paralegal,1.4269146114068199,240.0,342.4595067376368,False
+427,64,Court Appearance - Regulatory Compliance,Alice Johnson,Partner,29.37989101391314,600.0,17627.934608347885,True
+428,64,Drafting - Regulatory Compliance,Alice Brown,Paralegal,4.8002228897850525,240.0,1152.0534935484127,False
+429,64,Drafting - Regulatory Compliance,Alice Smith,Partner,6.995933480118127,600.0,4197.560088070876,False
+430,64,Client Meeting - Regulatory Compliance,John Williams,Associate,4.072727441018658,360.0,1466.1818787667166,False
+431,64,Client Meeting - Regulatory Compliance,Bob Brown,Senior Associate,7.92242699062274,480.0,3802.7649554989152,False
+432,64,Research - Regulatory Compliance,John Johnson,Senior Associate,2.362979126217179,480.0,1134.229980584246,False
+433,64,Drafting - Regulatory Compliance,Alice Smith,Associate,1.3888937344161296,360.0,500.0017443898067,False
+434,64,Drafting - Regulatory Compliance,John Smith,Senior Associate,5.62625592914812,480.0,2700.6028459910976,False
+435,65,Drafting - Litigation,Jane Smith,Partner,1.0167320758901508,600.0,610.0392455340905,False
+436,65,Drafting - Litigation,John Smith,Partner,3.780314148355172,600.0,2268.188489013103,False
+437,65,Document Review - Litigation,Alice Williams,Senior Associate,5.600664875293183,480.0,2688.319140140728,False
+438,65,Client Meeting - Litigation,Bob Brown,Paralegal,2.181481825699638,240.0,523.5556381679132,False
+439,65,Document Review - Litigation,Bob Smith,Partner,2.4350978334665854,600.0,1461.0587000799512,False
+440,65,Client Meeting - Litigation,Bob Johnson,Associate,2.5632418652333255,360.0,922.7670714839971,False
+441,65,Client Meeting - Litigation,Alice Brown,Senior Associate,2.5382867864783765,480.0,1218.3776575096208,False
+442,65,Document Review - Litigation,Jane Smith,Associate,4.806659772200122,360.0,1730.397517992044,False
+443,65,Court Appearance - Litigation,Jane Brown,Paralegal,0.8260209822058768,240.0,198.24503572941043,False
+444,66,Drafting - Regulatory Compliance,Alice Johnson,Senior Associate,7.520920443059681,360.0,2707.531359501485,False
+445,66,Court Appearance - Regulatory Compliance,Jane Smith,Partner,5.262867480387967,450.0,2368.290366174585,False
+446,66,Document Review - Regulatory Compliance,Jane Brown,Senior Associate,6.644785096740167,360.0,2392.12263482646,False
+447,66,Court Appearance - Regulatory Compliance,Jane Brown,Partner,5.024313910891628,450.0,2260.9412599012326,False
+448,66,Document Review - Regulatory Compliance,Alice Williams,Paralegal,5.507517666193745,180.0,991.353179914874,False
+449,66,Drafting - Regulatory Compliance,Alice Johnson,Associate,7.709891088121282,270.0,2081.670593792746,False
+450,67,Drafting - Regulatory Compliance,Bob Smith,Partner,2.7791904517001385,450.0,1250.6357032650624,False
+451,67,Court Appearance - Regulatory Compliance,Alice Smith,Partner,7.100289118653806,450.0,3195.1301033942127,False
+452,67,Drafting - Regulatory Compliance,Alice Smith,Paralegal,3.4700814227705035,180.0,624.6146560986906,False
+453,67,Client Meeting - Regulatory Compliance,Bob Brown,Associate,7.51279404415833,270.0,2028.454391922749,False
+454,67,Drafting - Regulatory Compliance,Bob Smith,Partner,3.6563970061150672,450.0,1645.3786527517802,False
+455,67,Research - Regulatory Compliance,Alice Johnson,Senior Associate,1.4216810254151313,360.0,511.8051691494473,False
+456,67,Court Appearance - Regulatory Compliance,Jane Williams,Partner,2.3522046118105506,450.0,1058.4920753147478,False
+457,67,Court Appearance - Regulatory Compliance,Alice Williams,Senior Associate,3.6635076844212797,360.0,1318.8627663916607,False
+458,67,Document Review - Regulatory Compliance,Bob Johnson,Associate,4.743541228960853,270.0,1280.7561318194305,False
+459,68,Court Appearance - M&A,Alice Williams,Associate,7.483718831063388,360.0,2694.1387791828197,False
+460,68,Court Appearance - M&A,Alice Brown,Partner,7.992806602392427,600.0,4795.683961435457,False
+461,68,Drafting - M&A,Alice Smith,Paralegal,6.071031019122979,240.0,1457.047444589515,False
+462,68,Document Review - M&A,Bob Williams,Partner,4.623314418217292,600.0,2773.988650930375,False
+463,69,Drafting - M&A,Alice Williams,Senior Associate,2.1534106187193265,320.0,689.0913979901845,False
+464,69,Client Meeting - M&A,Jane Johnson,Partner,2.0327615012667866,400.0,813.1046005067146,False
+465,69,Document Review - M&A,Jane Williams,Senior Associate,5.539756596345437,320.0,1772.7221108305398,False
+466,69,Document Review - M&A,Bob Johnson,Senior Associate,7.909518997444363,320.0,2531.046079182196,False
+467,69,Research - M&A,Bob Johnson,Associate,1.5148132723027055,240.0,363.5551853526493,False
+468,69,Drafting - M&A,Alice Williams,Paralegal,5.771139628865163,160.0,923.3823406184262,False
+469,69,Document Review - M&A,Alice Smith,Partner,7.878096213299524,400.0,3151.2384853198096,False
+470,69,Client Meeting - M&A,Jane Brown,Associate,7.434459575170882,240.0,1784.2702980410118,False
+471,69,Document Review - M&A,Alice Smith,Associate,7.099392612199049,240.0,1703.8542269277716,False
+472,70,Drafting - Patent Filing,Jane Brown,Senior Associate,2.3137921995944275,440.0,1018.0685678215481,False
+473,70,Court Appearance - Patent Filing,Jane Smith,Partner,33.36652283727459,550.0,18351.587560501022,True
+474,70,Research - Patent Filing,Alice Johnson,Senior Associate,49.98852892482336,440.0,21994.952726922278,True
+475,70,Research - Patent Filing,John Williams,Paralegal,6.44860003609882,220.0,1418.6920079417403,False
+476,70,Drafting - Patent Filing,John Williams,Paralegal,7.586225501076748,220.0,1668.9696102368846,False
+477,70,Document Review - Patent Filing,Alice Brown,Paralegal,0.8176397516988017,220.0,179.88074537373637,False
+478,70,Drafting - Patent Filing,Bob Williams,Paralegal,1.1789725079259978,220.0,259.37395174371954,False
+479,70,Drafting - Patent Filing,John Brown,Associate,6.575263127946572,330.0,2169.8368322223687,False
+480,70,Document Review - Patent Filing,Bob Brown,Partner,5.856177516167756,550.0,3220.8976338922657,False
+481,71,Document Review - Patent Filing,Jane Johnson,Associate,7.318394943672065,240.0,1756.4147864812956,False
+482,71,Research - Patent Filing,John Johnson,Associate,2.3074241780807654,240.0,553.7818027393837,False
+483,71,Drafting - Patent Filing,Bob Williams,Associate,0.7916496456434923,240.0,189.99591495443815,False
+484,71,Court Appearance - Patent Filing,Jane Smith,Partner,3.159687869034944,400.0,1263.8751476139776,False
+485,71,Research - Patent Filing,Jane Smith,Partner,1.4497080686461854,400.0,579.8832274584742,False
+486,71,Research - Patent Filing,John Williams,Senior Associate,4.669654878546339,320.0,1494.2895611348285,False
+487,71,Court Appearance - Patent Filing,Alice Smith,Senior Associate,4.808321937122297,320.0,1538.6630198791352,False
+488,71,Drafting - Patent Filing,John Williams,Partner,6.628961954967485,400.0,2651.584781986994,False
+489,71,Client Meeting - Patent Filing,John Smith,Partner,0.7582344748607107,400.0,303.2937899442843,False
+490,72,Drafting - Litigation,Alice Williams,Partner,1.8774284796203196,450.0,844.8428158291438,False
+491,72,Client Meeting - Litigation,Bob Smith,Senior Associate,2.2715836250188985,360.0,817.7701050068035,False
+492,72,Client Meeting - Litigation,Bob Brown,Paralegal,4.93166340736754,180.0,887.6994133261572,False
+493,72,Document Review - Litigation,Jane Smith,Partner,46.10837828039168,450.0,20748.770226176257,True
+494,72,Drafting - Litigation,Bob Johnson,Associate,4.7140518778511,270.0,1272.794007019797,False
+495,72,Court Appearance - Litigation,Jane Smith,Associate,3.3617838304252032,270.0,907.6816342148048,False
+496,73,Drafting - M&A,Jane Brown,Partner,5.4362835815946315,500.0,2718.141790797316,False
+497,73,Research - M&A,Bob Smith,Paralegal,2.275696056488506,200.0,455.13921129770114,False
+498,73,Client Meeting - M&A,Bob Williams,Associate,3.079444271040751,300.0,923.8332813122253,False
+499,73,Research - M&A,Alice Smith,Associate,0.8597310270168808,300.0,257.9193081050642,False
+500,73,Research - M&A,Alice Brown,Partner,1.759360048097785,500.0,879.6800240488925,False
+501,73,Court Appearance - M&A,Bob Johnson,Paralegal,7.727261140620993,200.0,1545.4522281241984,False
+502,73,Client Meeting - M&A,Bob Brown,Paralegal,4.324789960718568,200.0,864.9579921437136,False
+503,73,Court Appearance - M&A,Alice Smith,Associate,3.345122271837781,300.0,1003.5366815513344,False
+504,74,Drafting - M&A,Bob Williams,Senior Associate,2.2456685665094325,480.0,1077.9209119245277,False
+505,74,Client Meeting - M&A,Jane Johnson,Associate,3.006465032509583,360.0,1082.3274117034498,False
+506,74,Document Review - M&A,John Johnson,Senior Associate,29.531491478544403,480.0,14175.115909701313,True
+507,74,Drafting - M&A,Jane Brown,Partner,2.8994389292490568,600.0,1739.663357549434,False
+508,74,Drafting - M&A,John Williams,Partner,2.436938513623633,600.0,1462.1631081741798,False
+509,74,Research - M&A,Bob Johnson,Partner,2.7407855527868366,600.0,1644.471331672102,False
+510,74,Document Review - M&A,Alice Smith,Associate,3.8201542014530148,360.0,1375.2555125230854,False
+511,74,Drafting - M&A,Jane Smith,Paralegal,5.6334497167812625,240.0,1352.027932027503,False
+512,74,Court Appearance - M&A,John Smith,Senior Associate,4.604879186726941,480.0,2210.3420096289315,False
+513,75,Court Appearance - Regulatory Compliance,Alice Johnson,Partner,6.637841287379953,550.0,3650.812708058974,False
+514,75,Client Meeting - Regulatory Compliance,Alice Smith,Senior Associate,46.048921985959666,440.0,20261.525673822252,True
+515,75,Court Appearance - Regulatory Compliance,Jane Brown,Partner,7.923102355817446,550.0,4357.706295699595,False
+516,75,Drafting - Regulatory Compliance,John Brown,Associate,1.5643509625466498,330.0,516.2358176403944,False
+517,76,Drafting - M&A,Jane Williams,Senior Associate,4.158614835334483,440.0,1829.7905275471726,False
+518,76,Document Review - M&A,John Brown,Associate,2.4997178174885013,330.0,824.9068797712055,False
+519,76,Drafting - M&A,John Smith,Partner,3.9718198683680477,550.0,2184.500927602426,False
+520,76,Document Review - M&A,John Williams,Senior Associate,4.757941924388832,440.0,2093.494446731086,False
+521,76,Drafting - M&A,John Brown,Partner,0.6950358872418118,550.0,382.26973798299645,False
+522,76,Research - M&A,John Smith,Partner,7.662280290000702,550.0,4214.254159500386,False
+523,76,Court Appearance - M&A,Bob Brown,Paralegal,2.9620779154982237,220.0,651.6571414096093,False
+524,76,Drafting - M&A,Jane Williams,Paralegal,4.952604941757777,220.0,1089.5730871867108,False
+525,77,Drafting - M&A,John Smith,Paralegal,4.741361804494241,180.0,853.4451248089634,False
+526,77,Drafting - M&A,Bob Johnson,Paralegal,6.104985427437399,180.0,1098.897376938732,False
+527,77,Drafting - M&A,Jane Williams,Paralegal,4.681956876011325,180.0,842.7522376820385,False
+528,77,Client Meeting - M&A,Alice Brown,Paralegal,7.146358045767268,180.0,1286.3444482381083,False
+529,78,Drafting - Regulatory Compliance,Bob Brown,Associate,7.242411644164294,270.0,1955.4511439243595,False
+530,78,Drafting - Regulatory Compliance,John Brown,Partner,6.150005955669262,450.0,2767.5026800511678,False
+531,78,Research - Regulatory Compliance,Jane Williams,Partner,1.1259764175299876,450.0,506.6893878884944,False
+532,78,Client Meeting - Regulatory Compliance,Bob Williams,Associate,7.789090957011189,270.0,2103.054558393021,False
+533,78,Client Meeting - Regulatory Compliance,Bob Smith,Partner,4.131684500482312,450.0,1859.2580252170405,False
+534,78,Drafting - Regulatory Compliance,Jane Williams,Associate,34.21668279906174,270.0,9238.50435574667,True
+535,79,Drafting - Contract Review,Alice Smith,Paralegal,5.6810668848040295,240.0,1363.4560523529672,False
+536,79,Document Review - Contract Review,Jane Brown,Partner,6.1177339837235,600.0,3670.6403902341003,False
+537,79,Research - Contract Review,Jane Williams,Senior Associate,0.5570452278812189,480.0,267.3817093829851,False
+538,79,Client Meeting - Contract Review,Bob Johnson,Paralegal,5.504290091677032,240.0,1321.0296220024877,False
+539,79,Research - Contract Review,Jane Williams,Paralegal,4.768865236451323,240.0,1144.5276567483177,False
+540,79,Court Appearance - Contract Review,John Smith,Senior Associate,2.957718745150817,480.0,1419.7049976723922,False
+541,79,Court Appearance - Contract Review,John Brown,Associate,5.107379356630699,360.0,1838.6565683870517,False
+542,79,Research - Contract Review,Jane Smith,Partner,5.570121758977884,600.0,3342.0730553867306,False
+543,79,Document Review - Contract Review,Bob Smith,Paralegal,2.693283547897604,240.0,646.3880514954249,False
+544,80,Client Meeting - Patent Filing,Bob Smith,Senior Associate,0.7396091855683311,360.0,266.2593068045992,False
+545,80,Court Appearance - Patent Filing,Jane Johnson,Associate,3.857318883819636,270.0,1041.4760986313017,False
+546,80,Document Review - Patent Filing,Bob Brown,Paralegal,5.01243342784628,180.0,902.2380170123304,False
+547,80,Drafting - Patent Filing,John Smith,Partner,4.552641807487832,450.0,2048.6888133695243,False
+548,81,Research - M&A,Jane Johnson,Associate,1.8544830637863243,300.0,556.3449191358973,False
+549,81,Court Appearance - M&A,John Smith,Partner,30.046524524978153,500.0,15023.262262489077,True
+550,81,Court Appearance - M&A,Jane Smith,Associate,4.711219053992331,300.0,1413.3657161976994,False
+551,81,Court Appearance - M&A,Jane Williams,Associate,6.188292806629049,300.0,1856.4878419887145,False
+552,81,Court Appearance - M&A,Bob Johnson,Senior Associate,4.916999968773228,400.0,1966.7999875092914,False
+553,81,Court Appearance - M&A,Bob Williams,Paralegal,6.626038826555481,200.0,1325.2077653110962,False
+554,81,Court Appearance - M&A,Jane Brown,Partner,3.6192243936660264,500.0,1809.6121968330133,False
+555,81,Drafting - M&A,John Williams,Associate,5.860087363341899,300.0,1758.0262090025697,False
+556,81,Research - M&A,Jane Williams,Paralegal,5.878539613427854,200.0,1175.7079226855708,False
+557,81,Drafting - M&A,Jane Brown,Senior Associate,5.214789629436589,400.0,2085.9158517746355,False
+558,82,Document Review - M&A,Alice Johnson,Associate,4.041952924108504,360.0,1455.1030526790614,False
+559,82,Drafting - M&A,Bob Brown,Paralegal,5.024536696244851,240.0,1205.8888070987643,False
+560,82,Client Meeting - M&A,Alice Smith,Partner,5.086097287086621,600.0,3051.6583722519727,False
+561,82,Court Appearance - M&A,John Brown,Senior Associate,7.0013021077306155,480.0,3360.6250117106956,False
+562,82,Court Appearance - M&A,John Smith,Associate,5.035415431741042,360.0,1812.749555426775,False
+563,82,Document Review - M&A,Jane Smith,Senior Associate,1.9032347306310877,480.0,913.5526707029221,False
+564,82,Research - M&A,John Williams,Partner,2.722039420892258,600.0,1633.2236525353549,False
+565,82,Drafting - M&A,Jane Johnson,Senior Associate,7.777425339745002,480.0,3733.1641630776007,False
+566,83,Drafting - Patent Filing,Bob Smith,Senior Associate,1.873219993918033,400.0,749.2879975672132,False
+567,83,Research - Patent Filing,John Johnson,Partner,1.609754357855365,500.0,804.8771789276825,False
+568,83,Court Appearance - Patent Filing,John Johnson,Associate,4.166282959257826,300.0,1249.8848877773478,False
+569,83,Document Review - Patent Filing,Bob Brown,Partner,7.8643499004488895,500.0,3932.1749502244447,False
+570,83,Client Meeting - Patent Filing,John Johnson,Partner,5.3621278488993065,500.0,2681.0639244496533,False
+571,83,Drafting - Patent Filing,Bob Smith,Senior Associate,1.741990489708229,400.0,696.7961958832916,False
+572,83,Document Review - Patent Filing,Alice Brown,Paralegal,6.079495210678392,200.0,1215.8990421356784,False
+573,83,Research - Patent Filing,Alice Smith,Paralegal,6.838367101816286,200.0,1367.6734203632573,False
+574,84,Court Appearance - Litigation,Alice Johnson,Associate,1.8910004773950368,270.0,510.5701288966599,False
+575,84,Research - Litigation,Bob Brown,Senior Associate,2.323975409202849,360.0,836.6311473130256,False
+576,84,Drafting - Litigation,John Johnson,Partner,1.9304605333872886,450.0,868.7072400242798,False
+577,84,Research - Litigation,John Williams,Partner,5.794111382375424,450.0,2607.350122068941,False
+578,84,Drafting - Litigation,Alice Williams,Associate,5.10405241536553,270.0,1378.094152148693,False
+579,84,Court Appearance - Litigation,John Johnson,Associate,3.8303550146931125,270.0,1034.1958539671405,False
+580,84,Research - Litigation,Alice Williams,Partner,5.127716338446025,450.0,2307.4723523007115,False
+581,84,Document Review - Litigation,John Williams,Associate,2.4009430420573956,270.0,648.2546213554969,False
+582,84,Client Meeting - Litigation,Bob Brown,Senior Associate,7.929164882063101,360.0,2854.499357542716,False
+583,85,Research - M&A,John Williams,Associate,6.2315736827255055,300.0,1869.4721048176516,False
+584,85,Client Meeting - M&A,John Brown,Paralegal,34.3199891214629,200.0,6863.997824292581,True
+585,85,Research - M&A,Jane Johnson,Paralegal,5.20306650608671,200.0,1040.613301217342,False
+586,85,Client Meeting - M&A,John Brown,Paralegal,1.4489449194649016,200.0,289.7889838929803,False
+587,85,Court Appearance - M&A,Bob Johnson,Paralegal,3.7505680864586286,200.0,750.1136172917257,False
+588,85,Court Appearance - M&A,John Johnson,Associate,2.419377712804174,300.0,725.8133138412521,False
+589,86,Drafting - Contract Review,Alice Brown,Associate,6.111273075663219,360.0,2200.058307238759,False
+590,86,Research - Contract Review,Bob Brown,Associate,6.72963995836259,360.0,2422.6703850105323,False
+591,86,Document Review - Contract Review,Bob Brown,Paralegal,0.9525750281792504,240.0,228.6180067630201,False
+592,86,Document Review - Contract Review,Bob Williams,Paralegal,0.6508490791723549,240.0,156.20377900136518,False
+593,86,Drafting - Contract Review,John Brown,Paralegal,7.048319253375684,240.0,1691.5966208101643,False
+594,86,Research - Contract Review,Jane Smith,Senior Associate,0.5654727159000825,480.0,271.4269036320396,False
+595,86,Document Review - Contract Review,Bob Brown,Senior Associate,1.6459784786609737,480.0,790.0696697572673,False
+596,86,Client Meeting - Contract Review,Alice Johnson,Paralegal,7.522523824656332,240.0,1805.4057179175197,False
+597,87,Drafting - Regulatory Compliance,Jane Johnson,Paralegal,3.63355439109485,220.0,799.381966040867,False
+598,87,Court Appearance - Regulatory Compliance,John Williams,Senior Associate,5.315891051966968,440.0,2338.992062865466,False
+599,87,Research - Regulatory Compliance,John Brown,Partner,2.3520073539141704,550.0,1293.6040446527936,False
+600,87,Drafting - Regulatory Compliance,Alice Smith,Partner,7.83007782554388,550.0,4306.542804049134,False
+601,87,Document Review - Regulatory Compliance,John Brown,Partner,0.979972178445307,550.0,538.9846981449189,False
+602,87,Client Meeting - Regulatory Compliance,Jane Williams,Paralegal,4.404217121673428,220.0,968.9277667681541,False
+603,87,Court Appearance - Regulatory Compliance,Jane Brown,Associate,4.331630276039586,330.0,1429.4379910930636,False
+604,87,Research - Regulatory Compliance,Bob Smith,Partner,3.054150450956838,550.0,1679.7827480262608,False
+605,87,Court Appearance - Regulatory Compliance,Alice Williams,Associate,49.4049790025992,330.0,16303.643070857735,True
+606,88,Court Appearance - Regulatory Compliance,Alice Smith,Senior Associate,2.8503080207834177,440.0,1254.1355291447037,False
+607,88,Client Meeting - Regulatory Compliance,Alice Brown,Partner,6.143663447461126,550.0,3379.0148961036193,False
+608,88,Court Appearance - Regulatory Compliance,Bob Williams,Senior Associate,1.0971815527220203,440.0,482.75988319768896,False
+609,88,Research - Regulatory Compliance,Alice Smith,Senior Associate,0.7760080718796385,440.0,341.44355162704096,False
+610,88,Court Appearance - Regulatory Compliance,Bob Johnson,Senior Associate,4.008143236737033,440.0,1763.5830241642946,False
+611,88,Document Review - Regulatory Compliance,John Smith,Partner,48.15004339469704,550.0,26482.523867083375,True
+612,89,Research - Litigation,Jane Brown,Paralegal,1.3209238996867851,200.0,264.184779937357,False
+613,89,Drafting - Litigation,Alice Brown,Senior Associate,5.456852673892442,400.0,2182.741069556977,False
+614,89,Research - Litigation,Bob Smith,Partner,6.313882999341563,500.0,3156.9414996707815,False
+615,89,Drafting - Litigation,Bob Williams,Paralegal,5.407107600920586,200.0,1081.4215201841173,False
+616,89,Research - Litigation,John Brown,Senior Associate,1.935148334126319,400.0,774.0593336505276,False
+617,89,Document Review - Litigation,Jane Williams,Associate,5.262789478198764,300.0,1578.836843459629,False
+618,89,Court Appearance - Litigation,Bob Smith,Associate,21.258236020598368,300.0,6377.47080617951,True
+619,89,Document Review - Litigation,Bob Brown,Senior Associate,3.978418427224223,400.0,1591.3673708896893,False
+620,90,Court Appearance - M&A,John Williams,Associate,1.153470241629988,270.0,311.43696524009675,False
+621,90,Court Appearance - M&A,John Williams,Paralegal,2.6964485273933785,180.0,485.3607349308081,False
+622,90,Court Appearance - M&A,Jane Smith,Associate,2.009560168407867,270.0,542.5812454701241,False
+623,90,Document Review - M&A,John Brown,Associate,1.2349194341174594,270.0,333.42824721171405,False
+624,91,Client Meeting - Litigation,Bob Brown,Senior Associate,1.8309032562840435,480.0,878.8335630163409,False
+625,91,Document Review - Litigation,Alice Johnson,Partner,7.426688264477109,600.0,4456.012958686266,False
+626,91,Research - Litigation,Bob Brown,Associate,3.1052111835097076,360.0,1117.8760260634947,False
+627,91,Court Appearance - Litigation,Bob Brown,Associate,0.6696440733217865,360.0,241.07186639584316,False
+628,92,Court Appearance - Contract Review,Alice Smith,Senior Associate,48.09944155171182,360.0,17315.798958616255,True
+629,92,Client Meeting - Contract Review,John Williams,Associate,2.4504204091563477,270.0,661.6135104722139,False
+630,92,Client Meeting - Contract Review,Jane Johnson,Paralegal,3.1405332365863172,180.0,565.2959825855371,False
+631,92,Court Appearance - Contract Review,Bob Johnson,Partner,7.471710255625242,450.0,3362.2696150313586,False
+632,92,Document Review - Contract Review,John Williams,Senior Associate,6.11303883856281,360.0,2200.6939818826118,False
+633,92,Client Meeting - Contract Review,Alice Johnson,Associate,1.1361500054868285,270.0,306.7605014814437,False
+634,92,Document Review - Contract Review,John Williams,Associate,4.245045814866935,270.0,1146.1623700140724,False
+635,92,Court Appearance - Contract Review,Bob Williams,Associate,2.824724082251298,270.0,762.6755022078505,False
+636,92,Client Meeting - Contract Review,John Brown,Associate,6.003918775040952,270.0,1621.058069261057,False
+637,93,Court Appearance - Contract Review,Bob Williams,Senior Associate,7.951289089701612,360.0,2862.4640722925806,False
+638,93,Drafting - Contract Review,Jane Smith,Partner,1.8899482082604064,450.0,850.4766937171829,False
+639,93,Document Review - Contract Review,Bob Smith,Senior Associate,3.431322701904382,360.0,1235.2761726855774,False
+640,93,Document Review - Contract Review,Jane Johnson,Partner,6.779795948528598,450.0,3050.908176837869,False
+641,93,Document Review - Contract Review,Jane Smith,Senior Associate,3.9446344909271978,360.0,1420.068416733791,False
+642,93,Court Appearance - Contract Review,Jane Johnson,Associate,2.231201954264163,270.0,602.424527651324,False
+643,93,Client Meeting - Contract Review,Jane Smith,Associate,7.820136217452316,270.0,2111.4367787121255,False
+644,93,Document Review - Contract Review,Jane Brown,Partner,1.1152988527421637,450.0,501.88448373397364,False
+645,93,Document Review - Contract Review,John Williams,Senior Associate,7.0164936076664315,360.0,2525.9376987599153,False
+646,93,Research - Contract Review,Alice Smith,Senior Associate,2.381444122623592,360.0,857.319884144493,False
+647,94,Client Meeting - Litigation,Alice Brown,Partner,3.8384569048758186,450.0,1727.3056071941185,False
+648,94,Court Appearance - Litigation,Bob Johnson,Paralegal,4.119317697798502,180.0,741.4771856037304,False
+649,94,Court Appearance - Litigation,John Smith,Associate,3.6764781541538727,270.0,992.6491016215456,False
+650,94,Court Appearance - Litigation,Bob Johnson,Senior Associate,1.2346868381226108,360.0,444.4872617241399,False
+651,95,Research - Litigation,John Johnson,Paralegal,2.5019407097915125,180.0,450.3493277624722,False
+652,95,Document Review - Litigation,Alice Brown,Senior Associate,2.3541611178268025,360.0,847.4980024176489,False
+653,95,Client Meeting - Litigation,Bob Smith,Associate,5.920657466271068,270.0,1598.5775158931883,False
+654,95,Client Meeting - Litigation,Alice Williams,Senior Associate,4.313570906193278,360.0,1552.8855262295801,False
+655,96,Client Meeting - Regulatory Compliance,Bob Johnson,Partner,2.62547512608264,600.0,1575.285075649584,False
+656,96,Drafting - Regulatory Compliance,John Brown,Associate,6.969766575286705,360.0,2509.1159671032137,False
+657,96,Client Meeting - Regulatory Compliance,Jane Williams,Associate,3.476585459127804,360.0,1251.5707652860094,False
+658,97,Research - Regulatory Compliance,Jane Williams,Partner,3.4623220453515047,400.0,1384.9288181406018,False
+659,97,Drafting - Regulatory Compliance,Bob Williams,Partner,5.360389741653336,400.0,2144.1558966613343,False
+660,97,Research - Regulatory Compliance,Jane Brown,Paralegal,1.1525092584168495,160.0,184.4014813466959,False
+661,97,Drafting - Regulatory Compliance,John Johnson,Senior Associate,7.379668081234042,320.0,2361.4937859948936,False
+662,97,Drafting - Regulatory Compliance,John Johnson,Paralegal,5.719266086230944,160.0,915.0825737969511,False
+663,97,Drafting - Regulatory Compliance,Alice Brown,Senior Associate,2.285444627571246,320.0,731.3422808227988,False
+664,97,Document Review - Regulatory Compliance,Jane Williams,Paralegal,6.591043842208437,160.0,1054.56701475335,False
+665,97,Document Review - Regulatory Compliance,Bob Johnson,Senior Associate,3.2957528090125954,320.0,1054.6408988840305,False
+666,97,Drafting - Regulatory Compliance,Bob Brown,Paralegal,6.894983926559858,160.0,1103.1974282495773,False
+667,98,Court Appearance - Contract Review,Bob Smith,Paralegal,5.318591614213286,200.0,1063.7183228426572,False
+668,98,Document Review - Contract Review,Jane Smith,Associate,36.18080382919764,300.0,10854.241148759293,True
+669,98,Research - Contract Review,John Johnson,Senior Associate,4.399367040110624,400.0,1759.7468160442495,False
+670,99,Client Meeting - Contract Review,Jane Johnson,Paralegal,0.5856678202533254,200.0,117.13356405066509,False
+671,99,Research - Contract Review,Alice Smith,Associate,6.907250213203291,300.0,2072.1750639609872,False
+672,99,Court Appearance - Contract Review,Alice Johnson,Associate,24.642184349175665,300.0,7392.6553047526995,True
+673,99,Drafting - Contract Review,Bob Williams,Associate,5.400281899182215,300.0,1620.0845697546645,False
+674,99,Drafting - Contract Review,Alice Brown,Partner,24.90182167204543,500.0,12450.910836022715,True
+675,99,Drafting - Contract Review,John Johnson,Senior Associate,6.0335551433021966,400.0,2413.4220573208786,False
+676,99,Court Appearance - Contract Review,Bob Brown,Associate,3.4487610281587595,300.0,1034.628308447628,False
+677,99,Document Review - Contract Review,Bob Brown,Paralegal,4.721266705698098,200.0,944.2533411396196,False
+678,99,Client Meeting - Contract Review,Bob Brown,Paralegal,2.531406949890248,200.0,506.28138997804956,False
+679,100,Research - Litigation,Jane Smith,Partner,2.706945309768972,450.0,1218.1253893960375,False
+680,100,Research - Litigation,Jane Smith,Associate,4.852777481017932,270.0,1310.2499198748417,False
+681,100,Court Appearance - Litigation,Alice Williams,Senior Associate,5.036004789567781,360.0,1812.9617242444012,False
+682,100,Document Review - Litigation,John Williams,Associate,5.11189070530386,270.0,1380.210490432042,False
+683,100,Client Meeting - Litigation,Bob Brown,Partner,5.533738241935204,450.0,2490.182208870842,False
+684,100,Drafting - Litigation,John Brown,Senior Associate,2.7232840106194365,360.0,980.3822438229971,False
+685,100,Client Meeting - Litigation,John Smith,Associate,4.610208680331104,270.0,1244.7563436893981,False
+686,100,Research - Litigation,Bob Williams,Associate,2.7046799387224123,270.0,730.2635834550513,False
+687,100,Document Review - Litigation,Bob Smith,Associate,1.85107464758019,270.0,499.7901548466513,False
+688,100,Drafting - Litigation,Alice Smith,Senior Associate,6.355693604770722,360.0,2288.04969771746,False
+689,101,Client Meeting - M&A,Jane Smith,Associate,1.1036338228221454,360.0,397.30817621597237,False
+690,101,Drafting - M&A,Alice Williams,Partner,5.8920246895421435,600.0,3535.214813725286,False
+691,101,Court Appearance - M&A,Jane Brown,Associate,5.4889150653675065,360.0,1976.0094235323024,False
+692,101,Client Meeting - M&A,John Williams,Senior Associate,1.1802598520911745,480.0,566.5247290037637,False
+693,101,Drafting - M&A,Jane Williams,Associate,5.907873110775998,360.0,2126.834319879359,False
+694,101,Document Review - M&A,Bob Smith,Partner,4.86092237654253,600.0,2916.553425925518,False
+695,101,Drafting - M&A,Bob Smith,Senior Associate,4.679562210234147,480.0,2246.1898609123905,False
+696,101,Drafting - M&A,Alice Smith,Paralegal,6.558349413268045,240.0,1574.0038591843308,False
+697,101,Court Appearance - M&A,Bob Brown,Associate,31.48118882822679,360.0,11333.227978161645,True
+698,102,Document Review - M&A,Jane Johnson,Partner,1.2488776715783694,600.0,749.3266029470216,False
+699,102,Client Meeting - M&A,Bob Johnson,Senior Associate,3.206167082035532,480.0,1538.9601993770552,False
+700,102,Court Appearance - M&A,Bob Johnson,Associate,6.242187220686687,360.0,2247.1873994472076,False
+701,102,Drafting - M&A,Jane Williams,Senior Associate,1.4766914670888451,480.0,708.8119042026457,False
+702,102,Document Review - M&A,Alice Johnson,Senior Associate,4.130742502632658,480.0,1982.7564012636758,False
+703,102,Client Meeting - M&A,John Johnson,Paralegal,6.721851623527529,240.0,1613.244389646607,False
+704,102,Drafting - M&A,Jane Brown,Partner,2.3084978340998865,600.0,1385.098700459932,False
+705,102,Drafting - M&A,Jane Brown,Associate,4.2993108227883425,360.0,1547.7518962038034,False
+706,102,Document Review - M&A,Jane Johnson,Partner,6.707759965008401,600.0,4024.655979005041,False
+707,102,Client Meeting - M&A,Jane Williams,Associate,3.3286579512729535,360.0,1198.3168624582634,False
+708,103,Court Appearance - Contract Review,Jane Williams,Partner,47.534151359916734,450.0,21390.36811196253,True
+709,103,Client Meeting - Contract Review,Jane Brown,Senior Associate,5.278081582147537,360.0,1900.109369573113,False
+710,103,Court Appearance - Contract Review,Bob Williams,Senior Associate,1.057919697391649,360.0,380.8510910609936,False
+711,103,Document Review - Contract Review,Jane Johnson,Senior Associate,46.809232063728096,360.0,16851.323542942115,True
+712,104,Document Review - M&A,Jane Williams,Associate,2.1501434230015164,270.0,580.5387242104094,False
+713,104,Drafting - M&A,Bob Johnson,Paralegal,1.831005223769815,180.0,329.5809402785667,False
+714,104,Drafting - M&A,John Williams,Senior Associate,7.533116759177775,360.0,2711.922033303999,False
+715,104,Drafting - M&A,Jane Johnson,Paralegal,1.9803169000851935,180.0,356.4570420153348,False
+716,104,Research - M&A,Bob Brown,Partner,0.8379054883747643,450.0,377.05746976864395,False
+717,104,Drafting - M&A,Alice Williams,Senior Associate,3.3924307312436346,360.0,1221.2750632477084,False
+718,105,Client Meeting - Patent Filing,Jane Williams,Paralegal,7.474918739490836,240.0,1793.9804974778008,False
+719,105,Court Appearance - Patent Filing,John Smith,Partner,0.5859513854194077,600.0,351.5708312516446,False
+720,105,Client Meeting - Patent Filing,Alice Smith,Senior Associate,4.34197104043711,480.0,2084.1460994098125,False
+721,105,Research - Patent Filing,Alice Brown,Associate,4.08496404195148,360.0,1470.5870551025328,False
+722,105,Document Review - Patent Filing,John Johnson,Paralegal,7.440945673770296,240.0,1785.8269617048709,False
+723,105,Document Review - Patent Filing,John Johnson,Paralegal,0.8488267618292112,240.0,203.71842283901069,False
+724,106,Drafting - Contract Review,John Johnson,Paralegal,5.749663545555537,200.0,1149.9327091111074,False
+725,106,Court Appearance - Contract Review,Alice Smith,Paralegal,6.672504098465483,200.0,1334.5008196930967,False
+726,106,Client Meeting - Contract Review,Jane Smith,Paralegal,3.592838895704147,200.0,718.5677791408293,False
+727,106,Drafting - Contract Review,Bob Williams,Associate,6.308254234413901,300.0,1892.4762703241704,False
+728,106,Court Appearance - Contract Review,Alice Johnson,Partner,3.8271739977259958,500.0,1913.586998862998,False
+729,106,Document Review - Contract Review,Alice Brown,Senior Associate,1.3914446638175564,400.0,556.5778655270226,False
+730,106,Document Review - Contract Review,Bob Brown,Associate,1.400806388541402,300.0,420.24191656242056,False
+731,107,Court Appearance - Regulatory Compliance,Alice Brown,Partner,3.326710993344329,450.0,1497.0199470049479,False
+732,107,Drafting - Regulatory Compliance,Jane Johnson,Paralegal,0.5828708337057454,180.0,104.91675006703417,False
+733,107,Document Review - Regulatory Compliance,Jane Johnson,Partner,7.251835870271386,450.0,3263.326141622124,False
+734,107,Document Review - Regulatory Compliance,Alice Williams,Partner,3.314283163830062,450.0,1491.427423723528,False
+735,107,Court Appearance - Regulatory Compliance,Bob Williams,Senior Associate,3.7546381308320207,360.0,1351.6697270995273,False
+736,107,Document Review - Regulatory Compliance,Bob Williams,Senior Associate,6.850206172288802,360.0,2466.0742220239686,False
+737,107,Document Review - Regulatory Compliance,Jane Brown,Paralegal,3.4055184932147893,180.0,612.9933287786621,False
+738,108,Research - Litigation,Bob Smith,Senior Associate,2.3066946508659707,480.0,1107.213432415666,False
+739,108,Drafting - Litigation,Bob Williams,Associate,2.5880617019733156,360.0,931.7022127103936,False
+740,108,Document Review - Litigation,Jane Smith,Paralegal,3.5921795539879864,240.0,862.1230929571167,False
+741,108,Document Review - Litigation,John Williams,Senior Associate,2.10242627472277,480.0,1009.1646118669297,False
+742,108,Drafting - Litigation,Bob Brown,Partner,5.464804500634147,600.0,3278.882700380488,False
+743,108,Drafting - Litigation,John Brown,Partner,7.035041303226549,600.0,4221.024781935929,False
+744,108,Document Review - Litigation,John Williams,Paralegal,7.055175734069336,240.0,1693.2421761766407,False
+745,109,Document Review - Patent Filing,Jane Smith,Partner,38.46550818311381,450.0,17309.478682401215,True
+746,109,Research - Patent Filing,Alice Williams,Partner,3.0389167949608216,450.0,1367.5125577323697,False
+747,109,Client Meeting - Patent Filing,Alice Williams,Paralegal,7.413997714968826,180.0,1334.5195886943886,False
+748,109,Court Appearance - Patent Filing,Alice Smith,Paralegal,2.9014926879093688,180.0,522.2686838236864,False
+749,109,Drafting - Patent Filing,Jane Smith,Senior Associate,5.360590132465275,360.0,1929.8124476874991,False
+750,109,Document Review - Patent Filing,Jane Brown,Associate,6.705451701962173,270.0,1810.4719595297868,False
+751,109,Research - Patent Filing,John Brown,Partner,4.785550623774434,450.0,2153.4977806984953,False
+752,109,Document Review - Patent Filing,Bob Brown,Senior Associate,49.56304916433425,360.0,17842.69769916033,True
+753,110,Document Review - Litigation,Jane Johnson,Senior Associate,4.589626447618288,440.0,2019.4356369520467,False
+754,110,Court Appearance - Litigation,Jane Smith,Senior Associate,0.7415706457613026,440.0,326.2910841349731,False
+755,110,Research - Litigation,John Johnson,Senior Associate,1.130197181597394,440.0,497.2867599028533,False
+756,110,Document Review - Litigation,Bob Smith,Senior Associate,7.151640873746616,440.0,3146.721984448511,False
+757,110,Document Review - Litigation,Bob Brown,Associate,30.05385916905255,330.0,9917.773525787341,True
+758,110,Client Meeting - Litigation,Alice Brown,Associate,6.872283392047714,330.0,2267.8535193757457,False
+759,110,Research - Litigation,Alice Williams,Partner,6.772320300405721,550.0,3724.7761652231466,False
+760,111,Client Meeting - M&A,Alice Brown,Paralegal,2.936467887423691,160.0,469.83486198779053,False
+761,111,Research - M&A,Jane Brown,Senior Associate,2.557028469774794,320.0,818.2491103279341,False
+762,111,Document Review - M&A,Jane Brown,Senior Associate,3.8737860716802026,320.0,1239.6115429376648,False
+763,111,Client Meeting - M&A,John Johnson,Associate,7.108014882468886,240.0,1705.9235717925326,False
+764,111,Document Review - M&A,Bob Williams,Associate,2.947129298465338,240.0,707.3110316316811,False
+765,111,Document Review - M&A,Jane Smith,Associate,6.094460699309857,240.0,1462.6705678343656,False
+766,112,Research - M&A,Jane Williams,Paralegal,6.938856939698697,180.0,1248.9942491457655,False
+767,112,Drafting - M&A,John Johnson,Paralegal,6.693390077824478,180.0,1204.810214008406,False
+768,112,Research - M&A,Alice Williams,Associate,7.064860464654503,270.0,1907.5123254567156,False
+769,113,Court Appearance - Patent Filing,Jane Smith,Associate,3.1379957495890425,330.0,1035.538597364384,False
+770,113,Document Review - Patent Filing,Jane Smith,Associate,6.348746570257335,330.0,2095.0863681849205,False
+771,113,Document Review - Patent Filing,Bob Brown,Associate,7.912866322327609,330.0,2611.245886368111,False
+772,113,Drafting - Patent Filing,John Johnson,Partner,5.811918879852408,550.0,3196.5553839188246,False
+773,113,Drafting - Patent Filing,Bob Williams,Associate,6.233459272326457,330.0,2057.041559867731,False
+774,113,Research - Patent Filing,Jane Smith,Associate,3.649679128153175,330.0,1204.3941122905478,False
+775,113,Drafting - Patent Filing,Bob Brown,Senior Associate,2.3226887059595684,440.0,1021.9830306222101,False
+776,113,Client Meeting - Patent Filing,Bob Smith,Associate,7.743763531054853,330.0,2555.4419652481015,False
+777,114,Drafting - Regulatory Compliance,Jane Johnson,Senior Associate,2.1213833045345183,440.0,933.408653995188,False
+778,114,Research - Regulatory Compliance,Alice Brown,Associate,7.761858995236416,330.0,2561.4134684280175,False
+779,114,Client Meeting - Regulatory Compliance,Bob Smith,Senior Associate,2.5512619398763414,440.0,1122.5552535455902,False
+780,115,Court Appearance - M&A,Bob Johnson,Senior Associate,2.6728587126801386,320.0,855.3147880576444,False
+781,115,Document Review - M&A,Jane Williams,Partner,1.946254359128036,400.0,778.5017436512144,False
+782,115,Court Appearance - M&A,John Williams,Senior Associate,7.38285307907807,320.0,2362.5129853049825,False
+783,115,Document Review - M&A,Bob Williams,Senior Associate,1.4969969941972234,320.0,479.0390381431115,False
+784,115,Research - M&A,Alice Williams,Partner,5.396933653471274,400.0,2158.7734613885095,False
+785,115,Research - M&A,Alice Johnson,Senior Associate,6.259045987566673,320.0,2002.8947160213354,False
+786,115,Document Review - M&A,Alice Williams,Associate,6.795024644442611,240.0,1630.8059146662267,False
+787,116,Court Appearance - Contract Review,John Williams,Partner,5.9369661276735,600.0,3562.1796766041,False
+788,116,Court Appearance - Contract Review,Bob Johnson,Partner,1.6982470216493186,600.0,1018.9482129895912,False
+789,116,Document Review - Contract Review,Bob Johnson,Partner,5.2479002694051395,600.0,3148.740161643084,False
+790,116,Research - Contract Review,Jane Johnson,Associate,4.988781560757278,360.0,1795.9613618726203,False
+791,116,Drafting - Contract Review,John Williams,Associate,2.781502442095208,360.0,1001.340879154275,False
+792,116,Drafting - Contract Review,Alice Johnson,Paralegal,5.5362628342586495,240.0,1328.7030802220759,False
+793,117,Court Appearance - Patent Filing,Jane Smith,Paralegal,1.9532144774122726,220.0,429.7071850307,False
+794,117,Client Meeting - Patent Filing,Bob Johnson,Associate,47.040802153239824,330.0,15523.464710569142,True
+795,117,Client Meeting - Patent Filing,Bob Smith,Senior Associate,6.616134254114507,440.0,2911.099071810383,False
+796,117,Client Meeting - Patent Filing,Bob Williams,Partner,38.715672182959835,550.0,21293.61970062791,True
+797,117,Document Review - Patent Filing,Alice Smith,Senior Associate,4.194076034463541,440.0,1845.3934551639582,False
+798,117,Court Appearance - Patent Filing,John Smith,Senior Associate,2.3878982493985057,440.0,1050.6752297353426,False
+799,117,Drafting - Patent Filing,Alice Williams,Partner,2.315050185917939,550.0,1273.2776022548665,False
+800,118,Court Appearance - Regulatory Compliance,John Williams,Partner,6.949343696525284,600.0,4169.60621791517,False
+801,118,Client Meeting - Regulatory Compliance,Alice Johnson,Associate,0.7237713896346862,360.0,260.55770026848705,False
+802,118,Court Appearance - Regulatory Compliance,John Brown,Senior Associate,5.878501666780606,480.0,2821.6808000546907,False
+803,118,Court Appearance - Regulatory Compliance,Alice Williams,Partner,1.7258195348606735,600.0,1035.4917209164041,False
+804,119,Document Review - M&A,Jane Johnson,Associate,7.79899555422319,330.0,2573.668532893653,False
+805,119,Court Appearance - M&A,Alice Brown,Associate,5.732087118609411,330.0,1891.5887491411056,False
+806,119,Drafting - M&A,Jane Brown,Partner,0.7792036007505707,550.0,428.5619804128139,False
+807,119,Court Appearance - M&A,John Smith,Partner,5.796794997591807,550.0,3188.237248675494,False
+808,119,Document Review - M&A,Jane Johnson,Paralegal,4.693701588490324,220.0,1032.6143494678713,False
+809,119,Research - M&A,Bob Brown,Associate,4.664326641625698,330.0,1539.2277917364804,False
+810,119,Research - M&A,Alice Brown,Paralegal,7.204976403078817,220.0,1585.0948086773396,False
+811,119,Court Appearance - M&A,Alice Brown,Associate,1.4775529110303969,330.0,487.592460640031,False
+812,119,Client Meeting - M&A,Jane Williams,Partner,7.169922089602211,550.0,3943.457149281216,False
+813,120,Court Appearance - Regulatory Compliance,Bob Smith,Paralegal,5.295935014151182,220.0,1165.10570311326,False
+814,120,Court Appearance - Regulatory Compliance,Jane Williams,Paralegal,4.001083602712424,220.0,880.2383925967333,False
+815,120,Drafting - Regulatory Compliance,Alice Johnson,Paralegal,3.832401080102432,220.0,843.128237622535,False
+816,120,Court Appearance - Regulatory Compliance,John Brown,Paralegal,4.548769368895395,220.0,1000.7292611569869,False
+817,120,Court Appearance - Regulatory Compliance,Bob Smith,Associate,4.155390213343452,330.0,1371.2787704033392,False
+818,120,Client Meeting - Regulatory Compliance,Bob Brown,Partner,3.3814401135147776,550.0,1859.7920624331277,False
+819,120,Client Meeting - Regulatory Compliance,John Brown,Paralegal,4.723971396317374,220.0,1039.2737071898223,False
+820,120,Drafting - Regulatory Compliance,John Johnson,Paralegal,0.7240313248196302,220.0,159.28689146031863,False
+821,120,Research - Regulatory Compliance,Bob Smith,Senior Associate,2.9243809203136295,440.0,1286.727604937997,False
+822,121,Court Appearance - Regulatory Compliance,Jane Johnson,Partner,0.723263515094827,400.0,289.3054060379308,False
+823,121,Court Appearance - Regulatory Compliance,John Johnson,Paralegal,4.263378619472286,160.0,682.1405791155657,False
+824,121,Research - Regulatory Compliance,John Brown,Paralegal,1.2035233429992984,160.0,192.56373487988776,False
+825,121,Research - Regulatory Compliance,John Brown,Paralegal,1.7315295073434396,160.0,277.0447211749503,False
+826,121,Drafting - Regulatory Compliance,John Smith,Associate,4.572215529419611,240.0,1097.3317270607067,False
+827,122,Document Review - Regulatory Compliance,Bob Smith,Associate,3.9034018841783293,300.0,1171.0205652534987,False
+828,122,Research - Regulatory Compliance,Alice Smith,Associate,0.9812790550332363,300.0,294.3837165099709,False
+829,122,Document Review - Regulatory Compliance,John Johnson,Associate,7.563291283089139,300.0,2268.987384926742,False
+830,122,Research - Regulatory Compliance,John Johnson,Partner,5.74234400067942,500.0,2871.17200033971,False
+831,122,Research - Regulatory Compliance,Bob Williams,Associate,2.2403826830160876,300.0,672.1148049048263,False
+832,122,Research - Regulatory Compliance,John Williams,Associate,7.031775352702458,300.0,2109.5326058107376,False
+833,122,Drafting - Regulatory Compliance,Bob Williams,Paralegal,3.109362130036571,200.0,621.8724260073142,False
+834,122,Document Review - Regulatory Compliance,Alice Brown,Senior Associate,4.126727836377853,400.0,1650.6911345511412,False
+835,123,Client Meeting - Litigation,Jane Smith,Partner,7.541603832748262,450.0,3393.721724736718,False
+836,123,Court Appearance - Litigation,Alice Smith,Paralegal,7.171196902401589,180.0,1290.815442432286,False
+837,123,Client Meeting - Litigation,Bob Brown,Associate,4.208675480344381,270.0,1136.3423796929828,False
+838,123,Research - Litigation,Alice Williams,Partner,30.508655456490036,450.0,13728.894955420516,True
+839,123,Drafting - Litigation,Bob Williams,Associate,2.2903579419708517,270.0,618.39664433213,False
+840,123,Document Review - Litigation,Bob Smith,Senior Associate,3.322884835344511,360.0,1196.238540724024,False
+841,123,Document Review - Litigation,Alice Brown,Paralegal,0.9373803086212036,180.0,168.72845555181664,False
+842,124,Court Appearance - M&A,Bob Williams,Associate,3.6650654023495846,270.0,989.5676586343878,False
+843,124,Document Review - M&A,Bob Johnson,Senior Associate,33.533287387592196,360.0,12071.98345953319,True
+844,124,Document Review - M&A,John Smith,Associate,4.999898815004969,270.0,1349.9726800513417,False
+845,124,Research - M&A,Bob Johnson,Partner,6.288209689118695,450.0,2829.6943601034127,False
+846,124,Document Review - M&A,Jane Smith,Senior Associate,3.332204963150376,360.0,1199.5937867341354,False
+847,124,Research - M&A,John Smith,Paralegal,4.572152225571623,180.0,822.9874006028921,False
+848,124,Document Review - M&A,Bob Johnson,Associate,0.8853927360603554,270.0,239.05603873629596,False
+849,124,Court Appearance - M&A,Jane Williams,Paralegal,0.6619827352675818,180.0,119.15689234816472,False
+850,124,Document Review - M&A,Jane Smith,Paralegal,7.342120064626206,180.0,1321.581611632717,False
+851,125,Document Review - Regulatory Compliance,John Johnson,Paralegal,7.779868641810558,240.0,1867.168474034534,False
+852,125,Document Review - Regulatory Compliance,Jane Smith,Senior Associate,7.316383843649401,480.0,3511.8642449517124,False
+853,125,Document Review - Regulatory Compliance,John Brown,Paralegal,2.937596051813768,240.0,705.0230524353043,False
+854,125,Client Meeting - Regulatory Compliance,Jane Brown,Associate,5.66727798428035,360.0,2040.220074340926,False
+855,126,Document Review - Regulatory Compliance,Alice Johnson,Paralegal,2.6222673157585805,200.0,524.453463151716,False
+856,126,Research - Regulatory Compliance,Jane Brown,Paralegal,1.1649853951463893,200.0,232.99707902927787,False
+857,126,Drafting - Regulatory Compliance,Bob Brown,Associate,6.86980855420918,300.0,2060.942566262754,False
+858,126,Court Appearance - Regulatory Compliance,Jane Smith,Associate,7.084871779495353,300.0,2125.461533848606,False
+859,126,Court Appearance - Regulatory Compliance,Alice Brown,Senior Associate,6.15975807743059,400.0,2463.903230972236,False
+860,127,Court Appearance - Litigation,Bob Williams,Paralegal,4.038468445029868,160.0,646.1549512047789,False
+861,127,Document Review - Litigation,John Williams,Associate,5.441214275810326,240.0,1305.8914261944783,False
+862,127,Document Review - Litigation,Bob Johnson,Senior Associate,2.925538499347936,320.0,936.1723197913395,False
+863,127,Document Review - Litigation,Bob Johnson,Partner,5.090300993953501,400.0,2036.1203975814003,False
+864,128,Document Review - Contract Review,Alice Johnson,Partner,6.076852719101642,400.0,2430.7410876406566,False
+865,128,Client Meeting - Contract Review,Bob Smith,Paralegal,7.154078786922077,160.0,1144.6526059075322,False
+866,128,Court Appearance - Contract Review,Bob Brown,Senior Associate,36.30835080271969,320.0,11618.6722568703,True
+867,129,Client Meeting - M&A,John Williams,Partner,6.27664035198814,450.0,2824.488158394663,False
+868,129,Court Appearance - M&A,John Johnson,Senior Associate,3.847069242026027,360.0,1384.9449271293697,False
+869,129,Client Meeting - M&A,John Williams,Senior Associate,1.0622720301423016,360.0,382.4179308512286,False
+870,130,Research - Regulatory Compliance,John Johnson,Associate,0.8379617895636102,330.0,276.52739055599136,False
+871,130,Drafting - Regulatory Compliance,Bob Smith,Partner,0.906194127265592,550.0,498.4067699960756,False
+872,130,Document Review - Regulatory Compliance,Bob Johnson,Partner,1.8535946817974274,550.0,1019.4770749885851,False
+873,130,Court Appearance - Regulatory Compliance,John Brown,Senior Associate,1.8305368553924297,440.0,805.436216372669,False
+874,130,Drafting - Regulatory Compliance,Bob Brown,Senior Associate,4.461024522947746,440.0,1962.850790097008,False
+875,130,Drafting - Regulatory Compliance,John Smith,Senior Associate,7.608380666558044,440.0,3347.6874932855394,False
+876,131,Drafting - Contract Review,Alice Johnson,Senior Associate,3.62744586788574,320.0,1160.7826777234368,False
+877,131,Drafting - Contract Review,Bob Williams,Senior Associate,2.2854347771549,320.0,731.339128689568,False
+878,131,Research - Contract Review,Bob Smith,Associate,1.2689128304504542,240.0,304.539079308109,False
+879,131,Client Meeting - Contract Review,John Johnson,Senior Associate,2.3327141793995505,320.0,746.4685374078562,False
+880,131,Court Appearance - Contract Review,John Brown,Partner,7.35232972470072,400.0,2940.931889880288,False
+881,131,Client Meeting - Contract Review,Alice Smith,Senior Associate,5.7298086041851475,320.0,1833.5387533392473,False
+882,131,Drafting - Contract Review,Bob Brown,Associate,3.196208434078654,240.0,767.0900241788769,False
+883,132,Document Review - Contract Review,Alice Williams,Partner,7.133373016713879,500.0,3566.6865083569396,False
+884,132,Document Review - Contract Review,Bob Brown,Associate,7.684189811682895,300.0,2305.2569435048686,False
+885,132,Court Appearance - Contract Review,John Smith,Paralegal,4.299146932527909,200.0,859.8293865055817,False
+886,132,Drafting - Contract Review,John Williams,Associate,6.685391902095142,300.0,2005.6175706285426,False
+887,132,Drafting - Contract Review,Bob Williams,Senior Associate,2.7168391618372905,400.0,1086.735664734916,False
+888,133,Client Meeting - M&A,Bob Brown,Senior Associate,7.893049001290432,400.0,3157.2196005161727,False
+889,133,Court Appearance - M&A,Bob Brown,Senior Associate,42.92879322854189,400.0,17171.517291416756,True
+890,133,Research - M&A,John Brown,Associate,0.572942191614257,300.0,171.8826574842771,False
+891,133,Client Meeting - M&A,John Brown,Senior Associate,4.788465846059635,400.0,1915.386338423854,False
+892,133,Client Meeting - M&A,Bob Brown,Paralegal,6.184229784557415,200.0,1236.845956911483,False
+893,133,Court Appearance - M&A,Jane Johnson,Partner,34.16245279974651,500.0,17081.226399873256,True
+894,133,Drafting - M&A,Alice Smith,Associate,7.663604313446828,300.0,2299.0812940340484,False
+895,134,Document Review - Patent Filing,John Johnson,Senior Associate,2.4668135354499494,360.0,888.0528727619818,False
+896,134,Court Appearance - Patent Filing,Alice Johnson,Partner,4.0142159334345875,450.0,1806.3971700455643,False
+897,134,Court Appearance - Patent Filing,John Williams,Associate,7.880684974066899,270.0,2127.7849429980624,False
+898,134,Drafting - Patent Filing,John Smith,Senior Associate,7.160800672777146,360.0,2577.888242199773,False
+899,134,Drafting - Patent Filing,Jane Brown,Paralegal,7.382889825847666,180.0,1328.9201686525798,False
+900,134,Client Meeting - Patent Filing,Alice Williams,Senior Associate,0.7493566673014582,360.0,269.76840022852497,False
+901,135,Research - Patent Filing,Alice Williams,Associate,1.123817501079662,330.0,370.8597753562885,False
+902,135,Court Appearance - Patent Filing,Bob Williams,Partner,6.796854155802299,550.0,3738.269785691264,False
+903,135,Client Meeting - Patent Filing,Bob Brown,Partner,7.909588599960581,550.0,4350.273729978319,False
+904,135,Client Meeting - Patent Filing,Bob Johnson,Senior Associate,2.3576907682550696,440.0,1037.3839380322306,False
+905,136,Document Review - Regulatory Compliance,John Smith,Associate,1.7908802683029907,300.0,537.2640804908972,False
+906,136,Document Review - Regulatory Compliance,Jane Johnson,Partner,2.257709267780804,500.0,1128.854633890402,False
+907,136,Document Review - Regulatory Compliance,Alice Smith,Associate,4.878883897908776,300.0,1463.6651693726328,False
+908,136,Drafting - Regulatory Compliance,Alice Brown,Senior Associate,4.836666658425784,400.0,1934.6666633703137,False
+909,136,Client Meeting - Regulatory Compliance,Alice Johnson,Partner,3.7206406803926075,500.0,1860.3203401963037,False
+910,136,Court Appearance - Regulatory Compliance,Bob Brown,Partner,3.53605001556179,500.0,1768.025007780895,False
+911,136,Drafting - Regulatory Compliance,John Brown,Associate,4.905616458111188,300.0,1471.6849374333565,False
+912,137,Document Review - Patent Filing,Bob Brown,Partner,4.009285425235331,600.0,2405.5712551411984,False
+913,137,Research - Patent Filing,Alice Johnson,Paralegal,2.7185810634801357,240.0,652.4594552352326,False
+914,137,Research - Patent Filing,Alice Brown,Paralegal,3.8177365541845356,240.0,916.2567730042886,False
+915,137,Court Appearance - Patent Filing,Alice Brown,Senior Associate,1.439424284724906,480.0,690.9236566679548,False
+916,137,Court Appearance - Patent Filing,Jane Williams,Associate,7.225623907031545,360.0,2601.224606531356,False
+917,137,Research - Patent Filing,Bob Johnson,Associate,2.421222388884262,360.0,871.6400599983343,False
+918,137,Court Appearance - Patent Filing,Jane Brown,Partner,25.139869875351145,600.0,15083.921925210687,True
+919,138,Court Appearance - Regulatory Compliance,Bob Williams,Associate,3.0005040804049368,330.0,990.1663465336292,False
+920,138,Drafting - Regulatory Compliance,Bob Smith,Partner,2.007499096418142,550.0,1104.124503029978,False
+921,138,Research - Regulatory Compliance,John Smith,Associate,5.9758919155662165,330.0,1972.0443321368514,False
+922,138,Research - Regulatory Compliance,Alice Johnson,Paralegal,5.891327490769689,220.0,1296.0920479693316,False
+923,138,Drafting - Regulatory Compliance,John Brown,Associate,33.25622839404984,330.0,10974.555370036447,True
+924,139,Document Review - Contract Review,John Johnson,Senior Associate,6.116752134004093,360.0,2202.0307682414737,False
+925,139,Client Meeting - Contract Review,John Williams,Senior Associate,38.471512486785905,360.0,13849.744495242925,True
+926,139,Court Appearance - Contract Review,Alice Williams,Senior Associate,7.8854984838433,360.0,2838.779454183588,False
+927,139,Research - Contract Review,Bob Brown,Associate,1.3380925815831184,270.0,361.284997027442,False
+928,139,Drafting - Contract Review,John Williams,Paralegal,7.994674870684727,180.0,1439.0414767232508,False
+929,139,Drafting - Contract Review,John Smith,Senior Associate,1.67247413462185,360.0,602.090688463866,False
+930,139,Client Meeting - Contract Review,Alice Brown,Partner,1.7621978515209666,450.0,792.989033184435,False
+931,140,Court Appearance - Patent Filing,Jane Smith,Associate,4.945241184166892,240.0,1186.857884200054,False
+932,140,Drafting - Patent Filing,Jane Smith,Partner,1.204482550595805,400.0,481.793020238322,False
+933,140,Client Meeting - Patent Filing,Bob Johnson,Partner,3.141557644025311,400.0,1256.6230576101243,False
+934,141,Document Review - Contract Review,Alice Johnson,Senior Associate,3.7687842021244573,440.0,1658.2650489347611,False
+935,141,Research - Contract Review,Jane Williams,Paralegal,1.553433231518571,220.0,341.7553109340856,False
+936,141,Client Meeting - Contract Review,John Smith,Associate,5.145495901927836,330.0,1698.0136476361859,False
+937,141,Document Review - Contract Review,John Williams,Paralegal,0.9842516778654906,220.0,216.53536913040793,False
+938,141,Drafting - Contract Review,John Johnson,Paralegal,2.2050360136584475,220.0,485.10792300485843,False
+939,141,Drafting - Contract Review,John Williams,Paralegal,0.7374660708412296,220.0,162.24253558507053,False
+940,141,Document Review - Contract Review,Alice Smith,Senior Associate,3.9030144963838356,440.0,1717.3263784088876,False
+941,141,Document Review - Contract Review,Jane Smith,Senior Associate,7.932158095602462,440.0,3490.1495620650835,False
+942,141,Drafting - Contract Review,John Brown,Associate,1.4785315621713537,330.0,487.9154155165467,False
+943,142,Client Meeting - Contract Review,Alice Brown,Paralegal,1.5465441859665678,160.0,247.44706975465084,False
+944,142,Client Meeting - Contract Review,Jane Johnson,Senior Associate,5.662580334608006,320.0,1812.025707074562,False
+945,142,Drafting - Contract Review,Alice Williams,Partner,0.5257338292781739,400.0,210.29353171126957,False
+946,142,Court Appearance - Contract Review,John Johnson,Senior Associate,7.063003657345801,320.0,2260.1611703506564,False
+947,142,Client Meeting - Contract Review,Bob Smith,Paralegal,36.355508237264274,160.0,5816.881317962284,True
+948,143,Research - Litigation,Jane Johnson,Paralegal,7.348431795409858,220.0,1616.6549949901687,False
+949,143,Drafting - Litigation,John Smith,Senior Associate,3.760519642286787,440.0,1654.6286426061863,False
+950,143,Drafting - Litigation,Jane Brown,Paralegal,1.7355120373853707,220.0,381.8126482247816,False
+951,143,Client Meeting - Litigation,Bob Smith,Paralegal,0.6532613525895316,220.0,143.71749756969695,False
+952,143,Client Meeting - Litigation,Jane Johnson,Partner,5.299297084885041,550.0,2914.613396686773,False
+953,143,Document Review - Litigation,Alice Smith,Partner,3.749518649907886,550.0,2062.235257449337,False
+954,144,Court Appearance - Regulatory Compliance,Jane Smith,Paralegal,3.6596164911378177,240.0,878.3079578730762,False
+955,144,Court Appearance - Regulatory Compliance,John Smith,Paralegal,7.347406904196871,240.0,1763.377657007249,False
+956,144,Document Review - Regulatory Compliance,John Johnson,Paralegal,4.833650286599967,240.0,1160.0760687839922,False
+957,144,Client Meeting - Regulatory Compliance,Alice Johnson,Senior Associate,5.669878631897783,480.0,2721.5417433109355,False
+958,144,Court Appearance - Regulatory Compliance,Alice Brown,Senior Associate,1.967549367739756,480.0,944.4236965150828,False
+959,144,Document Review - Regulatory Compliance,Bob Brown,Associate,2.605081491572956,360.0,937.8293369662641,False
+960,144,Court Appearance - Regulatory Compliance,Bob Williams,Associate,3.871515385138729,360.0,1393.7455386499423,False
+961,144,Court Appearance - Regulatory Compliance,Jane Williams,Associate,6.00008248697597,360.0,2160.0296953113493,False
+962,144,Court Appearance - Regulatory Compliance,Jane Johnson,Senior Associate,2.1494567927225035,480.0,1031.7392605068017,False
+963,145,Drafting - Contract Review,Alice Smith,Senior Associate,4.475284003916713,320.0,1432.0908812533482,False
+964,145,Drafting - Contract Review,Bob Johnson,Paralegal,2.725186942887462,160.0,436.0299108619939,False
+965,145,Document Review - Contract Review,Alice Williams,Paralegal,6.761173337788796,160.0,1081.7877340462073,False
+966,145,Research - Contract Review,Jane Williams,Paralegal,6.246350790403259,160.0,999.4161264645214,False
+967,145,Document Review - Contract Review,Bob Smith,Associate,5.018571000968871,240.0,1204.457040232529,False
+968,145,Research - Contract Review,Bob Smith,Partner,6.103004500889393,400.0,2441.2018003557573,False
+969,145,Client Meeting - Contract Review,Alice Brown,Paralegal,6.948544228674155,160.0,1111.7670765878647,False
+970,145,Client Meeting - Contract Review,Bob Williams,Associate,6.656931692568676,240.0,1597.6636062164823,False
+971,146,Document Review - Contract Review,Alice Johnson,Paralegal,4.356572343721892,200.0,871.3144687443784,False
+972,146,Drafting - Contract Review,John Smith,Partner,47.522001035136874,500.0,23761.00051756844,True
+973,146,Document Review - Contract Review,Alice Williams,Partner,0.7323412272270762,500.0,366.1706136135381,False
+974,147,Document Review - Litigation,Bob Smith,Partner,5.971209762265793,600.0,3582.7258573594754,False
+975,147,Client Meeting - Litigation,Jane Johnson,Paralegal,3.183729305940013,240.0,764.0950334256031,False
+976,147,Document Review - Litigation,Bob Williams,Partner,1.4828744595203307,600.0,889.7246757121984,False
+977,147,Document Review - Litigation,Jane Johnson,Partner,7.554972435626557,600.0,4532.983461375934,False
+978,148,Client Meeting - Patent Filing,Alice Johnson,Associate,1.5900942727890859,360.0,572.433938204071,False
+979,148,Research - Patent Filing,Jane Brown,Partner,2.2882497840908558,600.0,1372.9498704545135,False
+980,148,Document Review - Patent Filing,Jane Johnson,Paralegal,0.6504769658323785,240.0,156.11447179977083,False
+981,148,Client Meeting - Patent Filing,Jane Williams,Associate,7.256046841863756,360.0,2612.176863070952,False
+982,148,Research - Patent Filing,Jane Smith,Partner,1.264416172789288,600.0,758.6497036735727,False
+983,149,Court Appearance - Contract Review,Jane Brown,Paralegal,4.7306716607135035,240.0,1135.361198571241,False
+984,149,Research - Contract Review,Alice Williams,Associate,7.617427069566885,360.0,2742.2737450440786,False
+985,149,Court Appearance - Contract Review,Alice Johnson,Senior Associate,4.745726711536469,480.0,2277.9488215375054,False
+986,149,Research - Contract Review,John Brown,Senior Associate,1.8178259173890767,480.0,872.5564403467569,False
+987,149,Drafting - Contract Review,Jane Johnson,Paralegal,4.372143601614677,240.0,1049.3144643875223,False
+988,149,Drafting - Contract Review,John Johnson,Senior Associate,7.625503585354146,480.0,3660.2417209699897,False
+989,150,Drafting - M&A,John Smith,Associate,7.458831246580309,330.0,2461.414311371502,False
+990,150,Client Meeting - M&A,John Williams,Senior Associate,5.451581406614826,440.0,2398.6958189105235,False
+991,150,Research - M&A,Alice Brown,Partner,5.106399631719893,550.0,2808.519797445941,False
+992,151,Document Review - Contract Review,Bob Johnson,Associate,2.8308118082762785,360.0,1019.0922509794602,False
+993,151,Court Appearance - Contract Review,John Johnson,Paralegal,3.14508513369866,240.0,754.8204320876785,False
+994,151,Document Review - Contract Review,John Brown,Partner,4.951392037048583,600.0,2970.83522222915,False
+995,151,Court Appearance - Contract Review,Alice Smith,Senior Associate,1.855192892455429,480.0,890.492588378606,False
+996,151,Drafting - Contract Review,Bob Smith,Partner,4.0579498597634185,600.0,2434.7699158580513,False
+997,151,Drafting - Contract Review,Jane Johnson,Partner,7.291547386200373,600.0,4374.928431720224,False
+998,151,Client Meeting - Contract Review,Jane Williams,Partner,2.631619010354213,600.0,1578.9714062125279,False
+999,152,Document Review - Regulatory Compliance,Bob Williams,Paralegal,1.1242506758672308,200.0,224.85013517344618,False
+1000,152,Research - Regulatory Compliance,Jane Williams,Senior Associate,0.6581392236537273,400.0,263.25568946149093,False
+1001,152,Document Review - Regulatory Compliance,Bob Brown,Associate,1.2487972974721329,300.0,374.6391892416399,False
+1002,152,Research - Regulatory Compliance,Alice Smith,Partner,4.65460573719159,500.0,2327.3028685957947,False
+1003,152,Drafting - Regulatory Compliance,John Brown,Senior Associate,1.8779897118860092,400.0,751.1958847544037,False
+1004,152,Research - Regulatory Compliance,Alice Smith,Associate,1.524310252244156,300.0,457.2930756732468,False
+1005,152,Document Review - Regulatory Compliance,John Johnson,Senior Associate,3.319671138853482,400.0,1327.868455541393,False
+1006,153,Document Review - Litigation,Jane Smith,Paralegal,7.0219370510492976,240.0,1685.2648922518315,False
+1007,153,Document Review - Litigation,Alice Smith,Partner,1.7553365885217875,600.0,1053.2019531130725,False
+1008,153,Client Meeting - Litigation,John Smith,Associate,0.998773218219517,360.0,359.55835855902615,False
+1009,153,Drafting - Litigation,John Smith,Paralegal,6.682212551710798,240.0,1603.7310124105916,False
+1010,154,Client Meeting - Regulatory Compliance,Bob Smith,Senior Associate,4.931616211624922,360.0,1775.381836184972,False
+1011,154,Court Appearance - Regulatory Compliance,Alice Smith,Paralegal,1.7239933766403834,180.0,310.31880779526904,False
+1012,154,Court Appearance - Regulatory Compliance,Bob Williams,Partner,7.7530038908690155,450.0,3488.851750891057,False
+1013,154,Research - Regulatory Compliance,Alice Williams,Senior Associate,7.025747554772864,360.0,2529.269119718231,False
+1014,154,Court Appearance - Regulatory Compliance,Alice Brown,Partner,7.176406820321622,450.0,3229.38306914473,False
+1015,154,Document Review - Regulatory Compliance,Bob Smith,Associate,3.9511047201386544,270.0,1066.7982744374367,False
+1016,154,Drafting - Regulatory Compliance,Bob Williams,Associate,7.613628480454503,270.0,2055.679689722716,False
+1017,154,Research - Regulatory Compliance,Jane Brown,Associate,5.681746168515392,270.0,1534.071465499156,False
+1018,154,Client Meeting - Regulatory Compliance,Jane Williams,Senior Associate,2.9050489876770365,360.0,1045.8176355637331,False
+1019,155,Court Appearance - Regulatory Compliance,John Johnson,Partner,5.63451120069394,500.0,2817.2556003469704,False
+1020,155,Client Meeting - Regulatory Compliance,John Brown,Paralegal,2.3469926101771246,200.0,469.3985220354249,False
+1021,155,Court Appearance - Regulatory Compliance,Bob Smith,Partner,7.869406010694062,500.0,3934.703005347031,False
+1022,155,Document Review - Regulatory Compliance,Alice Williams,Partner,6.712991410419586,500.0,3356.495705209793,False
+1023,155,Document Review - Regulatory Compliance,Alice Williams,Senior Associate,3.2175604958525854,400.0,1287.0241983410342,False
+1024,156,Client Meeting - M&A,Jane Johnson,Paralegal,4.787396728411945,220.0,1053.227280250628,False
+1025,156,Drafting - M&A,Alice Johnson,Paralegal,1.5044095007560572,220.0,330.97009016633257,False
+1026,156,Client Meeting - M&A,Jane Smith,Partner,0.9166224596267631,550.0,504.1423527947197,False
+1027,156,Research - M&A,John Smith,Paralegal,6.365821224560265,220.0,1400.4806694032584,False
+1028,156,Client Meeting - M&A,John Brown,Associate,2.471902491599872,330.0,815.7278222279577,False
+1029,156,Court Appearance - M&A,Bob Smith,Paralegal,5.405857158468196,220.0,1189.288574863003,False
+1030,156,Research - M&A,John Smith,Senior Associate,7.602058267974323,440.0,3344.9056379087024,False
+1031,156,Court Appearance - M&A,Bob Johnson,Senior Associate,4.3451009299976455,440.0,1911.844409198964,False
+1032,156,Drafting - M&A,John Brown,Associate,4.808810363815923,330.0,1586.9074200592547,False
+1033,157,Client Meeting - M&A,Alice Brown,Partner,6.0064053826821375,400.0,2402.562153072855,False
+1034,157,Client Meeting - M&A,Bob Williams,Paralegal,6.633094069579939,160.0,1061.2950511327901,False
+1035,157,Court Appearance - M&A,Bob Brown,Senior Associate,3.4648094351100025,320.0,1108.7390192352009,False
+1036,158,Document Review - M&A,Alice Johnson,Paralegal,3.2964279421797538,200.0,659.2855884359508,False
+1037,158,Document Review - M&A,John Williams,Senior Associate,5.3709080342536435,400.0,2148.3632137014574,False
+1038,158,Document Review - M&A,John Brown,Senior Associate,4.008059793048496,400.0,1603.2239172193981,False
+1039,158,Court Appearance - M&A,Bob Williams,Paralegal,3.679660390748483,200.0,735.9320781496966,False
+1040,158,Research - M&A,Bob Brown,Partner,4.781964404731293,500.0,2390.9822023656466,False
+1041,158,Research - M&A,Alice Smith,Associate,5.307010407815607,300.0,1592.103122344682,False
+1042,158,Document Review - M&A,Alice Johnson,Senior Associate,7.744961538941254,400.0,3097.9846155765017,False
+1043,158,Drafting - M&A,Alice Williams,Senior Associate,0.5736664163947989,400.0,229.46656655791955,False
+1044,159,Court Appearance - Litigation,Alice Johnson,Senior Associate,5.669215534311325,400.0,2267.6862137245303,False
+1045,159,Drafting - Litigation,Bob Johnson,Paralegal,39.655927781869615,200.0,7931.185556373923,True
+1046,159,Document Review - Litigation,Alice Smith,Partner,7.201195227353159,500.0,3600.5976136765794,False
+1047,159,Research - Litigation,Bob Smith,Paralegal,7.550100670543021,200.0,1510.0201341086042,False
+1048,159,Document Review - Litigation,Jane Brown,Partner,7.027130412111225,500.0,3513.565206055612,False
+1049,159,Drafting - Litigation,Bob Smith,Senior Associate,4.559290761269973,400.0,1823.7163045079892,False
+1050,159,Court Appearance - Litigation,Alice Brown,Partner,4.1164319718352544,500.0,2058.215985917627,False
+1051,160,Drafting - M&A,Bob Brown,Partner,4.485093929506592,550.0,2466.8016612286256,False
+1052,160,Client Meeting - M&A,Jane Smith,Partner,1.287818758075443,550.0,708.3003169414936,False
+1053,160,Client Meeting - M&A,Bob Johnson,Associate,2.614161564655064,330.0,862.6733163361712,False
+1054,160,Court Appearance - M&A,Bob Smith,Senior Associate,5.474529467973756,440.0,2408.7929659084525,False
+1055,160,Client Meeting - M&A,Jane Smith,Senior Associate,28.3948948432223,440.0,12493.753731017812,True
+1056,160,Court Appearance - M&A,Alice Brown,Partner,7.473351530811722,550.0,4110.343341946447,False
+1057,160,Drafting - M&A,John Johnson,Senior Associate,2.11021820259855,440.0,928.496009143362,False
+1058,160,Research - M&A,Bob Johnson,Paralegal,0.644492290420854,220.0,141.7883038925879,False
+1059,160,Court Appearance - M&A,Bob Johnson,Paralegal,7.719236615104658,220.0,1698.2320553230247,False
+1060,160,Document Review - M&A,Alice Williams,Paralegal,2.8982369913477886,220.0,637.6121380965135,False
+1061,161,Court Appearance - Litigation,Bob Williams,Associate,6.998841887984177,270.0,1889.687309755728,False
+1062,161,Client Meeting - Litigation,Alice Johnson,Associate,4.785318515639046,270.0,1292.0359992225426,False
+1063,161,Drafting - Litigation,Jane Johnson,Senior Associate,7.079052317057721,360.0,2548.45883414078,False
+1064,161,Drafting - Litigation,Jane Johnson,Paralegal,3.2545136475100134,180.0,585.8124565518024,False
+1065,161,Drafting - Litigation,Alice Johnson,Partner,2.72505286476647,450.0,1226.2737891449115,False
+1066,161,Drafting - Litigation,John Johnson,Associate,3.344401879469747,270.0,902.9885074568317,False
+1067,161,Document Review - Litigation,Jane Smith,Partner,2.539528970452179,450.0,1142.7880367034804,False
+1068,161,Research - Litigation,John Brown,Senior Associate,1.2215022206287331,360.0,439.7407994263439,False
+1069,162,Court Appearance - Contract Review,Jane Smith,Associate,3.8178760046774274,330.0,1259.8990815435511,False
+1070,162,Document Review - Contract Review,Alice Brown,Partner,4.315848646951226,550.0,2373.716755823174,False
+1071,162,Research - Contract Review,John Williams,Associate,1.0217663222839861,330.0,337.18288635371545,False
+1072,162,Drafting - Contract Review,Bob Smith,Senior Associate,0.8508908214499173,440.0,374.39196143796363,False
+1073,162,Client Meeting - Contract Review,Alice Johnson,Partner,1.761481939880109,550.0,968.8150669340599,False
+1074,163,Court Appearance - M&A,Jane Johnson,Senior Associate,1.3825312764184496,480.0,663.6150126808558,False
+1075,163,Research - M&A,Bob Williams,Associate,7.159176688085005,360.0,2577.303607710602,False
+1076,163,Drafting - M&A,Jane Johnson,Senior Associate,7.587791268536989,480.0,3642.139808897755,False
+1077,163,Court Appearance - M&A,Jane Brown,Associate,2.186380855639514,360.0,787.0971080302251,False
+1078,163,Court Appearance - M&A,John Johnson,Partner,6.856889437260332,600.0,4114.133662356199,False
+1079,163,Court Appearance - M&A,John Brown,Senior Associate,7.097087039294931,480.0,3406.601778861567,False
+1080,163,Drafting - M&A,John Johnson,Senior Associate,23.1684929410735,480.0,11120.876611715279,True
+1081,164,Research - Regulatory Compliance,John Williams,Associate,0.7191959945095695,360.0,258.91055802344505,False
+1082,164,Document Review - Regulatory Compliance,Jane Brown,Associate,3.1890451132958386,360.0,1148.0562407865018,False
+1083,164,Document Review - Regulatory Compliance,Alice Williams,Associate,2.1222800003894897,360.0,764.0208001402164,False
+1084,164,Court Appearance - Regulatory Compliance,Alice Smith,Partner,4.775427786157502,600.0,2865.256671694501,False
+1085,164,Court Appearance - Regulatory Compliance,Jane Johnson,Partner,0.865018160328186,600.0,519.0108961969116,False
+1086,164,Client Meeting - Regulatory Compliance,Alice Brown,Partner,3.5372826733514406,600.0,2122.3696040108644,False
+1087,164,Research - Regulatory Compliance,Bob Smith,Associate,2.6636783886505904,360.0,958.9242199142126,False
+1088,165,Client Meeting - Patent Filing,Jane Johnson,Partner,3.2796161092541007,400.0,1311.8464437016403,False
+1089,165,Client Meeting - Patent Filing,Alice Brown,Senior Associate,7.419943302128994,320.0,2374.381856681278,False
+1090,165,Client Meeting - Patent Filing,Jane Johnson,Paralegal,3.241817358661278,160.0,518.6907773858045,False
+1091,165,Research - Patent Filing,Jane Brown,Paralegal,5.507356040004223,160.0,881.1769664006756,False
+1092,165,Court Appearance - Patent Filing,John Brown,Senior Associate,4.997048181061945,320.0,1599.0554179398225,False
+1093,165,Client Meeting - Patent Filing,Jane Johnson,Senior Associate,5.007224478890985,320.0,1602.3118332451154,False
+1094,166,Research - M&A,Jane Johnson,Partner,3.8055421213462766,400.0,1522.2168485385107,False
+1095,166,Drafting - M&A,Jane Smith,Senior Associate,5.258658243932894,320.0,1682.770638058526,False
+1096,166,Document Review - M&A,Alice Brown,Associate,0.8506904948504077,240.0,204.16571876409785,False
+1097,166,Court Appearance - M&A,John Brown,Associate,7.3028680518085896,240.0,1752.6883324340615,False
+1098,166,Research - M&A,Alice Williams,Associate,4.157298000712462,240.0,997.751520170991,False
+1099,166,Court Appearance - M&A,John Smith,Paralegal,3.840385654005915,160.0,614.4617046409464,False
+1100,167,Court Appearance - Patent Filing,Jane Brown,Senior Associate,3.742428384716549,400.0,1496.9713538866197,False
+1101,167,Drafting - Patent Filing,Jane Brown,Senior Associate,2.0181362164120227,400.0,807.2544865648091,False
+1102,167,Research - Patent Filing,Alice Smith,Associate,39.43534604319474,300.0,11830.603812958423,True
+1103,167,Court Appearance - Patent Filing,Alice Smith,Paralegal,4.124762343619148,200.0,824.9524687238296,False
+1104,167,Drafting - Patent Filing,Bob Smith,Senior Associate,4.29741988140252,400.0,1718.9679525610081,False
+1105,167,Court Appearance - Patent Filing,Alice Williams,Partner,5.323051505087816,500.0,2661.5257525439083,False
+1106,168,Drafting - Patent Filing,Alice Smith,Partner,0.9303191812739113,600.0,558.1915087643468,False
+1107,168,Court Appearance - Patent Filing,Alice Williams,Paralegal,0.635885960382629,240.0,152.61263049183097,False
+1108,168,Research - Patent Filing,Alice Williams,Associate,5.783022176910359,360.0,2081.8879836877295,False
+1109,168,Court Appearance - Patent Filing,Alice Williams,Associate,1.4827657191684303,360.0,533.7956589006349,False
+1110,168,Document Review - Patent Filing,Alice Brown,Paralegal,5.8438553151428625,240.0,1402.525275634287,False
+1111,168,Research - Patent Filing,Alice Williams,Paralegal,3.0899848293641234,240.0,741.5963590473896,False
+1112,168,Court Appearance - Patent Filing,John Williams,Paralegal,3.9338805500633653,240.0,944.1313320152077,False
+1113,168,Court Appearance - Patent Filing,Jane Brown,Associate,2.523437347567127,360.0,908.4374451241657,False
+1114,168,Drafting - Patent Filing,John Brown,Partner,4.314261258553403,600.0,2588.556755132042,False
+1115,169,Document Review - Regulatory Compliance,John Brown,Paralegal,2.464153503031774,240.0,591.3968407276258,False
+1116,169,Drafting - Regulatory Compliance,Bob Brown,Senior Associate,3.0615913357857014,480.0,1469.5638411771367,False
+1117,169,Court Appearance - Regulatory Compliance,Bob Brown,Senior Associate,7.93423880207203,480.0,3808.4346249945743,False
+1118,169,Research - Regulatory Compliance,Bob Williams,Paralegal,3.5377384581913174,240.0,849.0572299659161,False
+1119,169,Drafting - Regulatory Compliance,Alice Brown,Senior Associate,4.452905907270653,480.0,2137.3948354899135,False
+1120,169,Court Appearance - Regulatory Compliance,Alice Johnson,Paralegal,1.8335627400011731,240.0,440.05505760028154,False
+1121,170,Research - Regulatory Compliance,Jane Brown,Associate,25.618658142246197,360.0,9222.716931208632,True
+1122,170,Drafting - Regulatory Compliance,Bob Brown,Paralegal,1.3830636410887807,240.0,331.93527386130734,False
+1123,170,Drafting - Regulatory Compliance,Alice Johnson,Paralegal,4.780260808948934,240.0,1147.262594147744,False
+1124,170,Document Review - Regulatory Compliance,Bob Johnson,Paralegal,2.28185604891389,240.0,547.6454517393337,False
+1125,170,Research - Regulatory Compliance,John Smith,Senior Associate,1.5601091595615273,480.0,748.8523965895331,False
+1126,170,Court Appearance - Regulatory Compliance,John Williams,Associate,7.458154317349213,360.0,2684.9355542457165,False
+1127,170,Drafting - Regulatory Compliance,Jane Brown,Associate,7.4162693206256005,360.0,2669.8569554252163,False
+1128,170,Drafting - Regulatory Compliance,Alice Johnson,Associate,6.177113329198633,360.0,2223.760798511508,False
+1129,170,Court Appearance - Regulatory Compliance,John Brown,Paralegal,7.214486081700007,240.0,1731.4766596080017,False
+1130,171,Court Appearance - M&A,Jane Brown,Associate,0.9021788705527176,360.0,324.78439339897835,False
+1131,171,Document Review - M&A,Bob Williams,Senior Associate,2.0277296414037496,480.0,973.3102278737998,False
+1132,171,Drafting - M&A,Alice Brown,Associate,1.2399662058634384,360.0,446.38783411083784,False
+1133,171,Document Review - M&A,Alice Brown,Partner,1.0841874962500264,600.0,650.5124977500159,False
+1134,171,Court Appearance - M&A,Alice Williams,Associate,4.769583723405502,360.0,1717.0501404259805,False
+1135,171,Court Appearance - M&A,Alice Brown,Paralegal,2.348064682779304,240.0,563.535523867033,False
+1136,171,Drafting - M&A,Jane Johnson,Partner,4.551493996671873,600.0,2730.8963980031235,False
+1137,171,Document Review - M&A,John Brown,Paralegal,4.675154843578966,240.0,1122.0371624589518,False
+1138,172,Client Meeting - Litigation,Jane Brown,Associate,4.769596627330509,270.0,1287.7910893792375,False
+1139,172,Document Review - Litigation,Alice Williams,Partner,6.717032634753395,450.0,3022.664685639028,False
+1140,172,Court Appearance - Litigation,John Johnson,Partner,3.058316873674255,450.0,1376.2425931534149,False
+1141,172,Research - Litigation,Jane Williams,Associate,2.853015668652439,270.0,770.3142305361584,False
+1142,172,Court Appearance - Litigation,Alice Williams,Senior Associate,4.9447858407004155,360.0,1780.1229026521496,False
+1143,172,Client Meeting - Litigation,Alice Smith,Paralegal,1.2308478205714908,180.0,221.55260770286833,False
+1144,172,Research - Litigation,Bob Brown,Senior Associate,6.738171364430127,360.0,2425.7416911948458,False
+1145,172,Research - Litigation,Jane Brown,Associate,7.936143209110704,270.0,2142.7586664598903,False
+1146,172,Document Review - Litigation,Alice Williams,Partner,1.0972058090262298,450.0,493.7426140618034,False
+1147,172,Research - Litigation,John Smith,Associate,1.5081276215488226,270.0,407.1944578181821,False
+1148,173,Research - M&A,Jane Williams,Associate,2.722011352953326,240.0,653.2827247087982,False
+1149,173,Drafting - M&A,Jane Williams,Paralegal,3.091491014239666,160.0,494.6385622783465,False
+1150,173,Document Review - M&A,John Smith,Paralegal,2.806364895701707,160.0,449.0183833122731,False
+1151,173,Client Meeting - M&A,Alice Smith,Paralegal,5.037343554117472,160.0,805.9749686587954,False
+1152,174,Drafting - Patent Filing,Alice Williams,Paralegal,4.4153946072353705,180.0,794.7710293023667,False
+1153,174,Court Appearance - Patent Filing,Jane Brown,Partner,5.393313385396226,450.0,2426.9910234283016,False
+1154,174,Research - Patent Filing,Alice Smith,Paralegal,2.6647283198526406,180.0,479.6510975734753,False
+1155,174,Research - Patent Filing,John Johnson,Paralegal,6.508620545861459,180.0,1171.5516982550625,False
+1156,174,Research - Patent Filing,John Brown,Associate,4.25853969466743,270.0,1149.8057175602062,False
+1157,174,Drafting - Patent Filing,Bob Brown,Senior Associate,2.5314974838342628,360.0,911.3390941803345,False
+1158,175,Research - M&A,Jane Brown,Senior Associate,4.773277183869832,480.0,2291.173048257519,False
+1159,175,Research - M&A,Bob Johnson,Associate,1.3997492138819867,360.0,503.9097169975152,False
+1160,175,Court Appearance - M&A,John Smith,Partner,3.8045343812794052,600.0,2282.720628767643,False
+1161,175,Drafting - M&A,John Brown,Partner,3.961859221560013,600.0,2377.1155329360076,False
+1162,175,Research - M&A,Alice Brown,Partner,2.373194961922515,600.0,1423.916977153509,False
+1163,175,Drafting - M&A,Bob Brown,Associate,6.816792997685221,360.0,2454.04547916668,False
+1164,175,Document Review - M&A,John Smith,Senior Associate,1.8385011590434204,480.0,882.4805563408418,False
+1165,175,Client Meeting - M&A,John Johnson,Paralegal,0.8095924704697297,240.0,194.30219291273514,False
+1166,176,Court Appearance - M&A,Jane Williams,Senior Associate,4.204072198956897,480.0,2017.9546554993108,False
+1167,176,Client Meeting - M&A,John Smith,Paralegal,3.1662327063329987,240.0,759.8958495199197,False
+1168,176,Document Review - M&A,John Williams,Partner,3.1660129441348874,600.0,1899.6077664809325,False
+1169,176,Document Review - M&A,Alice Smith,Paralegal,1.66400054921305,240.0,399.360131811132,False
+1170,176,Client Meeting - M&A,Alice Smith,Associate,5.572720604020076,360.0,2006.1794174472275,False
+1171,176,Court Appearance - M&A,Alice Brown,Associate,4.2026671137420575,360.0,1512.9601609471406,False
+1172,176,Document Review - M&A,Alice Johnson,Partner,7.773604835006449,600.0,4664.16290100387,False
+1173,176,Drafting - M&A,John Johnson,Partner,4.589383255127181,600.0,2753.629953076309,False
+1174,177,Document Review - Contract Review,Alice Williams,Associate,1.808839127039676,240.0,434.12139048952224,False
+1175,177,Document Review - Contract Review,John Smith,Paralegal,5.038405781480487,160.0,806.1449250368778,False
+1176,177,Client Meeting - Contract Review,Alice Smith,Partner,3.215595233318889,400.0,1286.2380933275556,False
+1177,177,Court Appearance - Contract Review,Alice Brown,Partner,1.8766688101778204,400.0,750.6675240711281,False
+1178,177,Research - Contract Review,Jane Johnson,Associate,2.4186530206875845,240.0,580.4767249650203,False
+1179,177,Client Meeting - Contract Review,Bob Johnson,Associate,3.9236746155021285,240.0,941.6819077205108,False
+1180,177,Document Review - Contract Review,John Johnson,Senior Associate,6.976931598489651,320.0,2232.6181115166883,False
+1181,177,Court Appearance - Contract Review,Alice Williams,Paralegal,1.6265111118903495,160.0,260.2417779024559,False
+1182,177,Court Appearance - Contract Review,Jane Smith,Senior Associate,6.148732576773109,320.0,1967.594424567395,False
+1183,177,Court Appearance - Contract Review,Alice Williams,Associate,7.416139105527965,240.0,1779.8733853267117,False
+1184,178,Court Appearance - M&A,John Williams,Associate,1.3375181239363994,240.0,321.00434974473586,False
+1185,178,Document Review - M&A,John Johnson,Associate,1.3396927644166505,240.0,321.52626345999613,False
+1186,178,Client Meeting - M&A,Jane Smith,Partner,1.689884644700582,400.0,675.9538578802328,False
+1187,179,Research - Regulatory Compliance,Bob Johnson,Senior Associate,1.201596170500907,440.0,528.702315020399,False
+1188,179,Drafting - Regulatory Compliance,Alice Brown,Associate,1.5202828338859118,330.0,501.6933351823509,False
+1189,179,Court Appearance - Regulatory Compliance,John Smith,Senior Associate,3.9245799640141787,440.0,1726.8151841662386,False
+1190,179,Client Meeting - Regulatory Compliance,Alice Smith,Paralegal,2.244797478691791,220.0,493.855445312194,False
+1191,179,Drafting - Regulatory Compliance,John Brown,Senior Associate,1.5873082764267086,440.0,698.4156416277518,False
+1192,179,Drafting - Regulatory Compliance,John Smith,Partner,5.6529819284356915,550.0,3109.1400606396305,False
+1193,179,Court Appearance - Regulatory Compliance,Alice Williams,Paralegal,1.3167851962947452,220.0,289.69274318484395,False
+1194,179,Research - Regulatory Compliance,Bob Johnson,Senior Associate,7.708269590069726,440.0,3391.6386196306794,False
+1195,180,Drafting - Regulatory Compliance,Alice Smith,Paralegal,3.3806726303950154,220.0,743.7479786869034,False
+1196,180,Research - Regulatory Compliance,Alice Johnson,Senior Associate,2.6856816344124965,440.0,1181.6999191414984,False
+1197,180,Document Review - Regulatory Compliance,Jane Williams,Paralegal,3.407617923470955,220.0,749.6759431636101,False
+1198,181,Drafting - Patent Filing,Jane Brown,Partner,1.2685363454612784,500.0,634.2681727306392,False
+1199,181,Court Appearance - Patent Filing,John Williams,Associate,4.25196482166551,300.0,1275.589446499653,False
+1200,181,Document Review - Patent Filing,John Brown,Associate,7.802471700764948,300.0,2340.7415102294844,False
+1201,181,Research - Patent Filing,Alice Williams,Senior Associate,5.8485736578001175,400.0,2339.429463120047,False
+1202,181,Research - Patent Filing,Alice Williams,Senior Associate,5.71044924105822,400.0,2284.179696423288,False
+1203,181,Court Appearance - Patent Filing,Jane Smith,Associate,4.238623910460193,300.0,1271.587173138058,False
+1204,181,Drafting - Patent Filing,Bob Smith,Paralegal,7.744805302736683,200.0,1548.9610605473367,False
+1205,181,Document Review - Patent Filing,Jane Brown,Senior Associate,7.916712700887515,400.0,3166.685080355006,False
+1206,181,Drafting - Patent Filing,Bob Williams,Paralegal,0.7592796281560625,200.0,151.8559256312125,False
+1207,182,Drafting - M&A,Jane Williams,Senior Associate,0.699332786547378,480.0,335.6797375427414,False
+1208,182,Court Appearance - M&A,John Williams,Partner,7.472754858521309,600.0,4483.652915112785,False
+1209,182,Court Appearance - M&A,Bob Johnson,Paralegal,1.0413548837014077,240.0,249.92517208833786,False
+1210,182,Document Review - M&A,John Williams,Partner,6.173780621501853,600.0,3704.268372901112,False
+1211,182,Client Meeting - M&A,Jane Johnson,Partner,6.299735272798871,600.0,3779.8411636793226,False
+1212,182,Client Meeting - M&A,Bob Brown,Senior Associate,5.302090389304067,480.0,2545.003386865952,False
+1213,182,Document Review - M&A,Alice Williams,Paralegal,7.707156282409065,240.0,1849.7175077781758,False
+1214,183,Client Meeting - Patent Filing,John Brown,Paralegal,5.036342219902506,240.0,1208.7221327766015,False
+1215,183,Court Appearance - Patent Filing,Jane Williams,Paralegal,5.913822416042244,240.0,1419.3173798501384,False
+1216,183,Drafting - Patent Filing,Bob Smith,Senior Associate,3.8193280008506334,480.0,1833.277440408304,False
+1217,184,Document Review - Contract Review,Bob Johnson,Associate,0.8079339991371419,360.0,290.8562396893711,False
+1218,184,Research - Contract Review,Jane Williams,Associate,4.052173344308541,360.0,1458.7824039510747,False
+1219,184,Drafting - Contract Review,Jane Brown,Paralegal,2.731586592455799,240.0,655.5807821893918,False
+1220,184,Document Review - Contract Review,Bob Brown,Senior Associate,47.56571195663827,480.0,22831.541739186367,True
+1221,184,Client Meeting - Contract Review,Jane Brown,Senior Associate,7.919345089178751,480.0,3801.2856428058008,False
+1222,184,Client Meeting - Contract Review,Alice Johnson,Partner,6.979765932351225,600.0,4187.859559410735,False
+1223,184,Client Meeting - Contract Review,Jane Brown,Partner,1.3420002766523091,600.0,805.2001659913855,False
+1224,184,Drafting - Contract Review,John Williams,Paralegal,4.674985910219631,240.0,1121.9966184527113,False
+1225,185,Drafting - Regulatory Compliance,Bob Johnson,Senior Associate,4.257016542375204,320.0,1362.2452935600654,False
+1226,185,Client Meeting - Regulatory Compliance,Bob Smith,Paralegal,40.52553547814305,160.0,6484.0856765028875,True
+1227,185,Drafting - Regulatory Compliance,Jane Brown,Senior Associate,4.4768383749462135,320.0,1432.5882799827882,False
+1228,186,Research - Patent Filing,Jane Brown,Associate,49.365605342865166,270.0,13328.713442573595,True
+1229,186,Research - Patent Filing,John Brown,Paralegal,1.9700769164636005,180.0,354.6138449634481,False
+1230,186,Drafting - Patent Filing,Jane Johnson,Paralegal,3.9426877806031775,180.0,709.683800508572,False
+1231,186,Client Meeting - Patent Filing,Alice Smith,Associate,2.668302523342303,270.0,720.4416813024218,False
+1232,186,Court Appearance - Patent Filing,Jane Johnson,Associate,0.8766192777438029,270.0,236.68720499082679,False
+1233,187,Court Appearance - Regulatory Compliance,Alice Johnson,Partner,1.695213370483565,450.0,762.8460167176042,False
+1234,187,Document Review - Regulatory Compliance,Alice Johnson,Paralegal,5.7550183006060065,180.0,1035.9032941090811,False
+1235,187,Document Review - Regulatory Compliance,Alice Brown,Partner,1.3796297325002547,450.0,620.8333796251146,False
+1236,187,Drafting - Regulatory Compliance,Alice Brown,Senior Associate,5.2290173991472475,360.0,1882.446263693009,False
+1237,187,Client Meeting - Regulatory Compliance,Bob Brown,Partner,0.9402107955665152,450.0,423.09485800493184,False
+1238,187,Court Appearance - Regulatory Compliance,Bob Smith,Partner,1.9288080537862409,450.0,867.9636242038084,False
+1239,187,Client Meeting - Regulatory Compliance,Alice Brown,Associate,6.737504034498569,270.0,1819.1260893146136,False
+1240,188,Research - Litigation,John Brown,Partner,7.555073838930336,550.0,4155.290611411685,False
+1241,188,Research - Litigation,John Johnson,Paralegal,2.2111224153265248,220.0,486.44693137183543,False
+1242,188,Client Meeting - Litigation,Jane Johnson,Paralegal,5.618264533661556,220.0,1236.0181974055422,False
+1243,188,Drafting - Litigation,Bob Johnson,Associate,1.4254972784413205,330.0,470.4141018856358,False
+1244,188,Client Meeting - Litigation,Alice Williams,Senior Associate,6.258807511061063,440.0,2753.8753048668677,False
+1245,188,Drafting - Litigation,John Smith,Partner,2.5951713848014806,550.0,1427.3442616408142,False
+1246,188,Drafting - Litigation,John Brown,Associate,5.983201363199959,330.0,1974.4564498559866,False
+1247,188,Drafting - Litigation,John Smith,Partner,2.5911950133028765,550.0,1425.157257316582,False
+1248,189,Drafting - Regulatory Compliance,Alice Johnson,Paralegal,2.165318145923199,240.0,519.6763550215677,False
+1249,189,Drafting - Regulatory Compliance,Bob Brown,Partner,5.267201688835928,600.0,3160.321013301557,False
+1250,189,Document Review - Regulatory Compliance,Alice Williams,Paralegal,2.6614342857235798,240.0,638.7442285736591,False
+1251,189,Court Appearance - Regulatory Compliance,Jane Smith,Partner,1.590546501857188,600.0,954.3279011143128,False
+1252,189,Client Meeting - Regulatory Compliance,John Brown,Paralegal,4.044386859218543,240.0,970.6528462124503,False
+1253,189,Document Review - Regulatory Compliance,Alice Williams,Associate,1.8975413207042509,360.0,683.1148754535303,False
+1254,189,Research - Regulatory Compliance,Alice Williams,Partner,2.7907759747399288,600.0,1674.4655848439572,False
+1255,189,Drafting - Regulatory Compliance,Alice Brown,Paralegal,33.99357433089138,240.0,8158.457839413931,True
+1256,189,Drafting - Regulatory Compliance,Jane Brown,Senior Associate,0.8886589136240628,480.0,426.55627853955014,False
+1257,189,Client Meeting - Regulatory Compliance,Jane Johnson,Paralegal,5.973020505212793,240.0,1433.5249212510705,False
+1258,190,Client Meeting - Litigation,John Brown,Senior Associate,5.937773621330469,400.0,2375.1094485321873,False
+1259,190,Document Review - Litigation,Bob Williams,Partner,3.8715376343672117,500.0,1935.7688171836057,False
+1260,190,Document Review - Litigation,Jane Smith,Paralegal,2.8751764164757403,200.0,575.035283295148,False
+1261,191,Document Review - Litigation,Alice Williams,Senior Associate,6.214228533841304,400.0,2485.6914135365214,False
+1262,191,Client Meeting - Litigation,John Smith,Associate,6.562603471996316,300.0,1968.7810415988947,False
+1263,191,Client Meeting - Litigation,John Johnson,Associate,7.389147372022572,300.0,2216.744211606772,False
+1264,191,Client Meeting - Litigation,Jane Johnson,Paralegal,1.4236799550686847,200.0,284.73599101373696,False
+1265,191,Client Meeting - Litigation,Jane Johnson,Associate,3.118735293583587,300.0,935.6205880750761,False
+1266,191,Court Appearance - Litigation,Alice Smith,Associate,3.1881109986163594,300.0,956.4332995849078,False
+1267,192,Drafting - Patent Filing,Bob Johnson,Partner,6.47247790398995,450.0,2912.6150567954774,False
+1268,192,Drafting - Patent Filing,Jane Brown,Partner,1.3279956152301025,450.0,597.5980268535461,False
+1269,192,Drafting - Patent Filing,John Johnson,Associate,30.980013769917257,270.0,8364.603717877659,True
+1270,192,Research - Patent Filing,John Johnson,Associate,2.276703453784525,270.0,614.7099325218218,False
+1271,192,Court Appearance - Patent Filing,John Brown,Paralegal,6.070026825640951,180.0,1092.6048286153712,False
+1272,192,Drafting - Patent Filing,John Brown,Associate,0.8049227026214768,270.0,217.32912970779873,False
+1273,192,Client Meeting - Patent Filing,Alice Smith,Associate,7.74865237312212,270.0,2092.136140742972,False
+1274,193,Client Meeting - Contract Review,John Johnson,Associate,0.9521691845291098,360.0,342.78090643047955,False
+1275,193,Client Meeting - Contract Review,John Brown,Paralegal,6.806399615585481,240.0,1633.5359077405155,False
+1276,193,Court Appearance - Contract Review,Alice Brown,Associate,1.328132940971972,360.0,478.12785874990993,False
+1277,194,Drafting - M&A,Bob Brown,Associate,5.243103304451842,270.0,1415.6378922019974,False
+1278,194,Document Review - M&A,John Smith,Partner,2.3837831365246416,450.0,1072.7024114360888,False
+1279,194,Court Appearance - M&A,Alice Brown,Partner,1.584371596759287,450.0,712.9672185416791,False
+1280,194,Research - M&A,Alice Johnson,Partner,2.3263868849685245,450.0,1046.874098235836,False
+1281,194,Research - M&A,Bob Smith,Paralegal,0.5895971971585843,180.0,106.12749548854516,False
+1282,195,Court Appearance - M&A,Jane Johnson,Partner,7.047748021761228,550.0,3876.2614119686755,False
+1283,195,Drafting - M&A,Jane Williams,Associate,2.04760672951159,330.0,675.7102207388247,False
+1284,195,Drafting - M&A,Alice Brown,Associate,31.890722459519857,330.0,10523.938411641553,True
+1285,196,Research - Contract Review,John Brown,Paralegal,1.931201984669459,240.0,463.48847632067015,False
+1286,196,Research - Contract Review,Alice Williams,Senior Associate,4.960062195583272,480.0,2380.8298538799704,False
+1287,196,Drafting - Contract Review,Bob Johnson,Partner,7.333582166417868,600.0,4400.149299850721,False
+1288,196,Client Meeting - Contract Review,Alice Brown,Senior Associate,4.986086760782714,480.0,2393.321645175703,False
+1289,196,Drafting - Contract Review,Bob Brown,Associate,3.8176800451995376,360.0,1374.3648162718337,False
+1290,196,Drafting - Contract Review,Bob Johnson,Paralegal,4.114444228930803,240.0,987.4666149433928,False
+1291,196,Client Meeting - Contract Review,Bob Smith,Partner,7.060609807306215,600.0,4236.365884383729,False
+1292,196,Court Appearance - Contract Review,Alice Williams,Senior Associate,1.149142920593441,480.0,551.5886018848516,False
+1293,197,Document Review - Contract Review,Jane Smith,Senior Associate,4.163161428554629,440.0,1831.7910285640367,False
+1294,197,Document Review - Contract Review,Bob Johnson,Associate,1.0317340004143367,330.0,340.4722201367311,False
+1295,197,Client Meeting - Contract Review,John Brown,Paralegal,1.4552972105358037,220.0,320.1653863178768,False
+1296,197,Research - Contract Review,Alice Brown,Paralegal,6.225530848034646,220.0,1369.616786567622,False
+1297,197,Drafting - Contract Review,Jane Williams,Associate,3.3430373804696605,330.0,1103.202335554988,False
+1298,197,Drafting - Contract Review,Jane Johnson,Paralegal,5.7919202740290014,220.0,1274.2224602863803,False
+1299,197,Court Appearance - Contract Review,Jane Smith,Associate,7.677705320563934,330.0,2533.6427557860984,False
+1300,197,Drafting - Contract Review,Bob Johnson,Partner,2.463853932932803,550.0,1355.1196631130415,False
+1301,197,Document Review - Contract Review,Bob Smith,Senior Associate,0.7802741561426902,440.0,343.3206287027837,False
+1302,198,Research - M&A,Alice Johnson,Partner,2.6084312107601093,600.0,1565.0587264560656,False
+1303,198,Client Meeting - M&A,Bob Smith,Partner,3.474533817995357,600.0,2084.720290797214,False
+1304,198,Document Review - M&A,John Williams,Paralegal,3.42366144714787,240.0,821.6787473154887,False
+1305,198,Client Meeting - M&A,Bob Williams,Associate,5.892364195253548,360.0,2121.251110291277,False
+1306,198,Client Meeting - M&A,Alice Johnson,Associate,2.2071389348795023,360.0,794.5700165566209,False
+1307,198,Client Meeting - M&A,Alice Smith,Paralegal,6.9646627991358585,240.0,1671.5190717926062,False
+1308,198,Research - M&A,John Smith,Associate,6.155944693173139,360.0,2216.1400895423303,False
+1309,199,Document Review - Regulatory Compliance,Bob Smith,Associate,6.355565625583497,240.0,1525.3357501400394,False
+1310,199,Court Appearance - Regulatory Compliance,John Brown,Associate,5.299029865385123,240.0,1271.7671676924294,False
+1311,199,Research - Regulatory Compliance,Bob Johnson,Partner,5.389316784453751,400.0,2155.7267137815,False
+1312,199,Research - Regulatory Compliance,Jane Johnson,Partner,2.3525567755325096,400.0,941.0227102130038,False
+1313,199,Document Review - Regulatory Compliance,Alice Johnson,Senior Associate,3.4343037039726005,320.0,1098.9771852712322,False
+1314,200,Research - Regulatory Compliance,Alice Williams,Associate,3.9773492927743868,270.0,1073.8843090490843,False
+1315,200,Client Meeting - Regulatory Compliance,Jane Smith,Associate,4.6075283009345664,270.0,1244.032641252333,False
+1316,200,Research - Regulatory Compliance,Jane Smith,Senior Associate,4.671894049132674,360.0,1681.8818576877627,False
+1317,200,Document Review - Regulatory Compliance,Bob Johnson,Associate,0.7688972662930639,270.0,207.60226189912726,False
