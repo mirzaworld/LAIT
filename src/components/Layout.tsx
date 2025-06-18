@@ -1,148 +1,277 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { 
-  BarChart3, 
-  FileText, 
-  PieChart, 
-  Settings, 
-  Menu, 
-  X, 
-  Bell, 
-  User,
-  Search,
-  DollarSign
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import {
+  Bell,
+  Moon,
+  Sun,
+  Menu,
+  X,
+  Home,
+  PieChart,
+  FileText,
+  Settings,
+  Upload,
+  AlertTriangle,
+  CheckCircle,
+  LogOut
 } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
+import { useNotificationContext } from '../context/NotificationContext';
+import { NotificationItem } from './NotificationItem';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-interface LayoutProps {
-  children: React.ReactNode;
-}
+const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { darkMode, toggleDarkMode, logout, userProfile } = useApp();
+  const { user, signOut } = useAuth();
+  const { notifications, hasUnread, markAllRead, clearNotifications } = useNotificationContext();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   const navigation = [
-    { name: 'Dashboard', href: '/', icon: BarChart3 },
+    { name: 'Dashboard', href: '/', icon: Home },
+    { name: 'Upload Invoice', href: '/invoices/upload', icon: Upload },
     { name: 'Analytics', href: '/analytics', icon: PieChart },
-    { name: 'Invoices', href: '/invoices', icon: FileText },
     { name: 'Reports', href: '/reports', icon: FileText },
-    { name: 'Settings', href: '/settings', icon: Settings },
+    { name: 'Vendors', href: '/vendors', icon: Settings },
+    { name: 'Settings', href: '/settings', icon: Settings }
   ];
 
   const isActive = (href: string) => {
     return location.pathname === href;
   };
 
+  const handleNotificationAction = (action: string, notificationData: any) => {
+    switch (action) {
+      case 'view':
+        // Navigate to invoice details
+        break;
+      case 'approve':
+        // Handle invoice approval
+        break;
+      case 'reject':
+        // Handle invoice rejection
+        break;
+      case 'viewVendor':
+        // Navigate to vendor details
+        break;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Mobile sidebar backdrop */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+    <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
+      <div className={`min-h-screen ${
+        darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'
       }`}>
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center justify-center w-8 h-8 bg-primary-600 rounded-lg">
-                <DollarSign className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-gray-900">LegalSpend AI</span>
+        {/* Sidebar */}
+        <aside
+          className={`fixed top-0 left-0 z-40 w-64 h-screen transition-transform ${
+            isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          } ${darkMode ? 'bg-gray-800' : 'bg-white'} shadow-lg`}
+        >
+          <div className="h-full px-3 py-4 overflow-y-auto">
+            <div className="flex items-center justify-between mb-5">
+              <span className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                LAIT
+              </span>
+              <button
+                onClick={() => setIsSidebarOpen(false)}
+                className={`lg:hidden ${darkMode ? 'text-white' : 'text-gray-500'}`}
+              >
+                <X className="w-6 h-6" />
+              </button>
             </div>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2">
-            {navigation.map((item) => {
-              const Icon = item.icon;
-              return (
+            
+            {/* Navigation Links */}
+            <nav className="space-y-2">
+              {navigation.map((item) => (
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200 ${
+                  className={`flex items-center px-4 py-2 rounded-lg transition-colors ${
                     isActive(item.href)
-                      ? 'bg-primary-50 text-primary-700 border-r-2 border-primary-600'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? `${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-900'}`
+                      : `${darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-100'}`
                   }`}
-                  onClick={() => setSidebarOpen(false)}
                 >
-                  <Icon className="w-5 h-5 mr-3" />
-                  {item.name}
+                  <item.icon className="w-5 h-5 mr-3" />
+                  <span>{item.name}</span>
                 </Link>
-              );
-            })}
-          </nav>
+              ))}
+              <button
+                onClick={handleLogout}
+                className={`w-full flex items-center px-4 py-2 rounded-lg transition-colors ${
+                  darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <LogOut className="w-5 h-5 mr-3" />
+                <span>Logout</span>
+              </button>
+            </nav>
+          </div>
+        </aside>
 
-          {/* User section */}
-          <div className="px-4 py-4 border-t border-gray-200">
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center justify-center w-8 h-8 bg-gray-300 rounded-full">
-                <User className="w-5 h-5 text-gray-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">Sarah Johnson</p>
-                <p className="text-xs text-gray-500">Legal Operations</p>
+        {/* Main Content */}
+        <div className={`lg:ml-64 min-h-screen ${darkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
+          {/* Header */}
+          <header className={`fixed top-0 right-0 z-30 w-full h-16 ${
+            darkMode ? 'bg-gray-800 border-b border-gray-700' : 'bg-white border-b'
+          } shadow-sm lg:ml-64 px-4`}>
+            <div className="h-full flex items-center justify-between max-w-screen-2xl mx-auto">
+              <button
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                className="lg:hidden"
+              >
+                <Menu className={`w-6 h-6 ${darkMode ? 'text-white' : 'text-gray-500'}`} />
+              </button>
+
+              <div className="flex items-center space-x-4">
+                {/* Search */}
+                <form onSubmit={handleSearch} className="hidden md:flex">
+                  <input
+                    type="search"
+                    placeholder="Search..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className={`px-4 py-2 rounded-lg ${
+                      darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100'
+                    } focus:outline-none focus:ring-2 focus:ring-primary-500`}
+                  />
+                </form>
+
+                {/* Dark Mode Toggle */}
+                <button
+                  onClick={toggleDarkMode}
+                  className={`p-2 rounded-lg ${
+                    darkMode ? 'bg-gray-700 text-white' : 'hover:bg-gray-100'
+                  }`}
+                >
+                  {darkMode ? (
+                    <Sun className="w-5 h-5" />
+                  ) : (
+                    <Moon className="w-5 h-5" />
+                  )}
+                </button>
+
+                {/* Notifications */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowNotifications(!showNotifications)}
+                    className={`relative p-2 rounded-lg ${
+                      darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+                    }`}
+                  >
+                    <Bell className={`w-6 h-6 ${darkMode ? 'text-white' : 'text-gray-500'}`} />
+                    {hasUnread && (
+                      <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+                    )}
+                  </button>
+
+                  {showNotifications && (
+                    <div className={`absolute right-0 mt-2 w-96 rounded-lg shadow-lg ${
+                      darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
+                    } ring-1 ring-black ring-opacity-5`}>
+                      <div className="p-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className={`text-lg font-medium ${
+                            darkMode ? 'text-white' : 'text-gray-900'
+                          }`}>
+                            Notifications
+                          </h3>
+                          <div className="space-x-2">
+                            <button
+                              onClick={markAllRead}
+                              className="text-xs text-blue-500 hover:text-blue-600"
+                            >
+                              Mark all read
+                            </button>
+                            <button
+                              onClick={clearNotifications}
+                              className="text-xs text-gray-500 hover:text-gray-600"
+                            >
+                              Clear all
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="space-y-4 max-h-96 overflow-y-auto">
+                          {notifications.length === 0 ? (
+                            <p className={`text-sm ${
+                              darkMode ? 'text-gray-400' : 'text-gray-500'
+                            }`}>
+                              No notifications
+                            </p>
+                          ) : (
+                            notifications.map((notification) => (
+                              <NotificationItem
+                                key={`${notification.type}-${notification.timestamp}`}
+                                notification={notification}
+                                onAction={handleNotificationAction}
+                              />
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* User Profile */}
+                {userProfile && (
+                  <div className={`hidden md:block text-right ${
+                    darkMode ? 'text-white' : 'text-gray-900'
+                  }`}>
+                    <p className="text-sm font-medium">
+                      {`${userProfile.prefix} ${userProfile.firstName} ${userProfile.lastName}`}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {userProfile.organizationType}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
+          </header>
+
+          {/* Main Content */}
+          <main className="pt-16 min-h-screen">
+            <div className="max-w-screen-2xl mx-auto p-4">
+              {children}
+            </div>
+          </main>
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="lg:pl-64">
-        {/* Top header */}
-        <header className="bg-white shadow-sm border-b border-gray-200">
-          <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
-            >
-              <Menu className="w-6 h-6" />
-            </button>
-
-            <div className="flex-1 max-w-lg mx-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search invoices, vendors, or matters..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <button className="p-2 text-gray-400 hover:text-gray-500 relative">
-                <Bell className="w-5 h-5" />
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-danger-500 rounded-full"></span>
-              </button>
-              <button className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50">
-                <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
-                  <User className="w-4 h-4 text-white" />
-                </div>
-              </button>
-            </div>
-          </div>
-        </header>
-
-        {/* Page content */}
-        <main className="flex-1">
-          {children}
-        </main>
-      </div>
+      {/* Toast Container */}
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
     </div>
   );
 };

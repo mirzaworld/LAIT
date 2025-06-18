@@ -1,45 +1,42 @@
-import React from 'react';
-import { AlertTriangle, TrendingUp, Clock, DollarSign, FileX } from 'lucide-react';
+import React, { useState } from 'react';
+import { AlertTriangle, TrendingUp, Clock, DollarSign, FileX, ExternalLink, Loader2, Check } from 'lucide-react';
+import { mockAlerts } from '../data/mockData';
 
 const AlertsPanel: React.FC = () => {
-  const alerts = [
-    {
-      id: 1,
-      type: 'budget',
-      severity: 'high',
-      title: 'Budget Threshold Exceeded',
-      message: 'IP Litigation matter has exceeded 90% of allocated budget',
-      time: '2 hours ago',
-      icon: DollarSign
-    },
-    {
-      id: 2,
-      type: 'anomaly',
-      severity: 'medium',
-      title: 'Unusual Billing Pattern',
-      message: 'Baker McKenzie submitted 3x normal hours for Q4',
-      time: '4 hours ago',
-      icon: TrendingUp
-    },
-    {
-      id: 3,
-      type: 'approval',
-      severity: 'low',
-      title: 'Pending Approvals',
-      message: '12 invoices requiring manager approval',
-      time: '6 hours ago',
-      icon: Clock
-    },
-    {
-      id: 4,
-      type: 'compliance',
-      severity: 'high',
-      title: 'Missing Documentation',
-      message: 'Invoice #INV-2024-003 lacks required supporting docs',
-      time: '1 day ago',
-      icon: FileX
+  const [loading, setLoading] = useState(false);
+  const [alerts, setAlerts] = useState(mockAlerts);
+  const [resolvedAlerts, setResolvedAlerts] = useState<number[]>([]);
+  
+  const handleResolveAlert = (id: number, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setResolvedAlerts([...resolvedAlerts, id]);
+      setLoading(false);
+    }, 500);
+  };
+  
+  const handleViewAlert = (id: number) => {
+    // In a real app, this would navigate to a detailed view or open a modal
+    alert(`Viewing alert details for ID: ${id}`);
+  };
+  
+  const getIcon = (iconType: string) => {
+    switch (iconType) {
+      case 'dollar':
+        return DollarSign;
+      case 'trend':
+        return TrendingUp;
+      case 'clock':
+        return Clock;
+      case 'file':
+        return FileX;
+      default:
+        return AlertTriangle;
     }
-  ];
+  };
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -76,44 +73,73 @@ const AlertsPanel: React.FC = () => {
         </div>
         <div className="flex items-center space-x-2">
           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-danger-100 text-danger-700">
-            4 active
+            {alerts.length - resolvedAlerts.length} active
           </span>
         </div>
       </div>
       
-      <div className="space-y-4">
-        {alerts.map((alert, index) => {
-          const Icon = alert.icon;
-          return (
-            <div 
-              key={alert.id}
-              className={`p-4 rounded-lg border transition-all duration-200 hover:shadow-sm animate-slide-up ${getSeverityColor(alert.severity)}`}
-              style={{ animationDelay: `${index * 50}ms` }}
-            >
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0">
-                  <Icon className={`w-5 h-5 ${getIconColor(alert.severity)}`} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-gray-900">
-                      {alert.title}
-                    </p>
-                    <span className="text-xs text-gray-500">{alert.time}</span>
+      {loading ? (
+        <div className="flex items-center justify-center p-8">
+          <Loader2 className="w-6 h-6 text-primary-500 animate-spin" />
+          <span className="ml-2 text-sm text-gray-500">Processing...</span>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {alerts.map((alert, index) => {
+            const isResolved = resolvedAlerts.includes(alert.id);
+            const IconComponent = getIcon(alert.icon);
+            
+            return (
+              <div 
+                key={alert.id}
+                onClick={() => !isResolved && handleViewAlert(alert.id)}
+                className={`p-4 rounded-lg border transition-all duration-200 hover:shadow-sm animate-slide-up ${
+                  isResolved ? 'bg-gray-50 border-gray-200 opacity-60' : getSeverityColor(alert.severity)
+                } ${!isResolved ? 'cursor-pointer' : ''}`}
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0">
+                    {isResolved ? (
+                      <Check className="w-5 h-5 text-success-500" />
+                    ) : (
+                      <IconComponent className={`w-5 h-5 ${getIconColor(alert.severity)}`} />
+                    )}
                   </div>
-                  <p className="text-xs text-gray-600 mt-1">
-                    {alert.message}
-                  </p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-gray-900">
+                        {alert.title}
+                      </p>
+                      <span className="text-xs text-gray-500">{alert.time}</span>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1">
+                      {alert.message}
+                    </p>
+                    {!isResolved && (
+                      <div className="mt-2 flex justify-end">
+                        <button 
+                          onClick={(e) => handleResolveAlert(alert.id, e)}
+                          className="text-xs text-primary-600 hover:text-primary-700 font-medium"
+                        >
+                          Mark as resolved
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
       
       <div className="mt-6 pt-4 border-t border-gray-200">
-        <button className="w-full text-sm text-primary-600 hover:text-primary-700 font-medium text-center">
-          View All Alerts
+        <button 
+          onClick={() => alert('Navigating to Alerts Dashboard')}
+          className="w-full text-sm text-primary-600 hover:text-primary-700 font-medium text-center flex items-center justify-center"
+        >
+          View All Alerts <ExternalLink className="ml-1 w-3 h-3" />
         </button>
       </div>
     </div>

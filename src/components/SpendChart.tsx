@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -11,6 +11,8 @@ import {
   BarElement,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
+import { Loader2 } from 'lucide-react';
+import { useSpendTrends } from '../hooks/useApi';
 
 ChartJS.register(
   CategoryScale,
@@ -24,35 +26,58 @@ ChartJS.register(
 );
 
 const SpendChart: React.FC = () => {
-  const data = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-    datasets: [
-      {
-        label: 'Actual Spend',
-        data: [420000, 380000, 450000, 520000, 480000, 550000, 620000, 580000, 640000, 690000, 720000, 680000],
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        tension: 0.4,
-        fill: true,
-      },
-      {
-        label: 'Budgeted Spend',
-        data: [500000, 500000, 500000, 500000, 500000, 500000, 500000, 500000, 500000, 500000, 500000, 500000],
-        borderColor: 'rgb(239, 68, 68)',
-        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-        borderDash: [5, 5],
-        tension: 0,
-      },
-      {
-        label: 'Predicted Spend',
-        data: [null, null, null, null, null, null, null, null, null, 690000, 720000, 750000],
-        borderColor: 'rgb(34, 197, 94)',
-        backgroundColor: 'rgba(34, 197, 94, 0.1)',
-        tension: 0.4,
-        borderDash: [3, 3],
-      }
-    ],
+  const [period, setPeriod] = useState<string>('monthly');
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
+  const { trends, loading, error } = useSpendTrends(period, selectedCategory);
+  
+  // Build the default chart data
+  const createChartData = () => {
+    if (!trends) {
+      return {
+        labels: [],
+        datasets: []
+      };
+    }
+    
+    // Use the data from the hooks (which uses mockData in dev)
+    return {
+      labels: trends.labels,
+      datasets: [
+        // Add datasets from trends
+        ...trends.datasets.map((dataset: any, index: number) => ({
+          label: dataset.label,
+          data: dataset.data,
+          borderColor: getDatasetColor(index, 'border'),
+          backgroundColor: getDatasetColor(index, 'background'),
+          tension: 0.4,
+          fill: true,
+        })),
+        // Add budget line (constant value)
+        {
+          label: 'Budget Threshold',
+          data: Array(trends.labels.length).fill(550000),
+          borderColor: 'rgb(239, 68, 68)',
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          borderDash: [5, 5],
+          tension: 0,
+        }
+      ]
+    };
   };
+  
+  const getDatasetColor = (index: number, type: 'border' | 'background') => {
+    const colors = [
+      { border: 'rgb(59, 130, 246)', background: 'rgba(59, 130, 246, 0.1)' },
+      { border: 'rgb(34, 197, 94)', background: 'rgba(34, 197, 94, 0.1)' },
+      { border: 'rgb(168, 85, 247)', background: 'rgba(168, 85, 247, 0.1)' },
+      { border: 'rgb(249, 115, 22)', background: 'rgba(249, 115, 22, 0.1)' }
+    ];
+    
+    const colorSet = colors[index % colors.length];
+    return type === 'border' ? colorSet.border : colorSet.background;
+  };
+  
+  const data = createChartData();
 
   const options = {
     responsive: true,
@@ -115,6 +140,19 @@ const SpendChart: React.FC = () => {
     },
   };
 
+  const handlePeriodChange = (newPeriod: string) => {
+    setPeriod(newPeriod);
+  };
+  
+  const handleCategoryClick = (category: string | undefined) => {
+    // Toggle selected category
+    if (category === selectedCategory) {
+      setSelectedCategory(undefined);
+    } else {
+      setSelectedCategory(category);
+    }
+  };
+
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
       <div className="flex items-center justify-between mb-6">
@@ -123,20 +161,90 @@ const SpendChart: React.FC = () => {
           <p className="text-sm text-gray-500">Monthly spending analysis and predictions</p>
         </div>
         <div className="flex space-x-2">
-          <button className="px-3 py-1 text-xs font-medium text-primary-600 bg-primary-50 rounded-full hover:bg-primary-100 transition-colors">
+          <button 
+            onClick={() => handlePeriodChange('monthly')}
+            className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+              period === 'monthly' 
+                ? 'text-primary-600 bg-primary-50 hover:bg-primary-100' 
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
             12M
           </button>
-          <button className="px-3 py-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors">
-            6M
+          <button 
+            onClick={() => handlePeriodChange('quarterly')}
+            className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+              period === 'quarterly' 
+                ? 'text-primary-600 bg-primary-50 hover:bg-primary-100' 
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Quarterly
           </button>
-          <button className="px-3 py-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors">
-            3M
+          <button 
+            onClick={() => handlePeriodChange('annually')}
+            className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+              period === 'annually' 
+                ? 'text-primary-600 bg-primary-50 hover:bg-primary-100' 
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Yearly
           </button>
         </div>
       </div>
-      <div className="h-80">
-        <Line data={data} options={options} />
-      </div>
+      
+      {loading ? (
+        <div className="h-80 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 text-primary-500 animate-spin" />
+          <span className="ml-2 text-gray-500">Loading chart data...</span>
+        </div>
+      ) : error ? (
+        <div className="h-80 flex items-center justify-center bg-danger-50 text-danger-700 rounded-lg">
+          <p>Error loading chart data. Please try again.</p>
+        </div>
+      ) : (
+        <>
+          <div className="h-80">
+            <Line data={data} options={options} />
+          </div>
+          
+          {/* Category filters */}
+          {trends && trends.datasets && trends.datasets.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="flex flex-wrap gap-2">
+                <span className="text-sm text-gray-500">Filter by category:</span>
+                <button
+                  onClick={() => handleCategoryClick(undefined)}
+                  className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                    selectedCategory === undefined
+                      ? 'bg-primary-100 text-primary-700'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  All
+                </button>
+                {trends.datasets.map((dataset: any, index: number) => (
+                  <button
+                    key={dataset.label}
+                    onClick={() => handleCategoryClick(dataset.label)}
+                    className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                      selectedCategory === dataset.label
+                        ? 'bg-primary-100 text-primary-700'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                    style={{
+                      borderColor: getDatasetColor(index, 'border')
+                    }}
+                  >
+                    {dataset.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 };

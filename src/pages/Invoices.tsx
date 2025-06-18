@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
-import { Upload, Search, Filter, Download, Eye, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Upload, Search, Filter, Download, Eye, CheckCircle, XCircle, Clock, AlertTriangle, AlertCircle, Zap } from 'lucide-react';
 
 const Invoices: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedInvoices, setSelectedInvoices] = useState<string[]>([]);
+  const [selectedInvoice, setSelectedInvoice] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
 
   const invoices = [
     {
@@ -132,6 +135,49 @@ const Invoices: React.FC = () => {
       setSelectedInvoices(filteredInvoices.map(inv => inv.id));
     }
   };
+  
+  const analyzeInvoice = (invoiceId: string) => {
+    // Find the invoice
+    const invoice = invoices.find(inv => inv.id === invoiceId);
+    if (!invoice) return;
+    
+    // Set selected invoice and start analysis
+    setSelectedInvoice(invoiceId);
+    setIsAnalyzing(true);
+    
+    // In a real implementation, this would call the backend API
+    setTimeout(() => {
+      // Mock analysis result from AI model
+      const result = {
+        invoice_id: invoice.id,
+        risk_score: invoice.riskScore,
+        risk_level: invoice.riskScore >= 70 ? 'high' : invoice.riskScore >= 40 ? 'medium' : 'low',
+        anomalies: invoice.riskScore >= 70 ? [
+          {
+            type: 'Unusual Rate Increase',
+            message: '340% increase from previous billing period indicates potential oversight or error'
+          },
+          {
+            type: 'Block Billing',
+            message: 'Multiple distinct tasks combined in single time entries'
+          }
+        ] : invoice.riskScore >= 40 ? [
+          {
+            type: 'Timekeeper Mix',
+            message: 'Partner heavy staffing (65% of hours) on routine matter'
+          }
+        ] : [],
+        recommendations: invoice.riskScore >= 70 ? 
+          ['Request detailed timekeeper breakdown', 'Compare to benchmark rates', 'Consider negotiation'] :
+          invoice.riskScore >= 40 ?
+          ['Review staffing allocation', 'Approve with staffing comment'] :
+          ['Approve for payment']
+      };
+      
+      setAnalysisResult(result);
+      setIsAnalyzing(false);
+    }, 1500);
+  };
 
   return (
     <div className="p-6 space-y-6 animate-fade-in">
@@ -172,6 +218,75 @@ const Invoices: React.FC = () => {
           </div>
         </div>
       </div>
+      
+      {/* AI Analysis Panel */}
+      {analysisResult && (
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 animate-fade-in">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">AI Invoice Analysis</h2>
+            <button 
+              onClick={() => setAnalysisResult(null)}
+              className="text-gray-400 hover:text-gray-500"
+            >
+              <XCircle className="w-5 h-5" />
+            </button>
+          </div>
+          
+          <div className="mb-4 flex items-center space-x-3">
+            <div className={`p-2 rounded-full ${
+              analysisResult.risk_level === 'high' ? 'bg-danger-100' : 
+              analysisResult.risk_level === 'medium' ? 'bg-warning-100' : 
+              'bg-success-100'
+            }`}>
+              {analysisResult.risk_level === 'high' ? 
+                <AlertTriangle className="w-6 h-6 text-danger-600" /> :
+                analysisResult.risk_level === 'medium' ? 
+                <AlertCircle className="w-6 h-6 text-warning-600" /> :
+                <CheckCircle className="w-6 h-6 text-success-600" />
+              }
+            </div>
+            <div>
+              <h3 className="font-medium text-gray-900">
+                {analysisResult.risk_level === 'high' ? 'High Risk' : 
+                analysisResult.risk_level === 'medium' ? 'Medium Risk' : 
+                'Low Risk'} - Score: {analysisResult.risk_score}/100
+              </h3>
+              <p className="text-sm text-gray-500">
+                Invoice #{analysisResult.invoice_id}
+              </p>
+            </div>
+          </div>
+          
+          <div className="space-y-3 mb-4">
+            <h4 className="font-medium text-gray-700">Anomalies Detected</h4>
+            {analysisResult.anomalies.length > 0 ? (
+              analysisResult.anomalies.map((anomaly: any, index: number) => (
+                <div key={index} className="p-3 bg-danger-50 rounded-lg">
+                  <div className="flex items-start">
+                    <Zap className="w-5 h-5 text-danger-600 mt-0.5 mr-3 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">{anomaly.type}</p>
+                      <p className="text-sm text-gray-600">{anomaly.message}</p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-gray-500">No anomalies detected</p>
+            )}
+          </div>
+          
+          <div className="space-y-3">
+            <h4 className="font-medium text-gray-700">Recommendations</h4>
+            {analysisResult.recommendations.map((rec: string, index: number) => (
+              <div key={index} className="flex items-start">
+                <CheckCircle className="w-5 h-5 text-success-600 mt-0.5 mr-3 flex-shrink-0" />
+                <p className="text-sm text-gray-800">{rec}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Filters and Search */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
@@ -304,13 +419,20 @@ const Invoices: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button className="text-primary-600 hover:text-primary-900 mr-3">
+                    <button 
+                      className="text-primary-600 hover:text-primary-900 mr-3"
+                      onClick={() => analyzeInvoice(invoice.id)}
+                      title="AI Analyze"
+                    >
+                      <Zap className="w-4 h-4" />
+                    </button>
+                    <button className="text-primary-600 hover:text-primary-900 mr-3" title="View Details">
                       <Eye className="w-4 h-4" />
                     </button>
-                    <button className="text-success-600 hover:text-success-900 mr-3">
+                    <button className="text-success-600 hover:text-success-900 mr-3" title="Approve">
                       <CheckCircle className="w-4 h-4" />
                     </button>
-                    <button className="text-danger-600 hover:text-danger-900">
+                    <button className="text-danger-600 hover:text-danger-900" title="Reject">
                       <XCircle className="w-4 h-4" />
                     </button>
                   </td>

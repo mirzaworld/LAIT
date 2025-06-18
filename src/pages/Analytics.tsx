@@ -1,13 +1,58 @@
-import React, { useState } from 'react';
-import { BarChart3, PieChart, TrendingUp, Filter, Download, Calendar } from 'lucide-react';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
-import { Doughnut, Bar } from 'react-chartjs-2';
+import React, { useState, useEffect } from 'react';
+import { BarChart3, PieChart, TrendingUp, Filter, Download, Calendar, AlertTriangle, ChevronLeft } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title } from 'chart.js';
+import { Doughnut, Bar, Line } from 'react-chartjs-2';
+import { pdfService } from '../services/pdfService';
 
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title);
 
 const Analytics: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [selectedTimeframe, setSelectedTimeframe] = useState('12M');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [aiInsights, setAiInsights] = useState<string[]>([]);
+
+  const { type = '', dateRange } = location.state || {};
+
+  useEffect(() => {
+    setLoading(true);
+    // In a real implementation, this would be an API call to the Python backend
+    setTimeout(() => {
+      setAiInsights([
+        "IP litigation spend is trending 23% higher than previous year, primarily driven by TechCorp vs CompetitorX case",
+        "Predicted Q3 spend is likely to be 15-20% above budget based on current matter velocity",
+        "3 firms account for 62% of total spend; consider diversifying vendor portfolio",
+        "Potential savings of $425,000 identified through rate optimization and timekeeper mix adjustments"
+      ]);
+      setLoading(false);
+    }, 1000);
+  }, [selectedTimeframe, selectedCategory, type]);
+
+  const handleExport = async () => {
+    setGenerating(true);
+    try {
+      const report = await pdfService.generateReport('current');
+      const pdfBlob = await pdfService.generatePDF(report);
+      
+      const url = window.URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `legal_analytics_${new Date().toISOString().split('T')[0]}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Error exporting analytics:', err);
+      alert('Failed to export analytics report');
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const spendByCategory = {
     labels: ['Litigation', 'Corporate', 'IP', 'Employment', 'Regulatory', 'M&A'],
@@ -96,14 +141,38 @@ const Analytics: React.FC = () => {
     },
   };
 
+  const getTypeLabel = () => {
+    switch (type) {
+      case 'spend':
+        return 'Spend Analytics';
+      case 'invoices':
+        return 'Invoice Processing Analytics';
+      case 'outliers':
+        return 'Risk Analysis';
+      case 'processing':
+        return 'Processing Performance';
+      default:
+        return 'Legal Spend Analytics';
+    }
+  };
+
   return (
     <div className="p-6 space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Legal Spend Analytics</h1>
+          {type && (
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center text-gray-600 hover:text-gray-900 mb-2"
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Back to Dashboard
+            </button>
+          )}
+          <h1 className="text-2xl font-bold text-gray-900">{getTypeLabel()}</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Deep dive into spending patterns and trends
+            Deep dive into {type || 'spending'} patterns and trends
           </p>
         </div>
         <div className="mt-4 sm:mt-0 flex items-center space-x-3">
@@ -119,13 +188,51 @@ const Analytics: React.FC = () => {
               <option value="12M">Last 12 Months</option>
             </select>
           </div>
-          <button className="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors duration-200">
-            <Download className="w-4 h-4 mr-2" />
-            Export
+          <button 
+            onClick={handleExport}
+            disabled={generating}
+            className="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors duration-200 disabled:opacity-50"
+          >
+            {generating ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                Generating...
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4 mr-2" />
+                Export Analytics
+              </>
+            )}
           </button>
         </div>
       </div>
 
+      {/* AI Insights */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">AI-Generated Insights</h2>
+          {loading && (
+            <div className="flex items-center space-x-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600"></div>
+              <span className="text-sm text-gray-500">Analyzing data...</span>
+            </div>
+          )}
+        </div>
+        <div className="space-y-3">
+          {aiInsights.map((insight, index) => (
+            <div 
+              key={index} 
+              className="flex items-start p-3 bg-primary-50 rounded-lg"
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              <AlertTriangle className="w-5 h-5 text-primary-600 mt-0.5 mr-3 flex-shrink-0" />
+              <p className="text-sm text-gray-800">{insight}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+      
       {/* Key Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
@@ -163,7 +270,7 @@ const Analytics: React.FC = () => {
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Efficiency Score</p>
+              <p className="text-sm font-medium text-gray-600">Resource Utilization</p>
               <p className="text-2xl font-bold text-gray-900">87%</p>
             </div>
             <div className="p-3 bg-warning-100 rounded-lg">
@@ -172,78 +279,67 @@ const Analytics: React.FC = () => {
           </div>
           <div className="mt-4">
             <span className="text-sm text-success-600 font-medium">↑ 5.3%</span>
-            <span className="text-sm text-gray-500 ml-2">vs last period</span>
+            <span className="text-sm text-gray-500 ml-2">vs target</span>
           </div>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Budget Variance</p>
-              <p className="text-2xl font-bold text-gray-900">+12%</p>
+              <p className="text-sm font-medium text-gray-600">Matter Volume</p>
+              <p className="text-2xl font-bold text-gray-900">156</p>
             </div>
-            <div className="p-3 bg-danger-100 rounded-lg">
-              <PieChart className="w-6 h-6 text-danger-600" />
+            <div className="p-3 bg-info-100 rounded-lg">
+              <PieChart className="w-6 h-6 text-info-600" />
             </div>
           </div>
           <div className="mt-4">
-            <span className="text-sm text-danger-600 font-medium">Over budget</span>
-            <span className="text-sm text-gray-500 ml-2">this quarter</span>
+            <span className="text-sm text-success-600 font-medium">↑ 3.8%</span>
+            <span className="text-sm text-gray-500 ml-2">vs last period</span>
           </div>
         </div>
       </div>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Category Breakdown */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">Spend by Practice Area</h3>
-              <p className="text-sm text-gray-500">Distribution of legal spending</p>
-            </div>
-          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-6">Spend by Category</h3>
           <div className="h-80">
             <Doughnut data={spendByCategory} options={doughnutOptions} />
           </div>
         </div>
 
+        {/* Monthly Trends */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">Monthly Spend Trends</h3>
-              <p className="text-sm text-gray-500">External vs internal costs</p>
-            </div>
-          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-6">Monthly Trends</h3>
           <div className="h-80">
             <Bar data={monthlyTrends} options={barOptions} />
           </div>
         </div>
       </div>
 
-      {/* Performance Insights */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">AI Performance Insights</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="p-4 bg-success-50 rounded-lg border border-success-200">
-            <h4 className="font-medium text-success-900 mb-2">Cost Optimization</h4>
-            <p className="text-sm text-success-700">
-              Switching to alternative counsel for routine matters could save $127K annually
-            </p>
-          </div>
-          <div className="p-4 bg-warning-50 rounded-lg border border-warning-200">
-            <h4 className="font-medium text-warning-900 mb-2">Budget Alert</h4>
-            <p className="text-sm text-warning-700">
-              IP litigation spend is trending 23% above budget for Q4
-            </p>
-          </div>
-          <div className="p-4 bg-primary-50 rounded-lg border border-primary-200">
-            <h4 className="font-medium text-primary-900 mb-2">Efficiency Gain</h4>
-            <p className="text-sm text-primary-700">
-              Document review automation reduced costs by $89K this quarter
-            </p>
-          </div>
+      {/* Type-specific Analytics */}
+      {type === 'invoices' && (
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Invoice Processing Performance</h3>
+          {/* Add invoice-specific analytics */}
         </div>
-      </div>
+      )}
+
+      {type === 'outliers' && (
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Risk Analysis Details</h3>
+          {/* Add risk analysis details */}
+        </div>
+      )}
+
+      {type === 'processing' && (
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Processing Efficiency Metrics</h3>
+          {/* Add processing performance metrics */}
+        </div>
+      )}
     </div>
   );
 };
