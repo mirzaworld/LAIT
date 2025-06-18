@@ -215,89 +215,281 @@ class RiskPredictor:
         return sum(rates) / len(rates) if rates else 0
     
     def _evaluate_additional_risk_factors(self, invoice_data):
-        """Evaluate additional risk factors not captured by the model"""
-        additional_risk = 0
+        """Evaluate additional risk factors not covered by the main model"""
         risk_factors = []
+        risk_adjustment = 0.0
         
-        # Check for block billing
-        if self._has_block_billing(invoice_data):
-            additional_risk += 10
+        # Check for high-risk patterns
+        if self._check_weekend_work(invoice_data):
+            risk_factors.append({
+                'type': 'weekend_work',
+                'severity': 'medium',
+                'description': 'Significant weekend work billed'
+            })
+            risk_adjustment += 0.1
+            
+        if self._check_block_billing(invoice_data):
             risk_factors.append({
                 'type': 'block_billing',
-                'description': 'Line item(s) contain block billing',
-                'severity': 'medium',
-                'impact': 10
+                'severity': 'high',
+                'description': 'Multiple tasks combined in single entries'
             })
-        
-        # Check for vague descriptions
-        vague_items = self._find_vague_descriptions(invoice_data)
-        if vague_items:
-            additional_risk += 5
+            risk_adjustment += 0.15
+            
+        if self._check_vague_descriptions(invoice_data):
             risk_factors.append({
                 'type': 'vague_descriptions',
-                'description': f'Found {len(vague_items)} line item(s) with vague descriptions',
-                'severity': 'low',
-                'impact': 5
+                'severity': 'medium',
+                'description': 'Multiple line items with vague descriptions'
             })
+            risk_adjustment += 0.1
             
-        # Check for excessive time on administrative tasks
-        admin_time = self._check_administrative_time(invoice_data)
-        if admin_time > 5:  # More than 5 hours on admin tasks
-            additional_risk += 15
+        expense_issues = self._check_expenses(invoice_data)
+        if expense_issues:
+            risk_factors.extend(expense_issues)
+            risk_adjustment += 0.2
+            
+        timekeeper_issues = self._check_timekeeper_distribution(invoice_data)
+        if timekeeper_issues:
+            risk_factors.extend(timekeeper_issues)
+            risk_adjustment += 0.1
+            
+        return {
+            'factors': risk_factors,
+            'adjustment': min(risk_adjustment, 0.5)  # Cap the total adjustment
+        }
+        
+    def _check_weekend_work(self, invoice_data):
+        """Check for unusual amounts of weekend work"""
+        weekend_hours = 0
+        total_hours = 0
+        
+        for item in invoice_data.get('line_items', []):
+            if 'date' in item and isinstance(item['date'], pd.Timestamp):
+                hours = float(item.get('hours', 0))
+                if item['date'].weekday() >= 5:  # Saturday = 5, Sunday = 6
+                    weekend_hours += hours
+                total_hours += hours
+                
+        if total_hours > 0:
+            weekend_ratio = weekend_hours / total_hours
+            return weekend_ratio > 0.2  # Flag if more than 20% weekend work
+            
+        return False
+        
+    def _check_block_billing(self, invoice_data):
+        """Check for block billing patterns"""
+        block_billing_indicators = [
+            'multiple',
+            'various',
+            'and',
+            'including',
+            'as well as'
+        ]
+        
+        block_billed_items = 0
+        total_items = len(invoice_data.get('line_items', []))
+        
+        for item in invoice_data.get('line_items', []):
+            desc = item.get('description', '').lower()
+            if any(indicator in desc for indicator in block_billing_indicators):
+                if item.get('hours', 0) >= 4:  # Only count if significant hours
+                    block_billed_items += 1
+                    
+        return block_billed_items > total_items * 0.2  # Flag if >20% block billed
+        
+    def _check_vague_descriptions(self, invoice_data):
+        """Check for vague or insufficient descriptions"""
+        vague_terms = {
+            'review',
+            'analyze',
+            'work on',
+            'attention to',
+            'handle',
+            'process',
+            'continue',
+            'update'
+        }
+        
+        vague_items = 0
+        total_items = len(invoice_data.get('line_items', []))
+        
+        for item in invoice_data.get('line_items', []):
+            desc = item.get('description', '').lower()
+            words = desc.split()
+            
+            if len(words) < 5:  # Too short
+                vague_items += 1
+            elif sum(1 for word in words if word in vague_terms) / len(words) > 0.3:
+                # More than 30% vague terms
+                vague_items += 1
+                
+        return vague_items > total_items * 0.25  # Flag if >25% vague
+        
+    def _check_expenses(self, invoice_data):
+        """Check for expense-related issues"""
+        risk_factors = []
+        expenses = [item for item in invoice_data.get('line_items', [])
+                   if item.get('type') == 'expense']
+                   
+        if not expenses:
+            return []
+            
+        total_expense = sum(float(exp.get('amount', 0)) for exp in expenses)
+        total_fees = sum(float(item.get('amount', 0)) 
+                        for item in invoice_data.get('line_items', [])
+                        if item.get('type') != 'expense')
+                        
+        # Check expense ratio
+        if total_fees > 0 and total_expense / total_fees > 0.3:
             risk_factors.append({
-                'type': 'excessive_admin',
-                'description': f'Excessive time ({admin_time}h) on administrative tasks',
-                'severity': 'high',
-                'impact': 15
+                'type': 'high_expenses',
+                'severity': 'medium',
+                'description': 'Expenses exceed 30% of fees'
             })
             
-        # Check for rate inconsistencies
-        if self._has_rate_inconsistencies(invoice_data):
-            additional_risk += 20
+        # Check for large individual expenses
+        large_expenses = [exp for exp in expenses 
+                         if float(exp.get('amount', 0)) > 1000]
+        if large_expenses:
             risk_factors.append({
-                'type': 'rate_inconsistency',
-                'description': 'Rate inconsistencies found across similar timekeeper levels',
+                'type': 'large_expenses',
                 'severity': 'high',
-                'impact': 20
+                'description': f'Found {len(large_expenses)} expenses over $1,000'
             })
             
-        return additional_risk, risk_factors
-    
-    def _get_risk_level(self, score):
+        return risk_factors
+        
+    def _check_timekeeper_distribution(self, invoice_data):
+        """Analyze distribution of work across timekeepers"""
+        risk_factors = []
+        timekeepers = {}
+        
+        # Collect hours by timekeeper
+        for item in invoice_data.get('line_items', []):
+            if item.get('type') != 'expense':
+                timekeeper = item.get('timekeeper', 'Unknown')
+                hours = float(item.get('hours', 0))
+                rate = float(item.get('rate', 0))
+                
+                if timekeeper not in timekeepers:
+                    timekeepers[timekeeper] = {
+                        'hours': 0,
+                        'total': 0,
+                        'rate': rate
+                    }
+                    
+                timekeepers[timekeeper]['hours'] += hours
+                timekeepers[timekeeper]['total'] += hours * rate
+                
+        if not timekeepers:
+            return []
+            
+        # Calculate total hours and amount
+        total_hours = sum(tk['hours'] for tk in timekeepers.values())
+        total_amount = sum(tk['total'] for tk in timekeepers.values())
+        
+        if total_hours > 0:
+            # Check for overreliance on expensive resources
+            expensive_hours = sum(tk['hours'] for tk in timekeepers.values()
+                                if tk['rate'] >= 500)
+            if expensive_hours / total_hours > 0.6:
+                risk_factors.append({
+                    'type': 'expensive_resources',
+                    'severity': 'medium',
+                    'description': 'Over 60% of work done by high-rate timekeepers'
+                })
+                
+            # Check for improper delegation
+            partner_hours = sum(tk['hours'] for tk in timekeepers.values()
+                              if tk['rate'] >= 400)
+            if partner_hours / total_hours > 0.4:
+                risk_factors.append({
+                    'type': 'delegation_issue',
+                    'severity': 'medium',
+                    'description': 'High proportion of partner-level work'
+                })
+                
+        return risk_factors
+        
+    def get_risk_details(self, invoice_data):
+        """Get detailed risk analysis for an invoice"""
+        # Get base risk score
+        risk_score = self.predict_risk(invoice_data)
+        
+        # Get additional risk factors
+        additional_risks = self._evaluate_additional_risk_factors(invoice_data)
+        
+        # Adjust risk score
+        final_risk_score = min(1.0, risk_score + additional_risks['adjustment'])
+        
+        # Generate risk report
+        return {
+            'risk_score': final_risk_score,
+            'risk_level': self._get_risk_level(final_risk_score),
+            'base_score': risk_score,
+            'risk_factors': additional_risks['factors'],
+            'recommendations': self._generate_recommendations(
+                final_risk_score,
+                additional_risks['factors']
+            )
+        }
+        
+    def _get_risk_level(self, risk_score):
         """Convert risk score to risk level"""
-        if score < 30:
+        if risk_score < 0.3:
             return 'low'
-        elif score < 70:
+        elif risk_score < 0.7:
             return 'medium'
         else:
             return 'high'
-    
-    def _identify_risk_factors(self, invoice_data, risk_score):
-        """Identify specific risk factors that contributed to the score"""
-        risk_factors = []
-        
-        # Sample logic to identify risk factors
-        if invoice_data['amount'] > 50000:
-            risk_factors.append({
-                'type': 'high_amount',
-                'description': 'Invoice amount exceeds typical threshold'
-            })
-        
-        if invoice_data.get('avg_rate', 0) > 500:
-            risk_factors.append({
-                'type': 'high_rate',
-                'description': 'Average hourly rate is above benchmark for similar matters'
-            })
-        
-        line_items = invoice_data.get('line_items', [])
-        for item in line_items:
-            if item.get('hours', 0) > 10:
-                risk_factors.append({
-                    'type': 'high_hours',
-                    'description': f"Time entry of {item.get('hours')} hours may indicate block billing"
-                })
             
-        return risk_factors
+    def _generate_recommendations(self, risk_score, risk_factors):
+        """Generate specific recommendations based on risk analysis"""
+        recommendations = []
+        
+        # General recommendations based on risk score
+        if risk_score >= 0.7:
+            recommendations.append({
+                'priority': 'high',
+                'action': 'detailed_review',
+                'description': 'Conduct detailed line-item review'
+            })
+        elif risk_score >= 0.3:
+            recommendations.append({
+                'priority': 'medium',
+                'action': 'selective_review',
+                'description': 'Review flagged items and high-value entries'
+            })
+            
+        # Specific recommendations based on risk factors
+        for factor in risk_factors:
+            if factor['type'] == 'block_billing':
+                recommendations.append({
+                    'priority': 'high',
+                    'action': 'request_breakdown',
+                    'description': 'Request detailed breakdown of block-billed entries'
+                })
+            elif factor['type'] == 'vague_descriptions':
+                recommendations.append({
+                    'priority': 'medium',
+                    'action': 'clarify_descriptions',
+                    'description': 'Request more detailed task descriptions'
+                })
+            elif factor['type'] == 'delegation_issue':
+                recommendations.append({
+                    'priority': 'medium',
+                    'action': 'review_staffing',
+                    'description': 'Discuss proper work delegation with vendor'
+                })
+            elif factor['type'] in ['high_expenses', 'large_expenses']:
+                recommendations.append({
+                    'priority': 'high',
+                    'action': 'expense_documentation',
+                    'description': 'Request supporting documentation for large expenses'
+                })
+                
+        return recommendations
     
     def _get_sample_training_data(self):
         """Get sample data for initial model training"""
@@ -336,6 +528,33 @@ class RiskPredictor:
             },
             # More sample data would be included in a real system
         ]
+    
+    def _identify_risk_factors(self, invoice_data, risk_score):
+        """Identify specific risk factors that contributed to the score"""
+        risk_factors = []
+        
+        # Sample logic to identify risk factors
+        if invoice_data['amount'] > 50000:
+            risk_factors.append({
+                'type': 'high_amount',
+                'description': 'Invoice amount exceeds typical threshold'
+            })
+        
+        if invoice_data.get('avg_rate', 0) > 500:
+            risk_factors.append({
+                'type': 'high_rate',
+                'description': 'Average hourly rate is above benchmark for similar matters'
+            })
+        
+        line_items = invoice_data.get('line_items', [])
+        for item in line_items:
+            if item.get('hours', 0) > 10:
+                risk_factors.append({
+                    'type': 'high_hours',
+                    'description': f"Time entry of {item.get('hours')} hours may indicate block billing"
+                })
+            
+        return risk_factors
     
     def _has_block_billing(self, invoice_data):
         """Check for block billing (multiple activities in single entry)"""

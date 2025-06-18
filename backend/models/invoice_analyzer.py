@@ -441,3 +441,288 @@ class InvoiceAnalyzer:
             
         finally:
             session.close()
+    
+    def _analyze_line_items(self, line_items):
+        """Detailed analysis of invoice line items"""
+        results = []
+        
+        if not line_items:
+            return []
+            
+        # Convert to DataFrame for easier analysis
+        df = pd.DataFrame(line_items)
+        
+        # Extract numeric features for anomaly detection
+        numeric_features = self._extract_numeric_features(df)
+        
+        # Text analysis for descriptions
+        text_features = self._analyze_descriptions([item['description'] for item in line_items])
+        
+        # Detect rate and hours anomalies
+        rate_anomalies = self._detect_rate_anomalies(df)
+        hours_anomalies = self._detect_hours_anomalies(df)
+        
+        # Combine all anomalies
+        for idx, item in enumerate(line_items):
+            anomalies = []
+            risk_score = 0.0
+            
+            # Check rate anomalies
+            if rate_anomalies[idx]:
+                anomalies.append({
+                    'type': 'high_rate',
+                    'severity': 'high',
+                    'message': f"Hourly rate (${item['rate']}) significantly above normal range"
+                })
+                risk_score += 0.4
+                
+            # Check hours anomalies
+            if hours_anomalies[idx]:
+                anomalies.append({
+                    'type': 'unusual_hours',
+                    'severity': 'medium',
+                    'message': f"Unusual number of hours ({item['hours']}) for this type of task"
+                })
+                risk_score += 0.3
+                
+            # Check text anomalies
+            if text_features[idx].get('is_suspicious', False):
+                anomalies.append({
+                    'type': 'suspicious_description',
+                    'severity': 'medium',
+                    'message': text_features[idx].get('reason', 'Unusual task description')
+                })
+                risk_score += 0.3
+                
+            results.append({
+                'line_item_id': item.get('id'),
+                'risk_score': min(risk_score, 1.0),
+                'anomalies': anomalies,
+                'recommendations': self._get_line_item_recommendations(anomalies)
+            })
+            
+        return results
+
+    def _extract_numeric_features(self, df):
+        """Extract numeric features from line items"""
+        features = []
+        
+        if df.empty:
+            return np.array([])
+            
+        # Basic features
+        features.append(df['hours'].values)
+        features.append(df['rate'].values)
+        features.append(df['hours'] * df['rate'].values)  # total amount
+        
+        # Derived features
+        if 'task_code' in df.columns:
+            # Calculate average rate and hours by task code
+            task_avg_rate = df.groupby('task_code')['rate'].transform('mean')
+            task_avg_hours = df.groupby('task_code')['hours'].transform('mean')
+            
+            features.append(df['rate'] / task_avg_rate)  # rate ratio
+            features.append(df['hours'] / task_avg_hours)  # hours ratio
+            
+        return np.column_stack(features)
+
+    def _analyze_descriptions(self, descriptions):
+        """Analyze line item descriptions for suspicious patterns"""
+        results = []
+        
+        # Common vague terms that might indicate insufficient detail
+        vague_terms = {'review', 'analyze', 'work on', 'attention to', 'various', 'miscellaneous'}
+        
+        # Patterns that might indicate block billing
+        block_billing_patterns = [
+            r'multiple tasks',
+            r'various matters',
+            r'and other',
+            r'including.*and.*and'
+        ]
+        
+        for desc in descriptions:
+            analysis = {
+                'is_suspicious': False,
+                'reason': None,
+                'suggestions': []
+            }
+            
+            # Convert to lowercase for analysis
+            desc_lower = desc.lower()
+            
+            # Check for vague descriptions
+            vague_count = sum(1 for term in vague_terms if term in desc_lower)
+            if vague_count >= 2:
+                analysis['is_suspicious'] = True
+                analysis['reason'] = 'Vague description'
+                analysis['suggestions'].append('Provide more specific details about the work performed')
+            
+            # Check for block billing
+            for pattern in block_billing_patterns:
+                if re.search(pattern, desc_lower):
+                    analysis['is_suspicious'] = True
+                    analysis['reason'] = 'Potential block billing'
+                    analysis['suggestions'].append('Split multiple tasks into separate line items')
+                    break
+            
+            # Check description length
+            if len(desc.split()) < 3:
+                analysis['is_suspicious'] = True
+                analysis['reason'] = 'Description too brief'
+                analysis['suggestions'].append('Provide more detailed description')
+            
+            results.append(analysis)
+            
+        return results
+
+    def _detect_rate_anomalies(self, df):
+        """Detect anomalies in hourly rates"""
+        if df.empty:
+            return []
+            
+        rates = df['rate'].values.reshape(-1, 1)
+        
+        # Use robust statistics to detect outliers
+        Q1 = np.percentile(rates, 25)
+        Q3 = np.percentile(rates, 75)
+        IQR = Q3 - Q1
+        upper_bound = Q3 + 1.5 * IQR
+        
+        return rates.flatten() > upper_bound
+
+    def _detect_hours_anomalies(self, df):
+        """Detect anomalies in hours billed"""
+        if df.empty:
+            return []
+            
+        hours = df['hours'].values.reshape(-1, 1)
+        
+        # Detect outliers using Isolation Forest for more robust detection
+        if len(hours) >= 10:  # Only use ML for sufficient data
+            clf = IsolationForest(contamination=0.1, random_state=42)
+            return clf.fit_predict(hours) == -1
+        else:
+            # Use simple statistical method for small datasets
+            Q1 = np.percentile(hours, 25)
+            Q3 = np.percentile(hours, 75)
+            IQR = Q3 - Q1
+            upper_bound = Q3 + 2 * IQR  # More lenient threshold
+            
+            return hours.flatten() > upper_bound
+
+    def _get_line_item_recommendations(self, anomalies):
+        """Generate recommendations based on line item anomalies"""
+        recommendations = []
+        
+        for anomaly in anomalies:
+            if anomaly['type'] == 'high_rate':
+                recommendations.append({
+                    'action': 'review_rate',
+                    'message': 'Consider negotiating lower rates or using alternative resources'
+                })
+            elif anomaly['type'] == 'unusual_hours':
+                recommendations.append({
+                    'action': 'review_hours',
+                    'message': 'Verify time entries and task complexity'
+                })
+            elif anomaly['type'] == 'suspicious_description':
+                recommendations.append({
+                    'action': 'improve_description',
+                    'message': 'Request more detailed task descriptions'
+                })
+                
+        return recommendations
+
+    def _compare_with_historical(self, processed_data, session):
+        """Compare invoice with historical data"""
+        vendor_id = processed_data.get('vendor_id')
+        matter_id = processed_data.get('matter_id')
+        
+        if not vendor_id or not matter_id:
+            return {}
+            
+        # Query historical data
+        historical = session.query(Invoice).filter(
+            Invoice.vendor_id == vendor_id,
+            Invoice.matter_id == matter_id,
+            Invoice.processed == True  # Only consider processed invoices
+        ).all()
+        
+        if not historical:
+            return {
+                'comparison_available': False,
+                'reason': 'No historical data available for this vendor/matter combination'
+            }
+            
+        # Calculate historical metrics
+        historical_rates = []
+        historical_hours = []
+        historical_totals = []
+        
+        for inv in historical:
+            for line in inv.line_items:
+                if line.rate:
+                    historical_rates.append(line.rate)
+                if line.hours:
+                    historical_hours.append(line.hours)
+            historical_totals.append(inv.amount)
+            
+        if not historical_rates or not historical_hours:
+            return {
+                'comparison_available': False,
+                'reason': 'Insufficient historical data for comparison'
+            }
+            
+        # Calculate statistics
+        comparison = {
+            'comparison_available': True,
+            'rates': {
+                'avg': np.mean(historical_rates),
+                'std': np.std(historical_rates),
+                'current_vs_avg': (processed_data['avg_rate'] / np.mean(historical_rates) - 1) * 100
+            },
+            'hours': {
+                'avg': np.mean(historical_hours),
+                'std': np.std(historical_hours),
+                'current_vs_avg': (processed_data['total_hours'] / np.mean(historical_hours) - 1) * 100
+            },
+            'total': {
+                'avg': np.mean(historical_totals),
+                'std': np.std(historical_totals),
+                'current_vs_avg': (processed_data['total_amount'] / np.mean(historical_totals) - 1) * 100
+            }
+        }
+        
+        # Add trend analysis if sufficient data
+        if len(historical) >= 3:
+            comparison['trend'] = self._analyze_trends(historical)
+            
+        return comparison
+
+    def _analyze_trends(self, historical_invoices):
+        """Analyze trends in historical invoice data"""
+        dates = [inv.date for inv in historical_invoices]
+        amounts = [inv.amount for inv in historical_invoices]
+        
+        # Sort by date
+        sorted_data = sorted(zip(dates, amounts))
+        dates, amounts = zip(*sorted_data)
+        
+        # Calculate basic trend
+        if len(dates) >= 2:
+            first_amount = amounts[0]
+            last_amount = amounts[-1]
+            time_diff = (dates[-1] - dates[0]).days / 30  # Convert to months
+            
+            if time_diff > 0:
+                monthly_change = ((last_amount / first_amount) ** (1/time_diff) - 1) * 100
+                
+                return {
+                    'duration_months': round(time_diff, 1),
+                    'monthly_change_pct': round(monthly_change, 2),
+                    'direction': 'increasing' if monthly_change > 0 else 'decreasing',
+                    'significant': abs(monthly_change) > 5  # Flag if change is more than 5% per month
+                }
+        
+        return None
