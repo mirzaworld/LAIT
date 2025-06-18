@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Download, Calendar, Filter, TrendingUp, FileText, PieChart, BarChart3 } from 'lucide-react';
+import { Download, Calendar, Filter, TrendingUp, FileText, PieChart, BarChart3, Zap, RefreshCw } from 'lucide-react';
 
 const Reports: React.FC = () => {
   const [selectedReport, setSelectedReport] = useState('spend-analysis');
   const [dateRange, setDateRange] = useState('last-quarter');
+  const [generatingReport, setGeneratingReport] = useState(false);
+  const [aiAnalysisActive, setAiAnalysisActive] = useState(false);
 
   const reportTypes = [
     {
@@ -101,6 +103,54 @@ const Reports: React.FC = () => {
         </div>
       </div>
 
+      {/* AI Report Enhancement Toggle */}
+      <div className="bg-primary-50 p-4 rounded-xl border border-primary-200 mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-primary-100 rounded-full">
+              <Zap className="w-5 h-5 text-primary-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">AI-Powered Report Enhancement</h3>
+              <p className="text-sm text-gray-600">Enable AI to add predictive analysis, anomaly detection, and optimization recommendations</p>
+            </div>
+          </div>
+          <div className="flex items-center">
+            <button 
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none ${
+                aiAnalysisActive ? 'bg-primary-600' : 'bg-gray-200'
+              }`}
+              onClick={() => setAiAnalysisActive(!aiAnalysisActive)}
+            >
+              <span 
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+                  aiAnalysisActive ? 'translate-x-6' : 'translate-x-1'
+                }`} 
+              />
+            </button>
+          </div>
+        </div>
+        
+        {aiAnalysisActive && (
+          <div className="mt-3 pl-10">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+              <div className="flex items-center space-x-1">
+                <CheckCircle className="w-3 h-3 text-success-600" />
+                <span>Spend pattern prediction</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <CheckCircle className="w-3 h-3 text-success-600" />
+                <span>Vendor optimization</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <CheckCircle className="w-3 h-3 text-success-600" />
+                <span>Rate benchmarking</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Report Configuration */}
         <div className="lg:col-span-2 space-y-6">

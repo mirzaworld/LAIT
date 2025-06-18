@@ -1,54 +1,17 @@
-import React from 'react';
-import { FileText, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import React, { useState } from 'react';
+import { FileText, AlertTriangle, CheckCircle, Clock, Loader2, ExternalLink } from 'lucide-react';
+import { useInvoices } from '../hooks/useApi';
+import { useNavigate } from 'react-router-dom';
 
 const RecentInvoices: React.FC = () => {
-  const invoices = [
-    {
-      id: 'INV-2024-001',
-      vendor: 'Morrison & Foerster LLP',
-      amount: 45750,
-      status: 'approved',
-      date: '2024-01-15',
-      matter: 'IP Litigation - TechCorp',
-      risk: 'low'
-    },
-    {
-      id: 'INV-2024-002',
-      vendor: 'Baker McKenzie',
-      amount: 23400,
-      status: 'pending',
-      date: '2024-01-14',
-      matter: 'M&A Advisory',
-      risk: 'medium'
-    },
-    {
-      id: 'INV-2024-003',
-      vendor: 'Latham & Watkins',
-      amount: 67800,
-      status: 'flagged',
-      date: '2024-01-13',
-      matter: 'Regulatory Compliance',
-      risk: 'high'
-    },
-    {
-      id: 'INV-2024-004',
-      vendor: 'Skadden Arps',
-      amount: 34200,
-      status: 'processing',
-      date: '2024-01-12',
-      matter: 'Employment Law',
-      risk: 'low'
-    },
-    {
-      id: 'INV-2024-005',
-      vendor: 'White & Case',
-      amount: 52300,
-      status: 'approved',
-      date: '2024-01-11',
-      matter: 'International Trade',
-      risk: 'medium'
-    }
-  ];
+  const navigate = useNavigate();
+  const { invoices, loading, error } = useInvoices();
+  const [selectedInvoice, setSelectedInvoice] = useState<string | null>(null);
+  
+  const handleViewInvoice = (id: string) => {
+    setSelectedInvoice(id);
+    navigate(`/invoices/${id}`);
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -80,17 +43,25 @@ const RecentInvoices: React.FC = () => {
     }
   };
 
-  const getRiskBadge = (risk: string) => {
+  const getRiskBadge = (riskScore: number) => {
     const baseClasses = "px-2 py-1 text-xs font-medium rounded-full";
-    switch (risk) {
-      case 'high':
-        return `${baseClasses} bg-danger-100 text-danger-700`;
-      case 'medium':
-        return `${baseClasses} bg-warning-100 text-warning-700`;
-      case 'low':
-        return `${baseClasses} bg-success-100 text-success-700`;
-      default:
-        return `${baseClasses} bg-gray-100 text-gray-700`;
+    
+    if (riskScore >= 70) {
+      return `${baseClasses} bg-danger-100 text-danger-700`;
+    } else if (riskScore >= 30) {
+      return `${baseClasses} bg-warning-100 text-warning-700`;
+    } else {
+      return `${baseClasses} bg-success-100 text-success-700`;
+    }
+  };
+  
+  const getRiskLabel = (riskScore: number) => {
+    if (riskScore >= 70) {
+      return 'high';
+    } else if (riskScore >= 30) {
+      return 'medium';
+    } else {
+      return 'low';
     }
   };
 
@@ -101,49 +72,64 @@ const RecentInvoices: React.FC = () => {
           <h3 className="text-lg font-semibold text-gray-900">Recent Invoices</h3>
           <p className="text-sm text-gray-500">Latest invoice submissions and status</p>
         </div>
-        <button className="text-sm text-primary-600 hover:text-primary-700 font-medium">
-          View All
+        <button 
+          onClick={() => navigate('/invoices')}
+          className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center"
+        >
+          View All <ExternalLink className="ml-1 w-3 h-3" />
         </button>
       </div>
       
       <div className="overflow-hidden">
-        <div className="space-y-4">
-          {invoices.map((invoice, index) => (
-            <div 
-              key={invoice.id}
-              className="flex items-center justify-between p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors duration-200 animate-slide-up"
-              style={{ animationDelay: `${index * 50}ms` }}
-            >
-              <div className="flex items-center space-x-4">
-                <div className="flex-shrink-0">
-                  {getStatusIcon(invoice.status)}
+        {loading ? (
+          <div className="flex items-center justify-center p-8">
+            <Loader2 className="w-6 h-6 text-primary-500 animate-spin" />
+            <span className="ml-2 text-sm text-gray-500">Loading invoices...</span>
+          </div>
+        ) : error ? (
+          <div className="p-4 text-center text-danger-600 bg-danger-50 rounded-lg">
+            <p>Error loading invoices. Please try again.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {invoices.slice(0, 5).map((invoice, index) => (
+              <div 
+                key={invoice.id}
+                className="flex items-center justify-between p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors duration-200 animate-slide-up cursor-pointer"
+                style={{ animationDelay: `${index * 50}ms` }}
+                onClick={() => handleViewInvoice(invoice.id)}
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="flex-shrink-0">
+                    {getStatusIcon(invoice.status)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center space-x-2">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {invoice.vendor}
+                      </p>
+                      <span className={getRiskBadge(invoice.riskScore)}>
+                        {getRiskLabel(invoice.riskScore)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500 truncate">{invoice.matter}</p>
+                    <p className="text-xs text-gray-400">{invoice.id} • {invoice.date}</p>
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center space-x-2">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {invoice.vendor}
+                <div className="flex items-center space-x-4">
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-gray-900">
+                      ${invoice.amount.toLocaleString()}
                     </p>
-                    <span className={getRiskBadge(invoice.risk)}>
-                      {invoice.risk}
+                    <span className={getStatusBadge(invoice.status)}>
+                      {invoice.status}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-500 truncate">{invoice.matter}</p>
-                  <p className="text-xs text-gray-400">{invoice.id} • {invoice.date}</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-4">
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-gray-900">
-                    ${invoice.amount.toLocaleString()}
-                  </p>
-                  <span className={getStatusBadge(invoice.status)}>
-                    {invoice.status}
-                  </span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
