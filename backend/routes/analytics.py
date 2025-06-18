@@ -10,8 +10,8 @@ from models.matter_analyzer import MatterAnalyzer
 analytics_bp = Blueprint('analytics', __name__)
 
 @analytics_bp.route('/summary', methods=['GET'])
-@jwt_required
-def get_analytics_summary(current_user):
+@jwt_required()
+def summary():
     """Get summary analytics for dashboard"""
     session = get_db_session()
     try:
@@ -124,8 +124,8 @@ def get_analytics_summary(current_user):
         session.close()
 
 @analytics_bp.route('/vendors', methods=['GET'])
-@jwt_required
-def get_vendor_analytics(current_user):
+@jwt_required()
+def vendors():
     """Get vendor comparison analytics"""
     session = get_db_session()
     try:
@@ -203,8 +203,8 @@ def get_vendor_analytics(current_user):
         session.close()
 
 @analytics_bp.route('/forecast', methods=['GET'])
-@jwt_required
-def get_spend_forecast(current_user):
+@jwt_required()
+def forecast():
     """Get forecasted spend data"""
     session = get_db_session()
     try:
