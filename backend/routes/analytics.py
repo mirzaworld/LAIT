@@ -5,6 +5,7 @@ from auth import jwt_required, role_required
 from datetime import datetime, timedelta
 import calendar
 from models.vendor_analyzer import VendorAnalyzer
+from models.matter_analyzer import MatterAnalyzer
 
 analytics_bp = Blueprint('analytics', __name__)
 
@@ -378,3 +379,103 @@ def get_vendor_risk_profile(current_user, vendor_id):
         return jsonify(profile)
     except Exception as e:
         return jsonify({'error': f'Error generating vendor risk profile: {str(e)}'}), 500
+
+@analytics_bp.route('/matters', methods=['GET'])
+@jwt_required
+def get_matter_analytics(current_user):
+    """Get matter comparison analytics"""
+    session = get_db_session()
+    try:
+        # Get date range parameters
+        date_from = request.args.get('date_from')
+        date_to = request.args.get('date_to')
+        
+        # Default to last 12 months if not specified
+        if not date_from:
+            date_from = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
+        if not date_to:
+            date_to = datetime.now().strftime('%Y-%m-%d')
+            
+        date_from_obj = datetime.strptime(date_from, '%Y-%m-%d')
+        date_to_obj = datetime.strptime(date_to, '%Y-%m-%d')
+        
+        # Get matter performance data
+        matter_data = session.query(
+            Matter.id,
+            Matter.name,
+            func.sum(Invoice.amount).label('total_spend'),
+            func.count(Invoice.id).label('invoice_count'),
+            func.avg(Invoice.risk_score).label('avg_risk_score'),
+            func.avg(LineItem.rate).label('avg_rate')
+        ).join(Invoice, Invoice.matter_id == Matter.id)\
+         .outerjoin(LineItem, LineItem.invoice_id == Invoice.id)\
+         .filter(Invoice.date >= date_from_obj, Invoice.date <= date_to_obj)\
+         .group_by(Matter.id, Matter.name)\
+         .order_by(func.sum(Invoice.amount).desc())\
+         .all()
+         
+        matters = []
+        for m in matter_data:
+            # Calculate efficiency score (placeholder)
+            efficiency_score = 100 - (10 * (m.avg_risk_score or 0))
+            if efficiency_score < 0:
+                efficiency_score = 0
+                
+            matters.append({
+                'id': m.id,
+                'name': m.name,
+                'total_spend': m.total_spend or 0,
+                'invoice_count': m.invoice_count or 0,
+                'avg_risk_score': m.avg_risk_score or 0,
+                'avg_hourly_rate': m.avg_rate or 0,
+                'efficiency_score': efficiency_score
+            })
+            
+        # Calculate global average metrics
+        global_avg_rate = session.query(func.avg(LineItem.rate))\
+            .join(Invoice, LineItem.invoice_id == Invoice.id)\
+            .filter(Invoice.date >= date_from_obj, Invoice.date <= date_to_obj)\
+            .scalar() or 0
+            
+        global_avg_risk = session.query(func.avg(Invoice.risk_score))\
+            .filter(Invoice.date >= date_from_obj, Invoice.date <= date_to_obj)\
+            .scalar() or 0
+            
+        return jsonify({
+            'matters': matters,
+            'benchmarks': {
+                'avg_hourly_rate': global_avg_rate,
+                'avg_risk_score': global_avg_risk
+            },
+            'date_range': {
+                'from': date_from,
+                'to': date_to
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Error generating matter analytics: {str(e)}'}), 500
+    finally:
+        session.close()
+
+@analytics_bp.route('/matter/<matter_id>/risk_profile', methods=['GET'])
+@jwt_required
+def get_matter_risk_profile(current_user, matter_id):
+    """Get advanced risk profile and analytics for a specific matter."""
+    try:
+        analyzer = MatterAnalyzer()
+        profile = analyzer.analyze_matter_risk(matter_id)
+        return jsonify(profile)
+    except Exception as e:
+        return jsonify({'error': f'Error generating matter risk profile: {str(e)}'}), 500
+
+@analytics_bp.route('/matter/<matter_id>/forecast', methods=['GET'])
+@jwt_required
+def get_matter_expense_forecast(current_user, matter_id):
+    """Get expense forecast for a specific matter."""
+    try:
+        analyzer = MatterAnalyzer()
+        forecast = analyzer.forecast_expenses(matter_id)
+        return jsonify(forecast)
+    except Exception as e:
+        return jsonify({'error': f'Error generating matter expense forecast: {str(e)}'}), 500
