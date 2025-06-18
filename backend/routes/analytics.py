@@ -4,6 +4,7 @@ from db.database import get_db_session, Invoice, LineItem, Vendor, Matter, RiskF
 from auth import jwt_required, role_required
 from datetime import datetime, timedelta
 import calendar
+from models.vendor_analyzer import VendorAnalyzer
 
 analytics_bp = Blueprint('analytics', __name__)
 
@@ -366,3 +367,14 @@ def get_risk_factor_analysis(current_user):
         return jsonify({'error': f'Error generating risk analysis: {str(e)}'}), 500
     finally:
         session.close()
+
+@analytics_bp.route('/vendor/<vendor_id>/risk_profile', methods=['GET'])
+@jwt_required
+def get_vendor_risk_profile(current_user, vendor_id):
+    """Get advanced risk profile and analytics for a specific vendor."""
+    try:
+        analyzer = VendorAnalyzer()
+        profile = analyzer.advanced_risk_profile(vendor_id)
+        return jsonify(profile)
+    except Exception as e:
+        return jsonify({'error': f'Error generating vendor risk profile: {str(e)}'}), 500
