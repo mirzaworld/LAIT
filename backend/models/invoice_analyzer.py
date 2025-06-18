@@ -726,3 +726,216 @@ class InvoiceAnalyzer:
                 }
         
         return None
+    
+    def advanced_anomaly_detection(self, invoice_data):
+        """
+        Advanced anomaly detection for legal invoices.
+        Uses multiple methods to detect unusual patterns:
+        1. Statistical anomaly detection
+        2. Pattern detection in line items
+        3. Temporal analysis against historical data
+        4. NLP-based description analysis
+        """
+        anomalies = []
+        risk_score = 0
+        recommendation = []
+        
+        # Process the invoice
+        processed_data = self._preprocess_invoice(invoice_data)
+        
+        # 1. Statistical anomalies
+        risk_analysis = self._analyze_risk(processed_data)
+        anomalies.extend(risk_analysis.get('anomalies', []))
+        risk_score = risk_analysis.get('risk_score', 0)
+        
+        # 2. Billing pattern anomalies
+        pattern_anomalies = self.detect_billing_patterns(invoice_data.get('line_items', []))
+        anomalies.extend(pattern_anomalies)
+        
+        # 3. Temporal anomalies (if we have historical data)
+        if hasattr(self, 'historical_data') and self.historical_data is not None:
+            temporal_anomalies = self.detect_temporal_anomalies(invoice_data)
+            anomalies.extend(temporal_anomalies)
+        
+        # 4. NLP-based description anomalies
+        text_anomalies = self.analyze_descriptions(invoice_data)
+        anomalies.extend(text_anomalies)
+        
+        # Update risk score based on the number of anomalies
+        if anomalies:
+            additional_risk = min(len(anomalies) * 5, 30)  # Max 30 additional points
+            risk_score = min(risk_score + additional_risk, 100)  # Cap at 100
+        
+        # Generate recommendations
+        if risk_score >= 80:
+            recommendation.append({
+                'priority': 'high',
+                'action': 'Manual review required',
+                'details': 'Multiple high-risk anomalies detected'
+            })
+        elif risk_score >= 60:
+            recommendation.append({
+                'priority': 'medium',
+                'action': 'Selective review recommended',
+                'details': 'Some suspicious patterns detected'
+            })
+        
+        return {
+            'anomalies': anomalies,
+            'risk_score': risk_score,
+            'recommendation': recommendation
+        }
+    
+    def detect_billing_patterns(self, line_items):
+        """
+        Detect suspicious patterns in billing line items.
+        Looks for:
+        - Block billing (vague descriptions with high hours)
+        - Rate inconsistencies for same timekeeper
+        - Just-below-threshold amounts
+        - Non-billable activities
+        - Duplicate entries
+        """
+        anomalies = []
+        
+        if not line_items:
+            return anomalies
+        
+        # Check for block billing (single entries with high hours)
+        for item in line_items:
+            hours = float(item.get('hours', 0))
+            description = item.get('description', '')
+            
+            # Check for block billing (high hours with vague description)
+            if hours > 8 and len(description.split()) < 6:
+                anomalies.append({
+                    'type': 'block_billing',
+                    'severity': 'medium',
+                    'description': f"Potential block billing: {hours} hours with vague description",
+                    'line_item': item.get('description', 'Unknown')
+                })
+            
+            # Check for non-billable activities
+            non_billable_keywords = ['administrative', 'filing', 'organizing', 'internal meeting']
+            if any(keyword in description.lower() for keyword in non_billable_keywords):
+                anomalies.append({
+                    'type': 'non_billable_activity',
+                    'severity': 'high',
+                    'description': f"Potentially non-billable activity: {description}",
+                    'line_item': item.get('description', 'Unknown')
+                })
+        
+        # Check for rate inconsistencies for the same timekeeper
+        timekeepers = {}
+        for item in line_items:
+            timekeeper = item.get('timekeeper', '')
+            rate = float(item.get('rate', 0))
+            
+            if timekeeper in timekeepers:
+                prev_rate = timekeepers[timekeeper]
+                if abs(rate - prev_rate) > 0:  # Any rate difference
+                    anomalies.append({
+                        'type': 'rate_inconsistency',
+                        'severity': 'medium',
+                        'description': f"Rate inconsistency for {timekeeper}: ${prev_rate} vs ${rate}",
+                        'line_item': item.get('description', 'Unknown')
+                    })
+            else:
+                timekeepers[timekeeper] = rate
+        
+        # Check for duplicate entries (same description, hours, and timekeeper)
+        descriptions = {}
+        for i, item in enumerate(line_items):
+            key = (item.get('description', ''), item.get('hours', 0), item.get('timekeeper', ''))
+            
+            if key in descriptions:
+                anomalies.append({
+                    'type': 'duplicate_entry',
+                    'severity': 'high',
+                    'description': f"Potential duplicate billing: {item.get('description', 'Unknown')}",
+                    'line_item': item.get('description', 'Unknown')
+                })
+            else:
+                descriptions[key] = i
+        
+        return anomalies
+    
+    def detect_temporal_anomalies(self, invoice_data):
+        """
+        Detect anomalies by comparing with historical data.
+        - Unusual increases in rates
+        - Sudden changes in staffing patterns
+        - Abnormal invoice frequency
+        """
+        anomalies = []
+        
+        # This is a mock implementation since we don't have real historical data
+        # In a real system, this would query a database of past invoices
+        
+        # Mock detection of rate increases
+        mock_historical_rate = 400  # Pretend this is from historical data
+        current_rate = self._get_average_rate(invoice_data.get('line_items', []))
+        
+        if current_rate > mock_historical_rate * 1.2:  # 20% increase
+            anomalies.append({
+                'type': 'rate_increase',
+                'severity': 'medium',
+                'description': f"Rate increased by {((current_rate/mock_historical_rate)-1)*100:.1f}% from historical average",
+                'details': f"Current: ${current_rate:.2f}, Historical: ${mock_historical_rate:.2f}"
+            })
+        
+        # Mock detection of unusual invoice frequency
+        # In a real implementation, this would check the time since last invoice
+        
+        return anomalies
+    
+    def analyze_descriptions(self, invoice_data):
+        """
+        Use NLP to analyze line item descriptions for anomalies:
+        - Vague descriptions
+        - Non-specific work activities
+        - Sensitive or unusual terms
+        """
+        anomalies = []
+        
+        line_items = invoice_data.get('line_items', [])
+        if not line_items:
+            return anomalies
+        
+        vague_terms = ['review', 'analyze', 'attention to', 'work on', 'handle', 'deal with']
+        sensitive_terms = ['ethics', 'complaint', 'investigate', 'error', 'mistake', 'correct']
+        
+        for item in line_items:
+            description = item.get('description', '').lower()
+            hours = float(item.get('hours', 0))
+            
+            # Check for vague descriptions with significant hours
+            if hours > 4 and any(term in description for term in vague_terms) and len(description.split()) < 5:
+                anomalies.append({
+                    'type': 'vague_description',
+                    'severity': 'low',
+                    'description': f"Vague description for {hours} hours: '{item.get('description', '')}'",
+                    'line_item': item.get('description', 'Unknown')
+                })
+            
+            # Check for sensitive terms
+            if any(term in description for term in sensitive_terms):
+                anomalies.append({
+                    'type': 'sensitive_content',
+                    'severity': 'medium',
+                    'description': f"Sensitive terms detected in: '{item.get('description', '')}'",
+                    'line_item': item.get('description', 'Unknown')
+                })
+        
+        return anomalies
+    
+    def _get_average_rate(self, line_items):
+        """Helper method to calculate average rate from line items"""
+        if not line_items:
+            return 0
+            
+        rates = [float(item.get('rate', 0)) for item in line_items if 'rate' in item]
+        if not rates:
+            return 0
+            
+        return sum(rates) / len(rates)
