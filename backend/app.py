@@ -1,12 +1,21 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_socketio import SocketIO
+from flask_migrate import Migrate
 import os
 from dotenv import load_dotenv
-from models.invoice_analyzer import InvoiceAnalyzer
-from models.risk_predictor import RiskPredictor
-from models.vendor_analyzer import VendorAnalyzer
-from db.database import init_db, get_db_session
+
+# Import database models and migrations
+from models import db, User, Invoice, Vendor
+
+# Import ML models
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from ml.models.invoice_analyzer import InvoiceAnalyzer
+from ml.models.risk_predictor import RiskPredictor
+from ml.models.vendor_analyzer import VendorAnalyzer
+
+# Import services and routes
 from services.notification_service import NotificationService
 from routes.invoice import invoice_bp
 from routes.auth import auth_bp
@@ -20,13 +29,18 @@ load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app)
 
-# Load configuration
-if os.environ.get('FLASK_ENV') == 'production':
-    app.config.from_object('config.ProductionConfig')
-else:
-    app.config.from_object('config.DevelopmentConfig')
+# Configure the app
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@localhost/legalspend')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-change-in-prod')
+app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'jwt-secret-change-in-prod')
+
+# Initialize extensions
+db.init_app(app)
+migrate = Migrate(app, db)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'development_key')
 
@@ -37,7 +51,12 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 notification_service = NotificationService(socketio)
 
 # Initialize database
-init_db()
+# Initialize blueprints
+app.register_blueprint(auth_bp, url_prefix='/api/auth')
+app.register_blueprint(invoice_bp, url_prefix='/api/invoices')
+app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
+app.register_blueprint(admin_bp, url_prefix='/api/admin')
+app.register_blueprint(notification_bp, url_prefix='/api/notifications')
 
 # Initialize ML models
 invoice_analyzer = InvoiceAnalyzer()

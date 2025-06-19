@@ -4,10 +4,10 @@ import os
 # Load environment variables
 load_dotenv()
 
-# Database configuration
+# Database configuration updated for production
 DB_USER = os.getenv('DB_USER', 'postgres')
-DB_PASSWORD = os.getenv('DB_PASSWORD', 'password')
-DB_HOST = os.getenv('DB_HOST', 'localhost')
+DB_PASSWORD = os.getenv('DB_PASSWORD', 'securepassword')
+DB_HOST = os.getenv('DB_HOST', 'db')  # Use Docker service name
 DB_PORT = os.getenv('DB_PORT', '5432')
 DB_NAME = os.getenv('DB_NAME', 'legalspend')
 
