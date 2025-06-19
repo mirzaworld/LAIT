@@ -125,8 +125,8 @@ def summary(current_user):
         session.close()
 
 @analytics_bp.route('/vendors', methods=['GET'])
-@jwt_required()
-def vendors():
+@jwt_required
+def vendors(current_user):
     """Get vendor comparison analytics"""
     session = get_db_session()
     try:
