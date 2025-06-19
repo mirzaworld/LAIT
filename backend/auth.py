@@ -1,6 +1,7 @@
 from flask import request, jsonify, current_app
 from functools import wraps
 import jwt
+from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
 import datetime
 from backend.db.database import get_db_session
 from backend.models.db_models import User
@@ -10,36 +11,24 @@ from werkzeug.security import check_password_hash
 def jwt_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        token = None
-        
-        # Check if token is in headers
-        if 'Authorization' in request.headers:
-            auth_header = request.headers['Authorization']
-            if auth_header.startswith('Bearer '):
-                token = auth_header.split(' ')[1]
-                
-        if not token:
-            return jsonify({'message': 'Authentication token is required'}), 401
-            
         try:
-            # Decode token
-            data = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=["HS256"])
+            # Use Flask-JWT-Extended to verify token
+            verify_jwt_in_request()
+            user_id = get_jwt_identity()
             
             # Get current user
             session = get_db_session()
-            current_user = session.query(User).filter_by(id=data['user_id']).first()
+            current_user = session.query(User).filter_by(id=user_id).first()
             session.close()
             
             if not current_user:
                 return jsonify({'message': 'User not found'}), 401
                 
-        except jwt.ExpiredSignatureError:
-            return jsonify({'message': 'Token has expired'}), 401
-        except jwt.InvalidTokenError:
-            return jsonify({'message': 'Invalid token'}), 401
+            # Pass the current_user to the route
+            return f(current_user, *args, **kwargs)
             
-        # Pass the current_user to the route
-        return f(current_user, *args, **kwargs)
+        except Exception as e:
+            return jsonify({'message': str(e)}), 401
             
     return decorated
 

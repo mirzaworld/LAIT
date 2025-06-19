@@ -5,6 +5,7 @@ from flask_migrate import Migrate
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
+from flask_jwt_extended import JWTManager
 import os
 from dotenv import load_dotenv
 import logging
@@ -56,6 +57,9 @@ def create_app():
             migrate = Migrate(flask_app, db)
         except ImportError:
             logger.warning("Database models not found, skipping database initialization")
+    
+    # Initialize JWT Manager
+    jwt = JWTManager(flask_app)
     
     # Security configurations
     if flask_app.config.get('ENV') == 'production':
