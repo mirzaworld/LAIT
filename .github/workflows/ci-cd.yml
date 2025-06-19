@@ -113,7 +113,7 @@ jobs:
         docker push $ECR_REGISTRY/lait-frontend:$IMAGE_TAG
         
     - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
+      uses: hashicorp/setup-terraform@v3
       
     - name: Terraform Init
       run: |
