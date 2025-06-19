@@ -204,8 +204,8 @@ def vendors(current_user):
         session.close()
 
 @analytics_bp.route('/forecast', methods=['GET'])
-@jwt_required()
-def forecast():
+@jwt_required
+def forecast(current_user):
     """Get forecasted spend data"""
     session = get_db_session()
     try:
@@ -482,8 +482,8 @@ def get_matter_expense_forecast(current_user, matter_id):
         return jsonify({'error': f'Error generating matter expense forecast: {str(e)}'}), 500
 
 @analytics_bp.route('/vendor-analytics', methods=['GET'])
-@jwt_required()
-def vendor_analytics():
+@jwt_required
+def vendor_analytics(current_user):
     """Get analytics for top vendors"""
     session = get_db_session()
     try:
@@ -500,8 +500,8 @@ def vendor_analytics():
         return jsonify({'message': str(e)}), 500
 
 @analytics_bp.route('/spend-forecast', methods=['GET'])
-@jwt_required()
-def spend_forecast():
+@jwt_required
+def spend_forecast(current_user):
     """Get spend forecast for the next period"""
     session = get_db_session()
     try:

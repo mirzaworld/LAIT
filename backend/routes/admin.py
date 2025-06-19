@@ -235,9 +235,9 @@ def get_admin_dashboard(current_user):
         session.close()
 
 @admin_bp.route('/settings', methods=['GET', 'POST'])
-@jwt_required()
+@jwt_required
 @role_required('admin')
-def manage_settings():
+def manage_settings(current_user):
     """Get or update application settings"""
     if request.method == 'GET':
         settings = get_settings()
@@ -249,9 +249,9 @@ def manage_settings():
         return jsonify({'message': 'Settings updated successfully'})
 
 @admin_bp.route('/audit-logs', methods=['GET'])
-@jwt_required()
+@jwt_required
 @role_required('admin')
-def audit_logs():
+def audit_logs(current_user):
     """Fetch audit logs"""
     try:
         # Mocked audit logs (replace with actual implementation)
