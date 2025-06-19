@@ -2,6 +2,8 @@ from flask import Blueprint, request, jsonify
 from db.database import get_db_session, User
 from werkzeug.security import generate_password_hash, check_password_hash
 from auth import generate_token, authenticate_user, jwt_required, role_required
+from flask_jwt_extended import get_jwt_identity
+from ..models import db
 import re
 
 auth_bp = Blueprint('auth', __name__)
@@ -203,35 +205,48 @@ def update_user(current_user, user_id):
     finally:
         session.close()
 
-@auth_bp.route('/password', methods=['PUT'])
-@jwt_required
-def change_password(current_user):
-    """Change user's password"""
+@auth_bp.route('/change-password', methods=['POST'])
+@jwt_required()
+def change_password():
+    """Allow users to change their password"""
+    user_id = get_jwt_identity()
     data = request.json
-    
-    if not data or 'current_password' not in data or 'new_password' not in data:
-        return jsonify({'message': 'Missing current or new password'}), 400
-        
-    current_password = data['current_password']
-    new_password = data['new_password']
-    
-    # Check current password
-    if not check_password_hash(current_user.password_hash, current_password):
-        return jsonify({'message': 'Current password is incorrect'}), 401
-        
-    # Validate new password
-    if len(new_password) < 8:
-        return jsonify({'message': 'New password must be at least 8 characters'}), 400
-        
-    session = get_db_session()
-    try:
-        user = session.query(User).filter_by(id=current_user.id).first()
-        user.password_hash = generate_password_hash(new_password)
-        session.commit()
-        
-        return jsonify({'message': 'Password changed successfully'})
-    except Exception as e:
-        session.rollback()
-        return jsonify({'message': f'Error changing password: {str(e)}'}), 500
-    finally:
-        session.close()
+
+    if not data or 'old_password' not in data or 'new_password' not in data:
+        return jsonify({'message': 'Missing required fields'}), 400
+
+    old_password = data.get('old_password')
+    new_password = data.get('new_password')
+
+    user = User.query.get(user_id)
+
+    if not user or not check_password_hash(user.password, old_password):
+        return jsonify({'message': 'Invalid old password'}), 401
+
+    user.password = generate_password_hash(new_password)
+    db.session.commit()
+
+    return jsonify({'message': 'Password changed successfully'})
+
+@auth_bp.route('/role-management', methods=['POST'])
+@jwt_required()
+@role_required('admin')
+def role_management():
+    """Allow admin to update user roles"""
+    data = request.json
+
+    if not data or 'user_id' not in data or 'new_role' not in data:
+        return jsonify({'message': 'Missing required fields'}), 400
+
+    user_id = data.get('user_id')
+    new_role = data.get('new_role')
+
+    user = User.query.get(user_id)
+
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    user.role = new_role
+    db.session.commit()
+
+    return jsonify({'message': 'User role updated successfully'})

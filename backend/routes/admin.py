@@ -233,3 +233,32 @@ def get_admin_dashboard(current_user):
         return jsonify({'error': f'Error retrieving admin dashboard: {str(e)}'}), 500
     finally:
         session.close()
+
+@admin_bp.route('/settings', methods=['GET', 'POST'])
+@jwt_required()
+@role_required('admin')
+def manage_settings():
+    """Get or update application settings"""
+    if request.method == 'GET':
+        settings = get_settings()
+        return jsonify(settings)
+
+    if request.method == 'POST':
+        new_settings = request.json
+        save_settings(new_settings)
+        return jsonify({'message': 'Settings updated successfully'})
+
+@admin_bp.route('/audit-logs', methods=['GET'])
+@jwt_required()
+@role_required('admin')
+def audit_logs():
+    """Fetch audit logs"""
+    try:
+        # Mocked audit logs (replace with actual implementation)
+        logs = [
+            {'timestamp': '2025-06-18T12:00:00Z', 'action': 'User login', 'user_id': 1},
+            {'timestamp': '2025-06-18T12:05:00Z', 'action': 'Invoice upload', 'user_id': 2},
+        ]
+        return jsonify(logs)
+    except Exception as e:
+        return jsonify({'message': str(e)}), 500

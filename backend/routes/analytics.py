@@ -479,3 +479,40 @@ def get_matter_expense_forecast(current_user, matter_id):
         return jsonify(forecast)
     except Exception as e:
         return jsonify({'error': f'Error generating matter expense forecast: {str(e)}'}), 500
+
+@analytics_bp.route('/vendor-analytics', methods=['GET'])
+@jwt_required()
+def vendor_analytics():
+    """Get analytics for top vendors"""
+    session = get_db_session()
+    try:
+        # Fetch top vendors by spend
+        top_vendors = session.query(Vendor.name, func.sum(Invoice.amount).label('total_spend'))\
+            .join(Invoice, Vendor.id == Invoice.vendor_id)\
+            .group_by(Vendor.name)\
+            .order_by(desc('total_spend'))\
+            .limit(10).all()
+
+        result = [{'vendor_name': v[0], 'total_spend': v[1]} for v in top_vendors]
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'message': str(e)}), 500
+
+@analytics_bp.route('/spend-forecast', methods=['GET'])
+@jwt_required()
+def spend_forecast():
+    """Get spend forecast for the next period"""
+    session = get_db_session()
+    try:
+        # Fetch historical spend data
+        historical_data = session.query(Invoice.date, func.sum(Invoice.amount).label('total_spend'))\
+            .group_by(Invoice.date)\
+            .order_by(Invoice.date).all()
+
+        # Use forecasting model (mocked for now)
+        forecast_model = MatterAnalyzer()
+        forecast = forecast_model.forecast_spend(historical_data)
+
+        return jsonify({'forecast': forecast})
+    except Exception as e:
+        return jsonify({'message': str(e)}), 500

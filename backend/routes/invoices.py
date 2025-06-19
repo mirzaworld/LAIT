@@ -7,6 +7,7 @@ from ..models import db, Invoice, InvoiceLine
 from ..services.s3_service import S3Service
 from ..services.pdf_parser_service import PDFParserService
 import tempfile
+import os
 
 invoices_bp = Blueprint('invoices', __name__, url_prefix='/api/invoices')
 
@@ -57,21 +58,54 @@ def get_invoice(invoice_id):
         'lines': lines
     })
 
-@invoices_bp.route('', methods=['POST'])
+@invoices_bp.route('/upload', methods=['POST'])
 @jwt_required()
 def upload_invoice():
+    """Upload a new invoice (PDF) and save parsed data to the database"""
+    user_id = get_jwt_identity()
     if 'file' not in request.files:
-        return jsonify({'msg': 'No file uploaded'}), 400
+        return jsonify({'message': 'No file provided'}), 400
+
     file = request.files['file']
-    if not file.filename.lower().endswith('.pdf'):
-        return jsonify({'msg': 'Only PDF files allowed'}), 400
+    if file.filename == '':
+        return jsonify({'message': 'No selected file'}), 400
+
+    # Save file temporarily
+    with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+        file.save(temp_file.name)
+        temp_file_path = temp_file.name
+
+    # Parse PDF
+    parser = PDFParserService()
+    parsed_data = parser.parse_pdf(temp_file_path)
+
+    # Save to database
+    invoice = Invoice(
+        vendor_name=parsed_data['vendor_name'],
+        invoice_number=parsed_data['invoice_number'],
+        date=parsed_data['date'],
+        total_amount=parsed_data['total_amount'],
+        overspend_risk=parsed_data['overspend_risk'],
+        processed=True,
+        pdf_s3_key=parsed_data['pdf_s3_key']
+    )
+    db.session.add(invoice)
+    db.session.commit()
+
+    # Clean up temporary file
+    os.remove(temp_file_path)
+
+    return jsonify({'message': 'Invoice uploaded successfully', 'invoice_id': invoice.id}), 201
+
+@invoices_bp.route('/download/<int:invoice_id>', methods=['GET'])
+@jwt_required()
+def download_invoice(invoice_id):
+    """Download invoice PDF from S3"""
+    inv = Invoice.query.get_or_404(invoice_id)
     s3 = S3Service()
-    key = s3.upload_file(file)
-    # Save file temporarily for parsing
-    file.seek(0)
-    with tempfile.NamedTemporaryFile(suffix='.pdf') as tmp:
-        file.save(tmp.name)
-        parser = PDFParserService()
-        invoice_data = parser.parse_invoice(tmp.name)
-    # TODO: Save invoice_data to DB, trigger ML, etc.
-    return jsonify({'msg': 'Invoice uploaded', 's3_key': key, 'parsed': invoice_data})
+    file_url = s3.generate_presigned_url(inv.pdf_s3_key) if inv.pdf_s3_key else None
+
+    if not file_url:
+        return jsonify({'message': 'File not found'}), 404
+
+    return jsonify({'file_url': file_url})
