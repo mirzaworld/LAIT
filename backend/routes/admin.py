@@ -111,9 +111,9 @@ def trigger_model_retrain():
         return jsonify({'error': f'Failed to start retraining: {str(e)}'}), 500
 
 @admin_bp.route('/audit-logs', methods=['GET'])
-@jwt_required
+@jwt_required()
 @role_required(['admin'])
-def get_audit_logs(current_user):
+def get_audit_logs():
     """Get system audit logs"""
     # In a real implementation, we would query an AuditLog table
     # For now, we'll return dummy data
@@ -183,9 +183,9 @@ def get_audit_logs(current_user):
     })
 
 @admin_bp.route('/dashboard', methods=['GET'])
-@jwt_required
+@jwt_required()
 @role_required(['admin'])
-def get_admin_dashboard(current_user):
+def get_admin_dashboard():
     """Get admin dashboard statistics"""
     session = get_db_session()
     try:
@@ -236,9 +236,9 @@ def get_admin_dashboard(current_user):
         session.close()
 
 @admin_bp.route('/settings', methods=['GET', 'POST'])
-@jwt_required
-@role_required('admin')
-def manage_settings(current_user):
+@jwt_required()
+@role_required(['admin'])
+def manage_settings():
     """Get or update application settings"""
     if request.method == 'GET':
         settings = get_settings()
@@ -249,10 +249,10 @@ def manage_settings(current_user):
         save_settings(new_settings)
         return jsonify({'message': 'Settings updated successfully'})
 
-@admin_bp.route('/audit-logs', methods=['GET'])
-@jwt_required
-@role_required('admin')
-def audit_logs(current_user):
+@admin_bp.route('/audit-logs/report', methods=['GET'])
+@jwt_required()
+@role_required(['admin'])
+def audit_logs():
     """Fetch audit logs"""
     try:
         # Mocked audit logs (replace with actual implementation)
