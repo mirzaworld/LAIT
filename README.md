@@ -1,33 +1,178 @@
 # LAIT - Legal AI Spend Optimizer
 
-An AI-powered platform to help in-house legal departments reduce outside counsel costs through intelligent invoice review, spend analytics, and vendor optimization.
+An enterprise-grade AI platform that helps in-house legal departments optimize outside counsel spend through intelligent invoice review, spend analytics, and vendor optimization.
 
 ## 🚀 Features
 
-- **AI Invoice Analysis**: Automatically flag anomalies and billing pattern outliers
-- **Predictive Spend Analytics**: Forecast future costs and identify budget risks
-- **Vendor Performance Tracking**: Compare law firm performance metrics
-- **Optimization Recommendations**: Get actionable insights to reduce costs
-- **PDF Invoice Upload**: Upload and automatically extract data from invoice PDFs
-- **Role-Based Access Control**: Secure user management with admin and regular user roles
-- **Real-Time Notifications**: WebSocket-powered alerts for invoice processing and risks
+- **AI Invoice Analysis**
+  - Automatic anomaly detection in billing entries
+  - PDF parsing and data extraction
+  - Smart validation of line items
 
-## 📊 Technical Overview
+- **Advanced Analytics**
+  - Predictive spend forecasting
+  - Vendor performance clustering
+  - Interactive dashboards
+  - Custom report generation
+
+- **Security & Compliance**
+  - Role-based access control (RBAC)
+  - Audit logging
+  - HTTPS enforcement
+  - Rate limiting
+  - Secure file handling
+
+- **Real-Time Updates**
+  - WebSocket notifications
+  - Processing status tracking
+  - Instant alerts for anomalies
+
+## 📊 Technical Stack
 
 ### Frontend
-- React with TypeScript
-- React Router for navigation
-- Chart.js for data visualization
+
+- React 18 with TypeScript
 - TailwindCSS for styling
-- Socket.io client for real-time updates
+- Chart.js for visualizations
+- Socket.io for real-time updates
 - JWT authentication
+- Production-ready build pipeline
 
 ### Backend
-- Python Flask API with RESTful endpoints
-- Flask-SocketIO for real-time communication
-- SQLAlchemy ORM
-- JWT-based authentication with role-based access
-- Celery for background tasks
+
+- Python 3.11+ with Flask
+- PostgreSQL for data storage
+- Redis for caching and Celery
+- AWS S3 for file storage
+- ML pipeline with scikit-learn & XGBoost
+- Comprehensive API documentation
+
+### Infrastructure
+
+- Docker and Docker Compose for containerization
+- AWS ECS for container orchestration
+- AWS RDS for managed PostgreSQL
+- AWS S3 for file storage
+- AWS ElastiCache for Redis
+- Terraform for infrastructure as code
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Docker Desktop
+- AWS CLI configured
+- Node.js 18+
+- Python 3.11+
+
+### Local Development
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/yourusername/LAIT.git
+cd LAIT
+```
+
+2. Set up environment variables:
+
+```bash
+cp .env.example .env
+# Edit .env with your configuration
+```
+
+3. Start the development environment:
+
+```bash
+docker-compose up -d
+```
+
+4. Install frontend dependencies:
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+The application will be available at:
+
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:5000
+- API Documentation: http://localhost:5000/api/docs
+
+### Running Tests
+
+Backend tests:
+
+```bash
+cd backend
+pytest
+```
+
+Frontend tests:
+
+```bash
+cd frontend
+npm test
+```
+
+## 🌐 Deployment
+
+### AWS Deployment
+
+1. Configure AWS credentials:
+
+```bash
+aws configure
+```
+
+2. Deploy infrastructure:
+
+```bash
+cd terraform
+terraform init
+terraform apply
+```
+
+3. Push Docker images:
+
+```bash
+docker build -t lait-backend ./backend
+docker build -t lait-frontend .
+# Tag and push to ECR
+```
+
+## 📚 Documentation
+
+- API documentation is available at `/api/docs`
+- ML model documentation in `/backend/ml/README.md`
+- Deployment guide in `/docs/deployment.md`
+
+## 🔒 Security Features
+
+- HTTPS enforcement in production
+- JWT authentication with refresh tokens
+- Rate limiting on sensitive endpoints
+- Input validation and sanitization
+- Regular security audits
+- Comprehensive audit logging
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 💬 Support
+
+For support, please open an issue in the GitHub repository or contact the maintainers.
 - scikit-learn ML models (Isolation Forest, XGBoost)
 - PDF processing (pdfplumber)
 - PostgreSQL database

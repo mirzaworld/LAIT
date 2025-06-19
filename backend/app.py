@@ -1,7 +1,10 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, redirect
 from flask_cors import CORS
 from flask_socketio import SocketIO
 from flask_migrate import Migrate
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_talisman import Talisman
 import os
 from dotenv import load_dotenv
 
@@ -11,9 +14,10 @@ from models import db, User, Invoice, Vendor
 # Import ML models
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from ml.models.invoice_analyzer import InvoiceAnalyzer
+from ml.models.outlier_detector import OutlierDetector
 from ml.models.risk_predictor import RiskPredictor
 from ml.models.vendor_analyzer import VendorAnalyzer
+from models.invoice_analyzer import InvoiceAnalyzer
 
 # Import services and routes
 from services.notification_service import NotificationService
@@ -29,7 +33,31 @@ load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app)
+app.config.from_object(config.Config)
+
+# Security configurations
+if app.config['ENV'] == 'production':
+    # Enable HTTPS
+    Talisman(app, 
+             force_https=True,
+             strict_transport_security=True,
+             session_cookie_secure=True)
+
+    # Configure CORS for production
+    CORS(app, 
+         resources={r"/api/*": {"origins": [app.config['FRONTEND_URL']]}},
+         supports_credentials=True)
+else:
+    # Development CORS settings
+    CORS(app)
+
+# Configure rate limiting
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri=app.config['REDIS_URL']
+)
 
 # Configure the app
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@localhost/legalspend')
@@ -40,9 +68,6 @@ app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'jwt-secret-change-in
 # Initialize extensions
 db.init_app(app)
 migrate = Migrate(app, db)
-socketio = SocketIO(app, cors_allowed_origins="*")
-
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'development_key')
 
 # Initialize SocketIO
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -50,8 +75,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # Initialize services
 notification_service = NotificationService(socketio)
 
-# Initialize database
-# Initialize blueprints
+# Register blueprints
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(invoice_bp, url_prefix='/api/invoices')
 app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
@@ -59,13 +83,9 @@ app.register_blueprint(admin_bp, url_prefix='/api/admin')
 app.register_blueprint(notification_bp, url_prefix='/api/notifications')
 
 # Initialize ML models
-invoice_analyzer = InvoiceAnalyzer()
+outlier_detector = OutlierDetector()
 risk_predictor = RiskPredictor()
 vendor_analyzer = VendorAnalyzer()
-
-# Register blueprints
-app.register_blueprint(invoice_bp, url_prefix='/api/invoices')
-app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
 app.register_blueprint(admin_bp, url_prefix='/api/admin')
 app.register_blueprint(notification_bp, url_prefix='/api/notifications')

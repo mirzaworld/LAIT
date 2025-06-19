@@ -1,0 +1,232 @@
+openapi: 3.0.0
+info:
+  title: Legal AI Spend Optimizer API
+  description: API for managing and analyzing legal invoices
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:5000/api
+    description: Development server
+  - url: https://api.lait.example.com/api
+    description: Production server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [user, admin]
+
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: integer
+        vendor_id:
+          type: integer
+        vendor_name:
+          type: string
+        client_name:
+          type: string
+        matter:
+          type: string
+        invoice_number:
+          type: string
+        date:
+          type: string
+          format: date
+        total_amount:
+          type: number
+        pdf_s3_key:
+          type: string
+        uploaded_by:
+          type: integer
+        uploaded_at:
+          type: string
+          format: date-time
+        processed:
+          type: boolean
+        overspend_risk:
+          type: boolean
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/login:
+    post:
+      security: []
+      tags:
+        - Authentication
+      summary: Login to get JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+
+  /invoices:
+    post:
+      tags:
+        - Invoices
+      summary: Upload a new invoice
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Invoice uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+
+    get:
+      tags:
+        - Invoices
+      summary: List all invoices
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+          description: Page number
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+          description: Items per page
+      responses:
+        '200':
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Invoice'
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+
+  /analytics/summary:
+    get:
+      tags:
+        - Analytics
+      summary: Get dashboard summary data
+      responses:
+        '200':
+          description: Dashboard summary data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_spend:
+                    type: number
+                  flagged_items_count:
+                    type: integer
+                  vendor_count:
+                    type: integer
+
+  /admin/retrain:
+    post:
+      tags:
+        - Admin
+      summary: Retrain ML models
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Models retraining started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task_id:
+                    type: string
+                  message:
+                    type: string
+
+  /admin/auditlogs:
+    get:
+      tags:
+        - Admin
+      summary: Get audit logs
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: start_date
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: end_date
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: List of audit logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    user_id:
+                      type: integer
+                    action:
+                      type: string
+                    timestamp:
+                      type: string
+                      format: date-time
+                    details:
+                      type: object
