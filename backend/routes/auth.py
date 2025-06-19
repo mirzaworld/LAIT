@@ -78,19 +78,24 @@ def register():
         session.add(new_user)
         session.commit()
         
-        # Generate token for immediate login
+        # Generate token for immediate login 
         token = generate_token(new_user.id, new_user.role)
+        
+        # Store user data before closing session
+        user_data = {
+            'id': new_user.id,
+            'email': new_user.email,
+            'first_name': new_user.first_name,
+            'last_name': new_user.last_name,
+            'role': new_user.role
+        }
+        
+        session.close()
         
         return jsonify({
             'message': 'User registered successfully',
             'token': token,
-            'user': {
-                'id': new_user.id,
-                'email': new_user.email,
-                'first_name': new_user.first_name,
-                'last_name': new_user.last_name,
-                'role': new_user.role
-            }
+            'user': user_data
         }), 201
         
     except Exception as e:
@@ -188,16 +193,21 @@ def update_user(current_user, user_id):
             
         session.commit()
         
+        # Store user data before closing session
+        user_data = {
+            'id': user.id,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'role': user.role,
+            'active': user.active
+        }
+        
+        session.close()
+        
         return jsonify({
             'message': 'User updated successfully',
-            'user': {
-                'id': user.id,
-                'email': user.email,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
-                'role': user.role,
-                'active': user.active
-            }
+            'user': user_data
         })
     except Exception as e:
         session.rollback()
