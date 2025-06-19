@@ -2,7 +2,8 @@ from flask import Blueprint, request, jsonify
 from sqlalchemy import func, desc, asc, and_, extract, text
 from backend.db.database import get_db_session
 from backend.models.db_models import Invoice, LineItem, Vendor, Matter, RiskFactor
-from backend.auth import jwt_required, role_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from backend.auth import role_required
 from datetime import datetime, timedelta
 import calendar
 from backend.models.vendor_analyzer import VendorAnalyzer
@@ -11,8 +12,8 @@ from backend.models.matter_analyzer import MatterAnalyzer
 analytics_bp = Blueprint('analytics', __name__)
 
 @analytics_bp.route('/summary', methods=['GET'])
-@jwt_required
-def summary(current_user):
+@jwt_required()
+def summary():
     """Get summary analytics for dashboard"""
     session = get_db_session()
     try:
@@ -125,8 +126,8 @@ def summary(current_user):
         session.close()
 
 @analytics_bp.route('/vendors', methods=['GET'])
-@jwt_required
-def vendors(current_user):
+@jwt_required()
+def vendors():
     """Get vendor comparison analytics"""
     session = get_db_session()
     try:

@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from backend.db.database import get_db_session
-from backend.auth import jwt_required, role_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from backend.auth import role_required
 from tasks import retrain_models
 import json
 import os
@@ -56,17 +57,17 @@ def save_settings(settings):
         return False
 
 @admin_bp.route('/settings', methods=['GET'])
-@jwt_required
+@jwt_required()
 @role_required(['admin'])
-def get_app_settings(current_user):
+def get_app_settings():
     """Get application settings"""
     settings = get_settings()
     return jsonify(settings)
 
 @admin_bp.route('/settings', methods=['PUT'])
-@jwt_required
+@jwt_required()
 @role_required(['admin'])
-def update_app_settings(current_user):
+def update_app_settings():
     """Update application settings"""
     data = request.json
     
@@ -90,9 +91,9 @@ def update_app_settings(current_user):
         return jsonify({'error': 'Failed to save settings'}), 500
 
 @admin_bp.route('/retrain', methods=['POST'])
-@jwt_required
+@jwt_required()
 @role_required(['admin'])
-def trigger_model_retrain(current_user):
+def trigger_model_retrain():
     """Trigger ML model retraining"""
     try:
         # Get model name if provided

@@ -36,10 +36,21 @@ def jwt_required(f):
 def role_required(roles):
     def decorator(f):
         @wraps(f)
-        def decorated_function(current_user, *args, **kwargs):
+        def decorated_function(*args, **kwargs):
+            # Get user_id from JWT
+            user_id = get_jwt_identity()
+            
+            # Get current user
+            session = get_db_session()
+            current_user = session.query(User).filter_by(id=user_id).first()
+            session.close()
+            
+            if not current_user:
+                return jsonify({'message': 'User not found'}), 401
+                
             if not current_user.role in roles:
                 return jsonify({'message': 'Unauthorized access'}), 403
-            return f(current_user, *args, **kwargs)
+            return f(*args, **kwargs)
         return decorated_function
     return decorator
 
