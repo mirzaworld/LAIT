@@ -5,7 +5,6 @@ from flask_migrate import Migrate
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
-from flask_jwt_extended import JWTManager
 import os
 from dotenv import load_dotenv
 import logging
@@ -31,13 +30,12 @@ def create_app():
     try:
         from backend.config import Config
         flask_app.config.from_object(Config)
-    except ImportError as e:
-        logger.info(f"First import attempt failed: {e}")
+    except ImportError:
         try:
             import config
             flask_app.config.from_object(config.Config)
-        except ImportError as e:
-            logger.warning(f"Config module not found: {e}, using default configurations")
+        except ImportError:
+            logger.warning("Config module not found, using default configurations")
     
     # Configure the app
     flask_app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@localhost/legalspend')
@@ -57,9 +55,6 @@ def create_app():
             migrate = Migrate(flask_app, db)
         except ImportError:
             logger.warning("Database models not found, skipping database initialization")
-    
-    # Initialize JWT Manager
-    jwt = JWTManager(flask_app)
     
     # Security configurations
     if flask_app.config.get('ENV') == 'production':
@@ -91,37 +86,36 @@ def create_app():
     # Initialize SocketIO
     socketio.init_app(flask_app, cors_allowed_origins="*")
 
-    # Register root route
-    @flask_app.route('/')
-    def root():
-        return jsonify({
-            "message": "LAIT API is running",
-            "status": "ok",
-            "version": "1.0.0"
-        })
-
     # Import and register blueprints
     try:
-        # Try importing from the routes package
-        from backend.routes import blueprints
+        # Try importing from the 'backend' package
+        from backend.routes.invoice import invoice_bp
+        from backend.routes.auth import auth_bp
+        from backend.routes.analytics import analytics_bp
+        from backend.routes.admin import admin_bp
+        from backend.routes.notification import notification_bp
         
-        for blueprint, url_prefix in blueprints:
-            flask_app.register_blueprint(blueprint, url_prefix=url_prefix)
-            logger.info(f"Registered blueprint {blueprint.name} at {url_prefix}")
-    except ImportError as e:
+        flask_app.register_blueprint(auth_bp, url_prefix='/api/auth')
+        flask_app.register_blueprint(invoice_bp, url_prefix='/api/invoices')
+        flask_app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
+        flask_app.register_blueprint(admin_bp, url_prefix='/api/admin')
+        flask_app.register_blueprint(notification_bp, url_prefix='/api/notifications')
+    except ImportError:
         try:
-            # Fallback to direct imports
-            from backend.routes.invoice import invoice_bp
-            from backend.routes.auth import auth_bp
-            from backend.routes.analytics import analytics_bp
-            from backend.routes.admin import admin_bp
-            from backend.routes.notification import notification_bp
+            # Fallback to local imports
+            from routes.invoice import invoice_bp
+            from routes.auth import auth_bp
+            from routes.analytics import analytics_bp
+            from routes.admin import admin_bp
+            from routes.notification import notification_bp
             
-            # Don't register blueprints here, as they are already registered in routes/__init__.py
-            # This prevents duplicate blueprint registration
-            pass
-        except ImportError as e:
-            logger.warning(f"Routes not found, skipping blueprint registration: {e}")
+            flask_app.register_blueprint(auth_bp, url_prefix='/api/auth')
+            flask_app.register_blueprint(invoice_bp, url_prefix='/api/invoices')
+            flask_app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
+            flask_app.register_blueprint(admin_bp, url_prefix='/api/admin')
+            flask_app.register_blueprint(notification_bp, url_prefix='/api/notifications')
+        except ImportError:
+            logger.warning("Routes not found, skipping blueprint registration")
     
     # Define health check endpoint
     @flask_app.route('/api/health', methods=['GET'])

@@ -2,7 +2,8 @@
 
 from backend.routes.auth import auth_bp
 from backend.routes.invoice import invoice_bp
-from backend.routes.invoices import invoices_bp
+# Import only one invoice blueprint
+# from backend.routes.invoices import invoices_bp
 from backend.routes.analytics import analytics_bp
 from backend.routes.admin import admin_bp
 from backend.routes.notification import notification_bp
@@ -16,6 +17,7 @@ blueprints = [
     (notification_bp, '/api/notifications')
 ]
 
-# Add invoices_bp if it exists and is different from invoice_bp
-if invoices_bp and invoices_bp.name != invoice_bp.name:
-    blueprints.append((invoices_bp, None))  # url_prefix is already included in blueprint definition
+# We're removing this block to avoid duplicate blueprint registration
+# # Add invoices_bp if it exists and is different from invoice_bp
+# if invoices_bp and invoices_bp.name != invoice_bp.name:
+#     blueprints.append((invoices_bp, None))  # url_prefix is already included in blueprint definition
