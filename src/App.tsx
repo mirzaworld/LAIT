@@ -10,6 +10,7 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
+import Landing from './pages/Landing';
 import UploadInvoice from './pages/UploadInvoice';
 import InvoiceList from './pages/InvoiceList';
 import VendorPerformance from './pages/VendorPerformance';
@@ -44,6 +45,9 @@ function AppContent() {
   return (
     <Router>
       <Routes>
+        {/* Public landing page */}
+        <Route path="/landing" element={<Landing />} />
+        
         {/* Public auth routes */}
         <Route path="/login" element={<AuthRoute element={<Login />} />} />
         <Route path="/signup" element={<AuthRoute element={<SignUp />} />} />
@@ -127,8 +131,10 @@ function AppContent() {
           } />
         } />
         
-        {/* Catch-all route */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Catch-all route - redirect to landing if not authenticated, dashboard if authenticated */}
+        <Route path="*" element={
+          <AuthRoute element={<Navigate to="/landing" replace />} />
+        } />
       </Routes>
     </Router>
   );
