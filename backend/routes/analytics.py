@@ -12,7 +12,7 @@ from backend.models.matter_analyzer import MatterAnalyzer
 analytics_bp = Blueprint('analytics', __name__)
 
 @analytics_bp.route('/summary', methods=['GET'])
-@jwt_required
+@jwt_required()
 def summary():
     """Get summary analytics for dashboard"""
     session = get_db_session()
@@ -126,7 +126,7 @@ def summary():
         session.close()
 
 @analytics_bp.route('/vendors', methods=['GET'])
-@jwt_required
+@jwt_required()
 def vendors():
     """Get vendor comparison analytics"""
     session = get_db_session()
@@ -205,7 +205,7 @@ def vendors():
         session.close()
 
 @analytics_bp.route('/forecast', methods=['GET'])
-@jwt_required
+@jwt_required()
 def forecast():
     """Get forecasted spend data"""
     session = get_db_session()
@@ -281,7 +281,7 @@ def forecast():
         session.close()
 
 @analytics_bp.route('/risk-factors', methods=['GET'])
-@jwt_required
+@jwt_required()
 def get_risk_factor_analysis():
     """Get analysis of risk factors"""
     session = get_db_session()
@@ -372,7 +372,7 @@ def get_risk_factor_analysis():
         session.close()
 
 @analytics_bp.route('/vendor/<vendor_id>/risk_profile', methods=['GET'])
-@jwt_required
+@jwt_required()
 def vendor_risk_profile(vendor_id):
     """Get advanced risk profile and analytics for a specific vendor."""
     current_user = get_jwt_identity()
@@ -384,7 +384,7 @@ def vendor_risk_profile(vendor_id):
         return jsonify({'error': f'Error generating vendor risk profile: {str(e)}'}), 500
 
 @analytics_bp.route('/matters', methods=['GET'])
-@jwt_required
+@jwt_required()
 def matter_analytics_list():
     """Get matter comparison analytics"""
     current_user = get_jwt_identity()
@@ -463,7 +463,7 @@ def matter_analytics_list():
         session.close()
 
 @analytics_bp.route('/matter/<matter_id>/risk_profile', methods=['GET'])
-@jwt_required
+@jwt_required()
 def matter_risk_profile(matter_id):
     """Get advanced risk profile and analytics for a specific matter."""
     current_user = get_jwt_identity()
@@ -475,7 +475,7 @@ def matter_risk_profile(matter_id):
         return jsonify({'error': f'Error generating matter risk profile: {str(e)}'}), 500
 
 @analytics_bp.route('/matter/<matter_id>/forecast', methods=['GET'])
-@jwt_required
+@jwt_required()
 def matter_expense_forecast(matter_id):
     """Get expense forecast for a specific matter."""
     current_user = get_jwt_identity()
@@ -487,7 +487,7 @@ def matter_expense_forecast(matter_id):
         return jsonify({'error': f'Error generating matter expense forecast: {str(e)}'}), 500
 
 @analytics_bp.route('/vendor-analytics', methods=['GET'])
-@jwt_required
+@jwt_required()
 def vendor_analytics():
     """Get analytics for top vendors"""
     current_user = get_jwt_identity()
@@ -506,7 +506,7 @@ def vendor_analytics():
         return jsonify({'message': str(e)}), 500
 
 @analytics_bp.route('/spend-forecast', methods=['GET'])
-@jwt_required
+@jwt_required()
 def general_spend_forecast():
     """Get spend forecast for the next period"""
     current_user = get_jwt_identity()

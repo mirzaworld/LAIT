@@ -13,7 +13,7 @@ import os
 invoices_bp = Blueprint('invoices', __name__, url_prefix='/api/invoices')
 
 @invoices_bp.route('', methods=['GET'])
-@jwt_required
+@jwt_required()
 def list_invoices():
     current_user = get_jwt_identity()
     session = get_db_session()
@@ -38,7 +38,7 @@ def list_invoices():
         session.close()
 
 @invoices_bp.route('/<int:invoice_id>', methods=['GET'])
-@jwt_required
+@jwt_required()
 def get_invoice(invoice_id):
     current_user = get_jwt_identity()
     session = get_db_session()
@@ -77,7 +77,7 @@ def get_invoice(invoice_id):
         session.close()
 
 @invoices_bp.route('/upload', methods=['POST'])
-@jwt_required
+@jwt_required()
 def upload_invoice():
     """Upload a new invoice (PDF) and save parsed data to the database"""
     current_user = get_jwt_identity()
@@ -129,7 +129,7 @@ def upload_invoice():
         session.close()
 
 @invoices_bp.route('/download/<int:invoice_id>', methods=['GET'])
-@jwt_required
+@jwt_required()
 def download_invoice(invoice_id):
     """Download invoice PDF from S3"""
     current_user = get_jwt_identity()
