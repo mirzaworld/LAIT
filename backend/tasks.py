@@ -24,7 +24,17 @@ logger = logging.getLogger(__name__)
 invoice_analyzer = InvoiceAnalyzer()
 risk_predictor = RiskPredictor()
 vendor_analyzer = VendorAnalyzer()
-notification_service = NotificationService()
+# Defer notification service initialization as it requires socketio instance
+notification_service = None
+
+def get_notification_service():
+    """Get or initialize the notification service with socketio"""
+    global notification_service
+    if notification_service is None:
+        from backend.app import socketio
+        from backend.services.notification_service import NotificationService
+        notification_service = NotificationService(socketio)
+    return notification_service
 
 @celery.task(name="tasks.process_invoice")
 def process_invoice(invoice_id):

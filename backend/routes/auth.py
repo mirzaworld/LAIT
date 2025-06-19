@@ -1,9 +1,9 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from backend.db.database import get_db_session
 from backend.models.db_models import User
 from werkzeug.security import generate_password_hash, check_password_hash
-from backend.auth import generate_token, authenticate_user, jwt_required, role_required
-from flask_jwt_extended import get_jwt_identity
+from backend.auth import authenticate_user, role_required
+from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
 import re
 
 auth_bp = Blueprint('auth', __name__)
@@ -24,10 +24,14 @@ def login():
     if not user:
         return jsonify({'message': 'Invalid credentials'}), 401
         
-    token = generate_token(user.id, user.role)
+    # Create access token with identity and role as an additional claim
+    access_token = create_access_token(
+        identity=user.id,
+        additional_claims={'role': user.role}
+    )
     
     return jsonify({
-        'token': token,
+        'token': access_token,
         'user': {
             'id': user.id,
             'email': user.email,
@@ -78,8 +82,11 @@ def register():
         session.add(new_user)
         session.commit()
         
-        # Generate token for immediate login 
-        token = generate_token(new_user.id, new_user.role)
+        # Generate JWT token using Flask-JWT-Extended
+        access_token = create_access_token(
+            identity=new_user.id,
+            additional_claims={'role': new_user.role}
+        )
         
         # Store user data before closing session
         user_data = {
@@ -94,7 +101,7 @@ def register():
         
         return jsonify({
             'message': 'User registered successfully',
-            'token': token,
+            'token': access_token,
             'user': user_data
         }), 201
         
@@ -105,40 +112,70 @@ def register():
         session.close()
 
 @auth_bp.route('/refresh', methods=['POST'])
-@jwt_required
-def refresh(current_user):
+@jwt_required()
+def refresh():
     """Refresh JWT token"""
-    token = generate_token(current_user.id, current_user.role)
+    # Get user ID from the JWT identity
+    user_id = get_jwt_identity()
     
-    return jsonify({
-        'token': token,
-        'user': {
-            'id': current_user.id,
-            'email': current_user.email,
-            'first_name': current_user.first_name,
-            'last_name': current_user.last_name,
-            'role': current_user.role
-        }
-    })
+    # Get user data from database
+    session = get_db_session()
+    try:
+        current_user = session.query(User).filter_by(id=user_id).first()
+        
+        if not current_user:
+            return jsonify({'message': 'User not found'}), 404
+            
+        # Create new access token
+        access_token = create_access_token(
+            identity=current_user.id,
+            additional_claims={'role': current_user.role}
+        )
+        
+        return jsonify({
+            'token': access_token,
+            'user': {
+                'id': current_user.id,
+                'email': current_user.email,
+                'first_name': current_user.first_name,
+                'last_name': current_user.last_name,
+                'role': current_user.role
+            }
+        })
+    finally:
+        session.close()
 
 @auth_bp.route('/me', methods=['GET'])
-@jwt_required
-def get_user(current_user):
+@jwt_required()
+def get_user():
     """Get current user information"""
-    return jsonify({
-        'user': {
-            'id': current_user.id,
-            'email': current_user.email,
-            'first_name': current_user.first_name,
-            'last_name': current_user.last_name,
-            'role': current_user.role
-        }
-    })
+    # Get user ID from the JWT identity
+    user_id = get_jwt_identity()
+    
+    # Get user data from database
+    session = get_db_session()
+    try:
+        current_user = session.query(User).filter_by(id=user_id).first()
+        
+        if not current_user:
+            return jsonify({'message': 'User not found'}), 404
+            
+        return jsonify({
+            'user': {
+                'id': current_user.id,
+                'email': current_user.email,
+                'first_name': current_user.first_name,
+                'last_name': current_user.last_name,
+                'role': current_user.role
+            }
+        })
+    finally:
+        session.close()
 
 @auth_bp.route('/admin/users', methods=['GET'])
-@jwt_required
+@jwt_required()
 @role_required(['admin'])
-def get_all_users(current_user):
+def get_all_users():
     """Admin only: Get all users"""
     session = get_db_session()
     try:
@@ -161,9 +198,9 @@ def get_all_users(current_user):
         session.close()
 
 @auth_bp.route('/admin/users/<int:user_id>', methods=['PUT'])
-@jwt_required
+@jwt_required()
 @role_required(['admin'])
-def update_user(current_user, user_id):
+def update_user(user_id):
     """Admin only: Update user information"""
     data = request.json
     
@@ -216,10 +253,10 @@ def update_user(current_user, user_id):
         session.close()
 
 @auth_bp.route('/change-password', methods=['POST'])
-@jwt_required
-def change_password(current_user):
+@jwt_required()
+def change_password():
     """Allow users to change their password"""
-    user_id = current_user.id
+    user_id = get_jwt_identity()
     data = request.json
 
     if not data or 'old_password' not in data or 'new_password' not in data:
@@ -247,9 +284,9 @@ def change_password(current_user):
         session.close()
 
 @auth_bp.route('/role-management', methods=['POST'])
-@jwt_required
-@role_required('admin')
-def role_management(current_user):
+@jwt_required()
+@role_required(['admin'])
+def role_management():
     """Allow admin to update user roles"""
     data = request.json
 

@@ -11,12 +11,11 @@ from backend.routes.notification import notification_bp
 blueprints = [
     (auth_bp, '/api/auth'),
     (invoice_bp, '/api/invoices'),
-    (invoices_bp, None),  # url_prefix is already included in blueprint definition
     (analytics_bp, '/api/analytics'),
     (admin_bp, '/api/admin'),
     (notification_bp, '/api/notifications')
 ]
 
-# Add invoices_bp if it exists
-if invoices_bp:
-    blueprints.append((invoices_bp, '/api/invoices'))
+# Add invoices_bp if it exists and is different from invoice_bp
+if invoices_bp and invoices_bp.name != invoice_bp.name:
+    blueprints.append((invoices_bp, None))  # url_prefix is already included in blueprint definition

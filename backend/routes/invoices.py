@@ -2,9 +2,8 @@
 Invoice routes: upload, list, get, file download
 """
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.db.database import get_db_session
-from backend.auth import jwt_required
 from backend.models.db_models import Invoice as DbInvoice
 from backend.services.s3_service import S3Service
 from backend.services.pdf_parser_service import PDFParserService
@@ -14,8 +13,9 @@ import os
 invoices_bp = Blueprint('invoices', __name__, url_prefix='/api/invoices')
 
 @invoices_bp.route('', methods=['GET'])
-@jwt_required
-def list_invoices(current_user):
+@jwt_required()
+def list_invoices():
+    current_user = get_jwt_identity()
     session = get_db_session()
     try:
         invoices = session.query(DbInvoice).all()
@@ -38,8 +38,9 @@ def list_invoices(current_user):
         session.close()
 
 @invoices_bp.route('/<int:invoice_id>', methods=['GET'])
-@jwt_required
-def get_invoice(current_user, invoice_id):
+@jwt_required()
+def get_invoice(invoice_id):
+    current_user = get_jwt_identity()
     session = get_db_session()
     try:
         inv = session.query(DbInvoice).filter_by(id=invoice_id).first()
@@ -76,9 +77,10 @@ def get_invoice(current_user, invoice_id):
         session.close()
 
 @invoices_bp.route('/upload', methods=['POST'])
-@jwt_required
-def upload_invoice(current_user):
+@jwt_required()
+def upload_invoice():
     """Upload a new invoice (PDF) and save parsed data to the database"""
+    current_user = get_jwt_identity()
     user_id = current_user.id
     if 'file' not in request.files:
         return jsonify({'message': 'No file provided'}), 400
@@ -126,12 +128,11 @@ def upload_invoice(current_user):
     finally:
         session.close()
 
-    # This code is unreachable after our fix above, so remove it
-
 @invoices_bp.route('/download/<int:invoice_id>', methods=['GET'])
-@jwt_required
-def download_invoice(current_user, invoice_id):
+@jwt_required()
+def download_invoice(invoice_id):
     """Download invoice PDF from S3"""
+    current_user = get_jwt_identity()
     session = get_db_session()
     try:
         inv = session.query(DbInvoice).filter_by(id=invoice_id).first()
@@ -149,5 +150,3 @@ def download_invoice(current_user, invoice_id):
         return jsonify({'message': f'Error retrieving invoice: {str(e)}'}), 500
     finally:
         session.close()
-
-    return jsonify({'file_url': file_url})
