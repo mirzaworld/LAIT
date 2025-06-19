@@ -12,8 +12,11 @@ def train_vendor_cluster_model(invoices_df=None, line_items_df=None):
     if invoices_df is None or line_items_df is None:
         invoices_df, line_items_df = generate_synthetic_invoices(200)
     
+    # Merge invoice and line item data to get vendor info
+    merged_data = pd.merge(line_items_df, invoices_df[['invoice_id', 'vendor_id', 'vendor_name']], on='invoice_id')
+    
     # Aggregate metrics by vendor
-    vendor_metrics = line_items_df.groupby('vendor_id').agg({
+    vendor_metrics = merged_data.groupby('vendor_id').agg({
         'rate': ['mean', 'std'],
         'hours': ['sum', 'mean'],
         'amount': ['sum', 'mean'],
