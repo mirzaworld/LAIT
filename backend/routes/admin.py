@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
-from db.database import get_db_session
-from auth import jwt_required, role_required
+from backend.db.database import get_db_session
+from backend.auth import jwt_required, role_required
 from tasks import retrain_models
 import json
 import os

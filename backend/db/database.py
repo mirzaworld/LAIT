@@ -7,6 +7,35 @@ import config
 
 Base = declarative_base()
 
+class User(Base):
+    __tablename__ = 'users'
+    
+    id = Column(Integer, primary_key=True)
+    email = Column(String(255), unique=True, nullable=False)
+    first_name = Column(String(100))
+    last_name = Column(String(100))
+    password_hash = Column(String(256), nullable=False)
+    role = Column(String(50), default='user')  # 'user', 'admin', 'manager'
+    active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    notifications = relationship("Notification", back_populates="user")
+
+class Notification(Base):
+    __tablename__ = 'notifications'
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    type = Column(String(50))
+    content = Column(JSON)
+    read = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = relationship("User", back_populates="notifications")
+
 class Vendor(Base):
     __tablename__ = 'vendors'
     
@@ -51,6 +80,11 @@ class Invoice(Base):
     rate = Column(Float)
     risk_score = Column(Float)
     analysis_result = Column(JSON)
+    pdf_s3_key = Column(String(255))  # S3 key for the uploaded PDF
+    overspend_risk = Column(Float)    # Probability or boolean for overspend risk
+    uploaded_by = Column(Integer, ForeignKey('users.id'))
+    uploaded_at = Column(DateTime, default=datetime.utcnow)
+    processed = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -58,6 +92,7 @@ class Invoice(Base):
     matter = relationship("Matter", back_populates="invoices")
     line_items = relationship("LineItem", back_populates="invoice")
     risk_factors = relationship("RiskFactor", back_populates="invoice")
+    uploader = relationship("User")
 
 class LineItem(Base):
     __tablename__ = 'line_items'
@@ -101,7 +136,4 @@ def init_db():
 def get_db_session():
     """Get a new database session"""
     session = SessionLocal()
-    try:
-        return session
-    finally:
-        session.close()
+    return session

@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from sqlalchemy import func, desc, asc, and_, extract, text
-from db.database import get_db_session, Invoice, LineItem, Vendor, Matter, RiskFactor
-from auth import jwt_required, role_required
+from backend.db.database import get_db_session, Invoice, LineItem, Vendor, Matter, RiskFactor
+from backend.auth import jwt_required, role_required
 from datetime import datetime, timedelta
 import calendar
 from models.vendor_analyzer import VendorAnalyzer
