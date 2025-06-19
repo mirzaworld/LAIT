@@ -372,9 +372,10 @@ def get_risk_factor_analysis(current_user):
         session.close()
 
 @analytics_bp.route('/vendor/<vendor_id>/risk_profile', methods=['GET'])
-@jwt_required
-def get_vendor_risk_profile(current_user, vendor_id):
+@jwt_required()
+def vendor_risk_profile(vendor_id):
     """Get advanced risk profile and analytics for a specific vendor."""
+    current_user = get_jwt_identity()
     try:
         analyzer = VendorAnalyzer()
         profile = analyzer.advanced_risk_profile(vendor_id)
@@ -383,9 +384,10 @@ def get_vendor_risk_profile(current_user, vendor_id):
         return jsonify({'error': f'Error generating vendor risk profile: {str(e)}'}), 500
 
 @analytics_bp.route('/matters', methods=['GET'])
-@jwt_required
-def get_matter_analytics(current_user):
+@jwt_required()
+def matter_analytics_list():
     """Get matter comparison analytics"""
+    current_user = get_jwt_identity()
     session = get_db_session()
     try:
         # Get date range parameters
@@ -461,9 +463,10 @@ def get_matter_analytics(current_user):
         session.close()
 
 @analytics_bp.route('/matter/<matter_id>/risk_profile', methods=['GET'])
-@jwt_required
-def get_matter_risk_profile(current_user, matter_id):
+@jwt_required()
+def matter_risk_profile(matter_id):
     """Get advanced risk profile and analytics for a specific matter."""
+    current_user = get_jwt_identity()
     try:
         analyzer = MatterAnalyzer()
         profile = analyzer.analyze_matter_risk(matter_id)
@@ -472,9 +475,10 @@ def get_matter_risk_profile(current_user, matter_id):
         return jsonify({'error': f'Error generating matter risk profile: {str(e)}'}), 500
 
 @analytics_bp.route('/matter/<matter_id>/forecast', methods=['GET'])
-@jwt_required
-def get_matter_expense_forecast(current_user, matter_id):
+@jwt_required()
+def matter_expense_forecast(matter_id):
     """Get expense forecast for a specific matter."""
+    current_user = get_jwt_identity()
     try:
         analyzer = MatterAnalyzer()
         forecast = analyzer.forecast_expenses(matter_id)
@@ -483,9 +487,10 @@ def get_matter_expense_forecast(current_user, matter_id):
         return jsonify({'error': f'Error generating matter expense forecast: {str(e)}'}), 500
 
 @analytics_bp.route('/vendor-analytics', methods=['GET'])
-@jwt_required
-def vendor_analytics(current_user):
+@jwt_required()
+def vendor_analytics():
     """Get analytics for top vendors"""
+    current_user = get_jwt_identity()
     session = get_db_session()
     try:
         # Fetch top vendors by spend
@@ -501,9 +506,10 @@ def vendor_analytics(current_user):
         return jsonify({'message': str(e)}), 500
 
 @analytics_bp.route('/spend-forecast', methods=['GET'])
-@jwt_required
-def spend_forecast(current_user):
+@jwt_required()
+def general_spend_forecast():
     """Get spend forecast for the next period"""
+    current_user = get_jwt_identity()
     session = get_db_session()
     try:
         # Fetch historical spend data
