@@ -7,30 +7,9 @@ from backend.db.database import get_db_session
 from backend.models.db_models import User
 from werkzeug.security import check_password_hash
 
-# JWT Authentication decorator
-def jwt_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        try:
-            # Use Flask-JWT-Extended to verify token
-            verify_jwt_in_request()
-            user_id = get_jwt_identity()
-            
-            # Get current user
-            session = get_db_session()
-            current_user = session.query(User).filter_by(id=user_id).first()
-            session.close()
-            
-            if not current_user:
-                return jsonify({'message': 'User not found'}), 401
-                
-            # Pass the current_user to the route
-            return f(current_user, *args, **kwargs)
-            
-        except Exception as e:
-            return jsonify({'message': str(e)}), 401
-            
-    return decorated
+# JWT Authentication is now handled by Flask-JWT-Extended
+# This is kept as a comment for reference of the migration
+# The @jwt_required() decorator from flask_jwt_extended is used instead
 
 # Role-based access decorator
 def role_required(roles):
