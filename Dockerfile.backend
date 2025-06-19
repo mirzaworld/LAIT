@@ -6,8 +6,17 @@ COPY backend/requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Install python-dotenv explicitly if not in requirements.txt
+RUN pip install --no-cache-dir python-dotenv
+
 COPY . .
+
+ENV PYTHONPATH=/app
+ENV FLASK_APP=backend/wsgi.py
+ENV FLASK_ENV=development
+ENV FLASK_DEBUG=1
 
 EXPOSE 5000
 
-CMD ["flask", "run", "--host=0.0.0.0"]
+# Use Flask to run the app with proper module path
+CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"]

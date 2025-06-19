@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
-from db.database import get_db_session, User
+from backend.db.database import get_db_session, User
 from werkzeug.security import generate_password_hash, check_password_hash
-from auth import generate_token, authenticate_user, jwt_required, role_required
+from backend.auth import generate_token, authenticate_user, jwt_required, role_required
 from flask_jwt_extended import get_jwt_identity
 from ..models import db
 import re

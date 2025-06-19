@@ -24,7 +24,7 @@ services:
     volumes:
       - ./backend:/app/backend
     environment:
-      - FLASK_APP=backend/app.py
+      - FLASK_APP=backend/wsgi.py
       - FLASK_ENV=development
       - DEBUG=True
       - API_HOST=0.0.0.0
@@ -35,6 +35,7 @@ services:
       - DB_PORT=5432
       - DB_NAME=${DB_NAME:-legalspend}
       - REDIS_URL=redis://redis:6379/0
+      - PYTHONPATH=/app
     depends_on:
       db:
         condition: service_healthy
@@ -68,16 +69,19 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    command: celery -A backend.tasks worker --loglevel=info
+    command: celery -A backend.celery_worker worker --loglevel=info
     environment:
       - DB_HOST=db
       - DB_USER=${DB_USER:-postgres}
       - DB_PASSWORD=${DB_PASSWORD:-securepassword}
       - DB_NAME=${DB_NAME:-legalspend}
       - REDIS_URL=redis://redis:6379/0
+      - PYTHONPATH=/app
+      - FLASK_APP=backend/wsgi.py
     depends_on:
       - db
       - redis
+      - backend
 
 volumes:
   postgres_data:

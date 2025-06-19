@@ -2,7 +2,7 @@ from flask import request, jsonify, current_app
 from functools import wraps
 import jwt
 import datetime
-from db.database import get_db_session, User
+from backend.db.database import get_db_session, User
 from werkzeug.security import check_password_hash
 
 # JWT Authentication decorator
