@@ -27,6 +27,12 @@ An enterprise-grade AI platform that helps in-house legal departments optimize o
   - Processing status tracking
   - Instant alerts for anomalies
 
+- **User Experience**
+  - Modern, responsive UI
+  - Professional landing page
+  - Streamlined onboarding
+  - Intuitive dashboard navigation
+
 ## 📊 Technical Stack
 
 ### Frontend

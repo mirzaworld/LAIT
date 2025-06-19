@@ -11,6 +11,7 @@ import Settings from './pages/Settings';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import Landing from './pages/Landing';
+import Contact from './pages/Contact';
 import UploadInvoice from './pages/UploadInvoice';
 import InvoiceList from './pages/InvoiceList';
 import VendorPerformance from './pages/VendorPerformance';
@@ -47,6 +48,7 @@ function AppContent() {
       <Routes>
         {/* Public landing page */}
         <Route path="/landing" element={<Landing />} />
+        <Route path="/contact" element={<Contact />} />
         
         {/* Public auth routes */}
         <Route path="/login" element={<AuthRoute element={<Login />} />} />
@@ -129,6 +131,11 @@ function AppContent() {
               <SettingsIntegrations />
             </Layout>
           } />
+        } />
+        
+        {/* Root path for non-authenticated users */}
+        <Route path="/" element={
+          <AuthRoute element={<Navigate to="/landing" replace />} />
         } />
         
         {/* Catch-all route - redirect to landing if not authenticated, dashboard if authenticated */}

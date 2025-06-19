@@ -4,8 +4,11 @@ from backend.db.database import get_db_session
 from backend.models.db_models import Invoice, LineItem, Vendor, Matter, RiskFactor
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.auth import role_required
-from datetime import datetime, timedelta
-import calendar
+from datetime import datetime, timed@analytics_bp.route('/vendor/<vendor_id>/risk_profile', methods=['GET'])
+@jwt_required()
+def get_vendor_risk_profile_detailed(vendor_id):
+    """Get advanced risk profile and analytics for a specific vendor."""
+    current_user = get_jwt_identity()import calendar
 from backend.models.vendor_analyzer import VendorAnalyzer
 from backend.models.matter_analyzer import MatterAnalyzer
 
