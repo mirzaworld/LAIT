@@ -4,8 +4,8 @@ from backend.db.database import get_db_session, Invoice, LineItem, Vendor, Matte
 from backend.auth import jwt_required, role_required
 from datetime import datetime, timedelta
 import calendar
-from models.vendor_analyzer import VendorAnalyzer
-from models.matter_analyzer import MatterAnalyzer
+from backend.models.vendor_analyzer import VendorAnalyzer
+from backend.models.matter_analyzer import MatterAnalyzer
 
 analytics_bp = Blueprint('analytics', __name__)
 

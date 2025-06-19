@@ -3,9 +3,9 @@ Invoice routes: upload, list, get, file download
 """
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from ..models import db, Invoice, InvoiceLine
-from ..services.s3_service import S3Service
-from ..services.pdf_parser_service import PDFParserService
+from backend.db.database import get_db_session, Invoice as DbInvoice
+from backend.services.s3_service import S3Service
+from backend.services.pdf_parser_service import PDFParserService
 import tempfile
 import os
 
@@ -14,20 +14,26 @@ invoices_bp = Blueprint('invoices', __name__, url_prefix='/api/invoices')
 @invoices_bp.route('', methods=['GET'])
 @jwt_required()
 def list_invoices():
-    invoices = Invoice.query.all()
-    result = []
-    for inv in invoices:
-        result.append({
-            'id': inv.id,
-            'vendor_name': inv.vendor_name,
-            'invoice_number': inv.invoice_number,
-            'date': inv.date.isoformat() if inv.date else None,
-            'total_amount': inv.total_amount,
-            'overspend_risk': inv.overspend_risk,
-            'processed': inv.processed,
-            'pdf_s3_key': inv.pdf_s3_key
-        })
-    return jsonify(result)
+    session = get_db_session()
+    try:
+        invoices = session.query(DbInvoice).all()
+        result = []
+        for inv in invoices:
+            result.append({
+                'id': inv.id,
+                'vendor_name': inv.vendor_name,
+                'invoice_number': inv.invoice_number,
+                'date': inv.date.isoformat() if inv.date else None,
+                'total_amount': inv.total_amount,
+                'overspend_risk': inv.overspend_risk,
+                'processed': inv.processed,
+                'pdf_s3_key': inv.pdf_s3_key
+            })
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        session.close()
 
 @invoices_bp.route('/<int:invoice_id>', methods=['GET'])
 @jwt_required()

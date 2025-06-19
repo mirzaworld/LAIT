@@ -3,7 +3,6 @@ from backend.db.database import get_db_session, User
 from werkzeug.security import generate_password_hash, check_password_hash
 from backend.auth import generate_token, authenticate_user, jwt_required, role_required
 from flask_jwt_extended import get_jwt_identity
-from ..models import db
 import re
 
 auth_bp = Blueprint('auth', __name__)
@@ -218,15 +217,23 @@ def change_password():
     old_password = data.get('old_password')
     new_password = data.get('new_password')
 
-    user = User.query.get(user_id)
+    session = get_db_session()
+    try:
+        user = session.query(User).filter_by(id=user_id).first()
 
-    if not user or not check_password_hash(user.password, old_password):
-        return jsonify({'message': 'Invalid old password'}), 401
+        if not user or not check_password_hash(user.password_hash, old_password):
+            session.close()
+            return jsonify({'message': 'Invalid old password'}), 401
 
-    user.password = generate_password_hash(new_password)
-    db.session.commit()
-
-    return jsonify({'message': 'Password changed successfully'})
+        user.password_hash = generate_password_hash(new_password)
+        session.commit()
+        session.close()
+        return jsonify({'message': 'Password changed successfully'})
+    except Exception as e:
+        session.rollback()
+        return jsonify({'message': f'Error changing password: {str(e)}'}), 500
+    finally:
+        session.close()
 
 @auth_bp.route('/role-management', methods=['POST'])
 @jwt_required()
@@ -241,12 +248,20 @@ def role_management():
     user_id = data.get('user_id')
     new_role = data.get('new_role')
 
-    user = User.query.get(user_id)
+    session = get_db_session()
+    try:
+        user = session.query(User).filter_by(id=user_id).first()
 
-    if not user:
-        return jsonify({'message': 'User not found'}), 404
+        if not user:
+            session.close()
+            return jsonify({'message': 'User not found'}), 404
 
-    user.role = new_role
-    db.session.commit()
-
-    return jsonify({'message': 'User role updated successfully'})
+        user.role = new_role
+        session.commit()
+        session.close()
+        return jsonify({'message': 'User role updated successfully'})
+    except Exception as e:
+        session.rollback()
+        return jsonify({'message': f'Error updating role: {str(e)}'}), 500
+    finally:
+        session.close()
