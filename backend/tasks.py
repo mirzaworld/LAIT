@@ -1,7 +1,7 @@
-from celery_worker import celery
-from models.invoice_analyzer import InvoiceAnalyzer
-from models.risk_predictor import RiskPredictor
-from models.vendor_analyzer import VendorAnalyzer
+from .celery_worker import celery
+from .models.invoice_analyzer import InvoiceAnalyzer
+from .ml.models.risk_predictor import RiskPredictor
+from .ml.models.vendor_analyzer import VendorAnalyzer
 from db.database import get_db_session, Invoice, Vendor, RiskFactor
 from services.notification_service import NotificationService
 import time
