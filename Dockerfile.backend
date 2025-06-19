@@ -26,5 +26,9 @@ ENV FLASK_DEBUG=1
 
 EXPOSE 5000
 
-# Use Flask to run the app with proper module path
-CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"]
+# Copy entrypoint script
+COPY scripts/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Use entrypoint script
+ENTRYPOINT ["/entrypoint.sh"]
