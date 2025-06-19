@@ -3,7 +3,8 @@ Invoice routes: upload, list, get, file download
 """
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from backend.db.database import get_db_session, Invoice as DbInvoice
+from backend.db.database import get_db_session
+from backend.models.db_models import Invoice as DbInvoice
 from backend.services.s3_service import S3Service
 from backend.services.pdf_parser_service import PDFParserService
 import tempfile
@@ -38,16 +39,22 @@ def list_invoices():
 @invoices_bp.route('/<int:invoice_id>', methods=['GET'])
 @jwt_required()
 def get_invoice(invoice_id):
-    inv = Invoice.query.get_or_404(invoice_id)
-    s3 = S3Service()
-    file_url = s3.generate_presigned_url(inv.pdf_s3_key) if inv.pdf_s3_key else None
-    lines = [
-        {
-            'id': l.id,
-            'description': l.description,
-            'hours': l.hours,
-            'rate': l.rate,
-            'line_total': l.line_total,
+    session = get_db_session()
+    try:
+        inv = session.query(DbInvoice).filter_by(id=invoice_id).first()
+        if not inv:
+            session.close()
+            return jsonify({"error": "Invoice not found"}), 404
+            
+        s3 = S3Service()
+        file_url = s3.generate_presigned_url(inv.pdf_s3_key) if inv.pdf_s3_key else None
+        lines = [
+            {
+                'id': l.id,
+                'description': l.description,
+                'hours': l.hours,
+                'rate': l.rate,
+                'line_total': l.line_total,
             'is_flagged': l.is_flagged,
             'flag_reason': l.flag_reason
         } for l in inv.lines
@@ -86,32 +93,57 @@ def upload_invoice():
     parsed_data = parser.parse_pdf(temp_file_path)
 
     # Save to database
-    invoice = Invoice(
-        vendor_name=parsed_data['vendor_name'],
-        invoice_number=parsed_data['invoice_number'],
-        date=parsed_data['date'],
-        total_amount=parsed_data['total_amount'],
-        overspend_risk=parsed_data['overspend_risk'],
-        processed=True,
-        pdf_s3_key=parsed_data['pdf_s3_key']
-    )
-    db.session.add(invoice)
-    db.session.commit()
+    session = get_db_session()
+    try:
+        invoice = DbInvoice(
+            vendor_name=parsed_data['vendor_name'],
+            invoice_number=parsed_data['invoice_number'],
+            date=parsed_data['date'],
+            total_amount=parsed_data['total_amount'],
+            overspend_risk=parsed_data['overspend_risk'],
+            processed=True,
+            pdf_s3_key=parsed_data['pdf_s3_key']
+        )
+        session.add(invoice)
+        session.commit()
+        invoice_id = invoice.id  # Store ID before closing session
+        session.close()
+        
+        # Clean up temporary file
+        os.remove(temp_file_path)
+        
+        return jsonify({'message': 'Invoice uploaded successfully', 'invoice_id': invoice_id})
+    except Exception as e:
+        session.rollback()
+        # Clean up temporary file even if there's an error
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+        return jsonify({'message': f'Error processing invoice: {str(e)}'}), 500
+    finally:
+        session.close()
 
-    # Clean up temporary file
-    os.remove(temp_file_path)
-
-    return jsonify({'message': 'Invoice uploaded successfully', 'invoice_id': invoice.id}), 201
+    # This code is unreachable after our fix above, so remove it
 
 @invoices_bp.route('/download/<int:invoice_id>', methods=['GET'])
 @jwt_required()
 def download_invoice(invoice_id):
     """Download invoice PDF from S3"""
-    inv = Invoice.query.get_or_404(invoice_id)
-    s3 = S3Service()
-    file_url = s3.generate_presigned_url(inv.pdf_s3_key) if inv.pdf_s3_key else None
-
-    if not file_url:
-        return jsonify({'message': 'File not found'}), 404
+    session = get_db_session()
+    try:
+        inv = session.query(DbInvoice).filter_by(id=invoice_id).first()
+        if not inv:
+            return jsonify({"error": "Invoice not found"}), 404
+            
+        s3 = S3Service()
+        file_url = s3.generate_presigned_url(inv.pdf_s3_key) if inv.pdf_s3_key else None
+        
+        if not file_url:
+            return jsonify({'message': 'File not found'}), 404
+            
+        return jsonify({'file_url': file_url})
+    except Exception as e:
+        return jsonify({'message': f'Error retrieving invoice: {str(e)}'}), 500
+    finally:
+        session.close()
 
     return jsonify({'file_url': file_url})
