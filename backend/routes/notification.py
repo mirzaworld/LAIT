@@ -83,36 +83,36 @@ class NotificationManager:
 notification_manager = NotificationManager()
 
 @notification_bp.route('/api/notifications', methods=['GET'])
-@jwt_required
+@jwt_required()
 def get_notifications():
     current_user = get_jwt_identity()
     limit = int(request.args.get('limit', 50))
     return jsonify(notification_manager.get_notifications(limit))
 
 @notification_bp.route('/api/notifications/<notification_id>/read', methods=['POST'])
-@jwt_required
+@jwt_required()
 def mark_as_read(notification_id):
     current_user = get_jwt_identity()
     success = notification_manager.mark_as_read(notification_id)
     return jsonify({'success': success})
 
 @notification_bp.route('/api/notifications/read-all', methods=['POST'])
-@jwt_required
+@jwt_required()
 def mark_all_as_read():
     current_user = get_jwt_identity()
     success = notification_manager.mark_all_as_read()
     return jsonify({'success': success})
 
 @notification_bp.route('/api/notifications/<notification_id>', methods=['DELETE'])
-@jwt_required
-def delete_notification(notification_id):
+@jwt_required()
+def delete_notification_route(notification_id):
     current_user = get_jwt_identity()
     success = notification_manager.delete_notification(notification_id)
     return jsonify({'success': success})
 
 @notification_bp.route('/api/notifications', methods=['DELETE'])
-@jwt_required
-def clear_notifications():
+@jwt_required()
+def clear_all_notifications():
     current_user = get_jwt_identity()
     success = notification_manager.clear_notifications()
     return jsonify({'success': success})
@@ -127,7 +127,7 @@ def handle_disconnect():
 
 # Example notifications for testing
 @notification_bp.route('/api/notifications/test', methods=['POST'])
-@jwt_required
+@jwt_required()
 def add_test_notification():
     current_user = get_jwt_identity()
     notification_types = ['success', 'warning', 'info', 'error']

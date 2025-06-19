@@ -1,3 +1,4 @@
+import os
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
@@ -11,6 +12,8 @@ target_metadata = db.metadata
 
 def run_migrations_offline():
     url = config.get_main_option("sqlalchemy.url")
+    if not url:
+        url = os.environ.get('DATABASE_URL')
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -22,7 +25,14 @@ def run_migrations_offline():
 
 def run_migrations_online():
     configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = context.get_x_argument(as_dictionary=True).get("db_url", "")
+    # Get database URL from environment variable
+    database_url = os.environ.get('DATABASE_URL')
+    if database_url:
+        configuration["sqlalchemy.url"] = database_url
+    else:
+        # Fallback to command line argument
+        configuration["sqlalchemy.url"] = context.get_x_argument(as_dictionary=True).get("db_url", "")
+    
     connectable = engine_from_config(
         configuration,
         prefix="sqlalchemy.",

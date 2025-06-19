@@ -44,19 +44,22 @@ class Vendor(TimestampMixin, db.Model):
 class Invoice(TimestampMixin, db.Model):
     __tablename__ = 'invoices'
     id = db.Column(db.Integer, primary_key=True)
-    vendor_id = db.Column(db.Integer, db.ForeignKey('vendor.id'), nullable=False)
-    vendor_name = db.Column(db.String(120))
-    client_name = db.Column(db.String(120))
-    matter = db.Column(db.String(120))
     invoice_number = db.Column(db.String(64))
+    vendor_id = db.Column(db.Integer, db.ForeignKey('vendors.id'), nullable=False)
+    matter_id = db.Column(db.Integer)
+    amount = db.Column(db.Float)
     date = db.Column(db.Date)
-    total_amount = db.Column(db.Float)
+    status = db.Column(db.String(20), default='pending', index=True)
+    description = db.Column(db.Text)
+    hours = db.Column(db.Float)
+    rate = db.Column(db.Float)
+    risk_score = db.Column(db.Float)
+    analysis_result = db.Column(db.JSON)
     pdf_s3_key = db.Column(db.String(256))
-    uploaded_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    overspend_risk = db.Column(db.Float)
+    uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
     processed = db.Column(db.Boolean, default=False)
-    overspend_risk = db.Column(db.Float)
-    status = db.Column(db.String(20), default='pending', index=True)
     lines = db.relationship('InvoiceLine', backref='invoice', lazy=True)
 
     __table_args__ = (
@@ -68,7 +71,7 @@ class Invoice(TimestampMixin, db.Model):
 class InvoiceLine(TimestampMixin, db.Model):
     __tablename__ = 'invoice_lines'
     id = db.Column(db.Integer, primary_key=True)
-    invoice_id = db.Column(db.Integer, db.ForeignKey('invoice.id'), nullable=False)
+    invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.id'), nullable=False)
     description = db.Column(db.Text)
     hours = db.Column(db.Float)
     rate = db.Column(db.Float)

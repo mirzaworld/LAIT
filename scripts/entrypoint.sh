@@ -5,7 +5,6 @@ set -e
 cd /app
 
 # Set environment variables
-export FLASK_APP=backend/wsgi.py
 export PYTHONPATH=/app
 
 echo "Waiting for database to be ready..."
@@ -13,7 +12,8 @@ sleep 5
 
 # Run database migrations
 echo "Running database migrations..."
-cd /app
+cd /app/backend
+export FLASK_APP=wsgi.py
 python -m flask db upgrade
 
 # Initialize the database if needed
