@@ -216,10 +216,10 @@ def update_user(current_user, user_id):
         session.close()
 
 @auth_bp.route('/change-password', methods=['POST'])
-@jwt_required()
-def change_password():
+@jwt_required
+def change_password(current_user):
     """Allow users to change their password"""
-    user_id = get_jwt_identity()
+    user_id = current_user.id
     data = request.json
 
     if not data or 'old_password' not in data or 'new_password' not in data:
@@ -247,9 +247,9 @@ def change_password():
         session.close()
 
 @auth_bp.route('/role-management', methods=['POST'])
-@jwt_required()
+@jwt_required
 @role_required('admin')
-def role_management():
+def role_management(current_user):
     """Allow admin to update user roles"""
     data = request.json
 

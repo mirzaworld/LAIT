@@ -11,8 +11,8 @@ from backend.models.matter_analyzer import MatterAnalyzer
 analytics_bp = Blueprint('analytics', __name__)
 
 @analytics_bp.route('/summary', methods=['GET'])
-@jwt_required()
-def summary():
+@jwt_required
+def summary(current_user):
     """Get summary analytics for dashboard"""
     session = get_db_session()
     try:
