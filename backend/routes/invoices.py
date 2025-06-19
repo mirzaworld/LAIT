@@ -2,8 +2,9 @@
 Invoice routes: upload, list, get, file download
 """
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import get_jwt_identity
 from backend.db.database import get_db_session
+from backend.auth import jwt_required
 from backend.models.db_models import Invoice as DbInvoice
 from backend.services.s3_service import S3Service
 from backend.services.pdf_parser_service import PDFParserService
@@ -13,8 +14,8 @@ import os
 invoices_bp = Blueprint('invoices', __name__, url_prefix='/api/invoices')
 
 @invoices_bp.route('', methods=['GET'])
-@jwt_required()
-def list_invoices():
+@jwt_required
+def list_invoices(current_user):
     session = get_db_session()
     try:
         invoices = session.query(DbInvoice).all()
@@ -37,13 +38,12 @@ def list_invoices():
         session.close()
 
 @invoices_bp.route('/<int:invoice_id>', methods=['GET'])
-@jwt_required()
-def get_invoice(invoice_id):
+@jwt_required
+def get_invoice(current_user, invoice_id):
     session = get_db_session()
     try:
         inv = session.query(DbInvoice).filter_by(id=invoice_id).first()
         if not inv:
-            session.close()
             return jsonify({"error": "Invoice not found"}), 404
             
         s3 = S3Service()
@@ -55,27 +55,31 @@ def get_invoice(invoice_id):
                 'hours': l.hours,
                 'rate': l.rate,
                 'line_total': l.line_total,
-            'is_flagged': l.is_flagged,
-            'flag_reason': l.flag_reason
-        } for l in inv.lines
-    ]
-    return jsonify({
-        'id': inv.id,
-        'vendor_name': inv.vendor_name,
-        'invoice_number': inv.invoice_number,
-        'date': inv.date.isoformat() if inv.date else None,
-        'total_amount': inv.total_amount,
-        'overspend_risk': inv.overspend_risk,
-        'processed': inv.processed,
-        'pdf_url': file_url,
-        'lines': lines
-    })
+                'is_flagged': l.is_flagged,
+                'flag_reason': l.flag_reason
+            } for l in inv.lines
+        ]
+        return jsonify({
+            'id': inv.id,
+            'vendor_name': inv.vendor_name,
+            'invoice_number': inv.invoice_number,
+            'date': inv.date.isoformat() if inv.date else None,
+            'total_amount': inv.total_amount,
+            'overspend_risk': inv.overspend_risk,
+            'processed': inv.processed,
+            'pdf_url': file_url,
+            'lines': lines
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        session.close()
 
 @invoices_bp.route('/upload', methods=['POST'])
-@jwt_required()
-def upload_invoice():
+@jwt_required
+def upload_invoice(current_user):
     """Upload a new invoice (PDF) and save parsed data to the database"""
-    user_id = get_jwt_identity()
+    user_id = current_user.id
     if 'file' not in request.files:
         return jsonify({'message': 'No file provided'}), 400
 
@@ -125,8 +129,8 @@ def upload_invoice():
     # This code is unreachable after our fix above, so remove it
 
 @invoices_bp.route('/download/<int:invoice_id>', methods=['GET'])
-@jwt_required()
-def download_invoice(invoice_id):
+@jwt_required
+def download_invoice(current_user, invoice_id):
     """Download invoice PDF from S3"""
     session = get_db_session()
     try:
