@@ -6,6 +6,7 @@ import SpendChart from '../components/SpendChart';
 import RecentInvoices from '../components/RecentInvoices';
 import TopVendors from '../components/TopVendors';
 import AlertsPanel from '../components/AlertsPanel';
+import ApiStatus from '../components/ApiStatus';
 import { useDashboardMetrics } from '../hooks/useApi';
 import { pdfService } from '../services/pdfService';
 import DatePicker from 'react-datepicker';
@@ -254,6 +255,21 @@ const Dashboard: React.FC = () => {
         >
           View Full Analytics
         </button>
+      </div>
+      
+      {/* API Status Display */}
+      <div className="flex justify-center mt-6">
+        <div className="flex flex-wrap gap-3 justify-center">
+          <ApiStatus url="/api/health" label="API Status" />
+          <ApiStatus url="/api/ml/test" label="ML Service" />
+          <ApiStatus url="/api/workflow/electronic-billing" label="Workflow" />
+          <button 
+            onClick={() => navigate('/diagnostics')}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            View diagnostics
+          </button>
+        </div>
       </div>
     </div>
   );
