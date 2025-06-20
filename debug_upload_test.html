@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LAIT Upload Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .test-button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .test-button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>LAIT Frontend API Test</h1>
+    <div>
+        <button class="test-button" onclick="testHealth()">Test API Health</button>
+        <button class="test-button" onclick="testMetrics()">Test Dashboard Metrics</button>
+        <button class="test-button" onclick="testInvoices()">Test Invoices</button>
+        <button class="test-button" onclick="testUpload()">Test File Upload</button>
+        <button class="test-button" onclick="testReportGeneration()">Test Report Generation</button>
+        <button class="test-button" onclick="clearResults()">Clear Results</button>
+    </div>
+    <div id="results"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:5002/api';
+        
+        function addResult(test, result, isSuccess = true) {
+            const resultsDiv = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${isSuccess ? 'success' : 'error'}`;
+            div.innerHTML = `<h3>${test}</h3><pre>${JSON.stringify(result, null, 2)}</pre>`;
+            resultsDiv.appendChild(div);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        async function testHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                addResult('Health Check', { status: response.status, data });
+            } catch (error) {
+                addResult('Health Check', { error: error.message }, false);
+            }
+        }
+        
+        async function testMetrics() {
+            try {
+                const response = await fetch(`${API_BASE}/dashboard/metrics`);
+                const data = await response.json();
+                addResult('Dashboard Metrics', { status: response.status, data });
+            } catch (error) {
+                addResult('Dashboard Metrics', { error: error.message }, false);
+            }
+        }
+        
+        async function testInvoices() {
+            try {
+                const response = await fetch(`${API_BASE}/invoices`);
+                const data = await response.json();
+                addResult('Invoices List', { status: response.status, count: data.length, data: data.slice(0, 2) });
+            } catch (error) {
+                addResult('Invoices List', { error: error.message }, false);
+            }
+        }
+        
+        async function testUpload() {
+            try {
+                const formData = new FormData();
+                formData.append('file', new Blob(['Test invoice content for frontend test'], { type: 'text/plain' }), 'frontend-test.txt');
+                formData.append('vendor', 'Frontend Test Vendor');
+                formData.append('amount', '2500');
+                formData.append('date', '2024-01-15');
+                formData.append('category', 'Legal Services');
+                formData.append('description', 'Test invoice from frontend');
+                
+                const response = await fetch(`${API_BASE}/upload-invoice`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                addResult('File Upload', { status: response.status, data });
+                
+                // Test if the invoice was added by fetching the updated metrics
+                setTimeout(async () => {
+                    const metricsResponse = await fetch(`${API_BASE}/dashboard/metrics`);
+                    const metricsData = await metricsResponse.json();
+                    addResult('Metrics After Upload', { 
+                        invoice_count: metricsData.invoice_count,
+                        total_spend: metricsData.total_spend,
+                        uploaded_invoices_count: metricsData.uploaded_invoices_count 
+                    });
+                }, 1000);
+                
+            } catch (error) {
+                addResult('File Upload', { error: error.message }, false);
+            }
+        }
+        
+        async function testReportGeneration() {
+            try {
+                const response = await fetch(`${API_BASE}/reports/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ period: 'current' })
+                });
+                
+                const data = await response.json();
+                addResult('Report Generation', { 
+                    status: response.status, 
+                    report_id: data.report_id,
+                    executive_summary: data.executive_summary,
+                    vendor_count: data.vendor_analysis?.length || 0,
+                    category_count: data.category_analysis?.length || 0
+                });
+            } catch (error) {
+                addResult('Report Generation', { error: error.message }, false);
+            }
+        }
+        
+        // Auto-run health check on load
+        window.onload = () => {
+            testHealth();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LAIT Frontend API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .loading { background: #fff3cd; border-color: #ffeeba; }
+    </style>
+</head>
+<body>
+    <h1>🧪 LAIT Frontend API Connection Test</h1>
+    <p>Testing if frontend can connect to backend API...</p>
+    
+    <div id="healthTest" class="test loading">
+        ⏳ Testing Health Endpoint...
+    </div>
+    
+    <div id="invoicesTest" class="test loading">
+        ⏳ Testing Invoices Endpoint...
+    </div>
+    
+    <div id="metricsTest" class="test loading">
+        ⏳ Testing Dashboard Metrics Endpoint...
+    </div>
+    
+    <div id="summary" class="test">
+        <strong>Test Results:</strong> <span id="results">Running...</span>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5002/api';
+        let passedTests = 0;
+        let totalTests = 3;
+        
+        async function testEndpoint(endpoint, elementId, description) {
+            const element = document.getElementById(elementId);
+            
+            try {
+                const response = await fetch(`${API_URL}${endpoint}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    mode: 'cors',
+                    credentials: 'omit'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    element.className = 'test success';
+                    element.innerHTML = `✅ ${description}: SUCCESS<br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    passedTests++;
+                } else {
+                    element.className = 'test error';
+                    element.innerHTML = `❌ ${description}: FAILED (${response.status} ${response.statusText})`;
+                }
+            } catch (error) {
+                element.className = 'test error';
+                element.innerHTML = `❌ ${description}: ERROR - ${error.message}`;
+            }
+            
+            updateSummary();
+        }
+        
+        function updateSummary() {
+            const resultsElement = document.getElementById('results');
+            const summaryElement = document.getElementById('summary');
+            
+            if (passedTests === totalTests) {
+                resultsElement.textContent = `${passedTests}/${totalTests} tests passed! 🎉`;
+                summaryElement.className = 'test success';
+            } else {
+                resultsElement.textContent = `${passedTests}/${totalTests} tests passed`;
+                if (passedTests === 0) {
+                    summaryElement.className = 'test error';
+                }
+            }
+        }
+        
+        // Run tests
+        (async () => {
+            await testEndpoint('/health', 'healthTest', 'Health Check');
+            await testEndpoint('/invoices', 'invoicesTest', 'Invoice List');
+            await testEndpoint('/dashboard/metrics', 'metricsTest', 'Dashboard Metrics');
+        })();
+    </script>
+</body>
+</html>

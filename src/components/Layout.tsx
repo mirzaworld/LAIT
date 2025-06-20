@@ -32,7 +32,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { darkMode, toggleDarkMode, logout, userProfile } = useApp();
-  const { user, signOut } = useAuth();
+  const { user, logout: authLogout } = useAuth();
   const { notifications, hasUnread, markAllRead, clearNotifications } = useNotificationContext();
 
   const handleSearch = (e: React.FormEvent) => {

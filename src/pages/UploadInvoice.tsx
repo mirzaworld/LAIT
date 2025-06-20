@@ -1,19 +1,13 @@
 import React, { useState } from 'react';
-import { Upload, FileText, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { Upload, FileText, AlertTriangle, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { uploadInvoice } from '../services/api';
 
-interface AnalysisResult {
-  invoice_data: {
-    invoice_number: string;
-    date: string;
-    amount: number;
-    vendor: string;
-    hours_billed: number;
-    rate: number;
-  };
+interface UploadResult {
+  invoice_id: string;
+  invoice_added: boolean;
   analysis: {
     risk_score: number;
-    anomalies: string[];
-    insights: string[];
+    risk_level: string;
     recommendations: string[];
   };
 }
@@ -21,8 +15,9 @@ interface AnalysisResult {
 const UploadInvoice: React.FC = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
-  const [analysisResults, setAnalysisResults] = useState<Record<string, AnalysisResult>>({});
+  const [uploadResults, setUploadResults] = useState<Record<string, UploadResult>>({});
   const [error, setError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleFileDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -42,53 +37,80 @@ const UploadInvoice: React.FC = () => {
   };
 
   const handleUploadAll = async () => {
-    const newProgress: Record<string, number> = {};
-    const newResults: Record<string, AnalysisResult> = {};
+    setIsUploading(true);
+    setError(null);
     
     for (const file of files) {
-      newProgress[file.name] = 0;
-      setUploadProgress({ ...newProgress });
+      setUploadProgress(prev => ({ ...prev, [file.name]: 0 }));
 
       try {
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const response = await fetch('http://localhost:5002/api/upload-invoice', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to upload ${file.name}`);
-        }
-
-        const result = await response.json();
-        newProgress[file.name] = 100;
-        newResults[file.name] = result;
+        console.log(`Uploading file: ${file.name}`);
         
-        setUploadProgress({ ...newProgress });
-        setAnalysisResults({ ...newResults });
+        // Use the API service function
+        const result = await uploadInvoice(
+          file,
+          'Unknown Vendor', // Default vendor - could be extracted from file or user input
+          undefined, // Amount will be extracted from file
+          undefined, // Date will be extracted from file
+          'Legal Services', // Default category
+          `Uploaded via web interface: ${file.name}`
+        );
+        
+        setUploadProgress(prev => ({ ...prev, [file.name]: 100 }));
+        setUploadResults(prev => ({ ...prev, [file.name]: result }));
+        
+        console.log(`Successfully uploaded ${file.name}:`, result);
       } catch (error) {
-        console.error(error);
-        newProgress[file.name] = -1; // Indicate failure
-        setUploadProgress({ ...newProgress });
-        setError(`Failed to process ${file.name}. Please try again.`);
+        console.error(`Error uploading ${file.name}:`, error);
+        setUploadProgress(prev => ({ ...prev, [file.name]: -1 }));
+        setError(`Failed to process ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        break; // Stop uploading on first error
       }
     }
+    
+    setIsUploading(false);
+  };
+
+  const handleRemoveFile = (fileName: string) => {
+    setFiles(files.filter(file => file.name !== fileName));
+    const newProgress = { ...uploadProgress };
+    const newResults = { ...uploadResults };
+    delete newProgress[fileName];
+    delete newResults[fileName];
+    setUploadProgress(newProgress);
+    setUploadResults(newResults);
   };
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
   };
 
+  const getRiskLevelColor = (riskLevel: string) => {
+    switch (riskLevel) {
+      case 'high':
+        return 'text-danger-600';
+      case 'medium':
+        return 'text-warning-600';
+      case 'low':
+        return 'text-success-600';
+      default:
+        return 'text-gray-600';
+    }
+  };
+
   return (
     <div className="p-6 space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-bold text-gray-900">Upload Invoices</h1>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Upload Invoices</h1>
+        <p className="mt-1 text-sm text-gray-500">
+          Upload legal invoices for automatic analysis and risk assessment
+        </p>
+      </div>
 
       {error && (
         <div className="bg-danger-50 text-danger-700 p-4 rounded-lg flex items-center">
-          <AlertTriangle className="w-5 h-5 mr-2" />
-          {error}
+          <AlertTriangle className="w-5 h-5 mr-2 flex-shrink-0" />
+          <span>{error}</span>
         </div>
       )}
 
@@ -110,73 +132,93 @@ const UploadInvoice: React.FC = () => {
               onChange={handleFileSelect}
             />
           </label>
+          <p className="text-xs text-gray-500 mt-2">Supported formats: PDF, TXT</p>
         </div>
       </div>
 
       {files.length > 0 && (
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900">Selected Files</h2>
-          <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">Selected Files ({files.length})</h2>
+            <button
+              onClick={() => {
+                setFiles([]);
+                setUploadProgress({});
+                setUploadResults({});
+                setError(null);
+              }}
+              className="text-sm text-gray-500 hover:text-gray-700"
+            >
+              Clear All
+            </button>
+          </div>
+          
+          <div className="space-y-3">
             {files.map((file) => (
               <div key={file.name} className="bg-white p-4 rounded-lg shadow border">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <FileText className="w-5 h-5 text-gray-400 mr-2" />
-                    <span className="text-sm text-gray-700">{file.name}</span>
+                    <div>
+                      <span className="text-sm text-gray-700 font-medium">{file.name}</span>
+                      <p className="text-xs text-gray-500">{(file.size / 1024).toFixed(1)} KB</p>
+                    </div>
                   </div>
-                  <div className="flex items-center">
+                  <div className="flex items-center space-x-2">
                     {uploadProgress[file.name] === 100 && (
                       <CheckCircle className="w-5 h-5 text-success-500" />
                     )}
                     {uploadProgress[file.name] === -1 && (
                       <XCircle className="w-5 h-5 text-danger-500" />
                     )}
-                    {uploadProgress[file.name] > 0 && uploadProgress[file.name] < 100 && (
-                      <span className="text-sm text-gray-500">{uploadProgress[file.name]}%</span>
+                    {uploadProgress[file.name] === 0 && isUploading && (
+                      <RefreshCw className="w-4 h-4 text-primary-500 animate-spin" />
                     )}
+                    <button
+                      onClick={() => handleRemoveFile(file.name)}
+                      className="text-xs text-gray-400 hover:text-danger-500 disabled:opacity-50"
+                      disabled={isUploading}
+                    >
+                      Remove
+                    </button>
                   </div>
                 </div>
 
-                {analysisResults[file.name] && (
+                {uploadResults[file.name] && (
                   <div className="mt-4 border-t pt-4">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-2">Analysis Results</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Upload Results</h3>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-sm text-gray-600">Invoice Number</p>
-                        <p className="text-sm font-medium">{analysisResults[file.name].invoice_data.invoice_number}</p>
+                        <p className="text-sm text-gray-600">Invoice ID</p>
+                        <p className="text-sm font-medium">{uploadResults[file.name].invoice_id}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Amount</p>
+                        <p className="text-sm text-gray-600">Status</p>
                         <p className="text-sm font-medium">
-                          ${analysisResults[file.name].invoice_data.amount.toLocaleString()}
+                          {uploadResults[file.name].invoice_added ? (
+                            <span className="text-success-600">✓ Successfully Added</span>
+                          ) : (
+                            <span className="text-danger-600">✗ Failed to Add</span>
+                          )}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Hours Billed</p>
-                        <p className="text-sm font-medium">{analysisResults[file.name].invoice_data.hours_billed}</p>
+                        <p className="text-sm text-gray-600">Risk Level</p>
+                        <p className={`text-sm font-medium capitalize ${getRiskLevelColor(uploadResults[file.name].analysis.risk_level)}`}>
+                          {uploadResults[file.name].analysis.risk_level}
+                        </p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-600">Risk Score</p>
-                        <p className="text-sm font-medium">{analysisResults[file.name].analysis.risk_score}%</p>
+                        <p className="text-sm font-medium">{uploadResults[file.name].analysis.risk_score}%</p>
                       </div>
                     </div>
 
-                    {analysisResults[file.name].analysis.anomalies.length > 0 && (
+                    {uploadResults[file.name].analysis.recommendations && uploadResults[file.name].analysis.recommendations.length > 0 && (
                       <div className="mt-4">
-                        <p className="text-sm font-semibold text-gray-900 mb-2">Anomalies Detected</p>
-                        <ul className="list-disc list-inside text-sm text-danger-600">
-                          {analysisResults[file.name].analysis.anomalies.map((anomaly, index) => (
-                            <li key={index}>{anomaly}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {analysisResults[file.name].analysis.recommendations.length > 0 && (
-                      <div className="mt-4">
-                        <p className="text-sm font-semibold text-gray-900 mb-2">Recommendations</p>
-                        <ul className="list-disc list-inside text-sm text-primary-600">
-                          {analysisResults[file.name].analysis.recommendations.map((rec, index) => (
+                        <p className="text-sm font-semibold text-gray-900 mb-2">AI Recommendations</p>
+                        <ul className="list-disc list-inside text-sm text-primary-600 space-y-1">
+                          {uploadResults[file.name].analysis.recommendations.map((rec, index) => (
                             <li key={index}>{rec}</li>
                           ))}
                         </ul>
@@ -190,10 +232,20 @@ const UploadInvoice: React.FC = () => {
 
           <button
             onClick={handleUploadAll}
-            disabled={files.length === 0}
-            className="w-full py-2 px-4 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={files.length === 0 || isUploading}
+            className="w-full py-3 px-4 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
           >
-            Upload and Analyze All Files
+            {isUploading ? (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                Uploading and Analyzing...
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4 mr-2" />
+                Upload and Analyze All Files
+              </>
+            )}
           </button>
         </div>
       )}

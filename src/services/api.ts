@@ -1,6 +1,6 @@
 // API service for interacting with the backend
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002';
 
 // Authentication helpers
 const getAuthToken = (): string | null => {
@@ -160,7 +160,7 @@ export interface DashboardMetrics {
  */
 export const getInvoices = async (status?: string, vendor?: string): Promise<Invoice[]> => {
   try {
-    let url = `${API_URL}/invoices`;
+    let url = `${API_URL}/api/invoices`;
     const params = new URLSearchParams();
     
     if (status) params.append('status', status);
@@ -203,7 +203,7 @@ export const getInvoices = async (status?: string, vendor?: string): Promise<Inv
  */
 export const getInvoiceDetails = async (invoiceId: string): Promise<any> => {
   try {
-    const response = await fetch(`${API_URL}/invoices/${invoiceId}`, {
+    const response = await fetch(`${API_URL}/api/invoices/${invoiceId}`, {
       headers: getAuthHeaders()
     });
     if (!response.ok) {
@@ -222,7 +222,7 @@ export const getInvoiceDetails = async (invoiceId: string): Promise<any> => {
  */
 export const analyzeInvoice = async (invoiceId: string): Promise<InvoiceAnalysis> => {
   try {
-    const response = await fetch(`${API_URL}/invoices/${invoiceId}/analyze`, {
+    const response = await fetch(`${API_URL}/api/invoices/${invoiceId}/analyze`, {
       method: 'POST',
       headers: getAuthHeaders()
     });
@@ -241,24 +241,55 @@ export const analyzeInvoice = async (invoiceId: string): Promise<InvoiceAnalysis
 /**
  * Upload a new invoice
  */
-export const uploadInvoice = async (fileData: File): Promise<any> => {
+export const uploadInvoice = async (
+  fileData: File, 
+  vendor?: string,
+  amount?: number,
+  date?: string,
+  category?: string,
+  description?: string
+): Promise<any> => {
   try {
     const formData = new FormData();
     formData.append('file', fileData);
     
-    const response = await fetch(`${API_URL}/invoices/upload`, {
+    // Add additional metadata if provided
+    if (vendor) formData.append('vendor', vendor);
+    if (amount) formData.append('amount', amount.toString());
+    if (date) formData.append('date', date);
+    if (category) formData.append('category', category);
+    if (description) formData.append('description', description);
+    
+    console.log('Uploading invoice to:', `${API_URL}/api/upload-invoice`);
+    
+    // Don't include Content-Type header for FormData - let browser set it
+    const headers = getAuthHeaders();
+    delete (headers as any)['Content-Type'];
+    
+    const response = await fetch(`${API_URL}/api/upload-invoice`, {
       method: 'POST',
       body: formData,
-      headers: getAuthHeaders()
+      headers,
+      mode: 'cors',
+      credentials: 'omit'
     });
     
+    console.log('Upload response status:', response.status);
+    
     if (!response.ok) {
-      throw new Error(`API error: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('Upload API error response:', errorText);
+      throw new Error(`Upload API error (${response.status}): ${response.statusText} - ${errorText}`);
     }
     
-    return await response.json();
+    const data = await response.json();
+    console.log('Upload successful:', data);
+    return data;
   } catch (error) {
     console.error('Error uploading invoice:', error);
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('Unable to connect to the API server. Please ensure the backend is running on http://localhost:5002');
+    }
     throw error;
   }
 };
@@ -268,7 +299,7 @@ export const uploadInvoice = async (fileData: File): Promise<any> => {
  */
 export const getVendors = async (): Promise<Vendor[]> => {
   try {
-    const response = await fetch(`${API_URL}/vendors`, {
+    const response = await fetch(`${API_URL}/api/vendors`, {
       headers: getAuthHeaders()
     });
     if (!response.ok) {
@@ -288,7 +319,7 @@ export const getVendors = async (): Promise<Vendor[]> => {
  */
 export const getVendorPerformance = async (vendorId: string): Promise<VendorPerformance> => {
   try {
-    const response = await fetch(`${API_URL}/vendors/${vendorId}/performance`, {
+    const response = await fetch(`${API_URL}/api/vendors/${vendorId}/performance`, {
       headers: getAuthHeaders()
     });
     if (!response.ok) {
@@ -307,9 +338,9 @@ export const getVendorPerformance = async (vendorId: string): Promise<VendorPerf
  */
 export const getDashboardMetrics = async (): Promise<DashboardMetrics> => {
   try {
-    console.log('Fetching dashboard metrics from:', `${API_URL}/dashboard/metrics`);
+    console.log('Fetching dashboard metrics from:', `${API_URL}/api/dashboard/metrics`);
     
-    const response = await fetch(`${API_URL}/dashboard/metrics`, {
+    const response = await fetch(`${API_URL}/api/dashboard/metrics`, {
       headers: getAuthHeaders(),
       mode: 'cors',
       credentials: 'omit'
@@ -340,7 +371,7 @@ export const getDashboardMetrics = async (): Promise<DashboardMetrics> => {
  */
 export const getSpendTrends = async (period: string = 'monthly', category?: string): Promise<any> => {
   try {
-    let url = `${API_URL}/analytics/spend-trends`;
+    let url = `${API_URL}/api/analytics/spend-trends`;
     const params = new URLSearchParams();
     
     params.append('period', period);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, Calendar, Filter, TrendingUp, FileText, PieChart, BarChart3, Zap, RefreshCw } from 'lucide-react';
+import { Download, Calendar, Filter, TrendingUp, FileText, PieChart, BarChart3, Zap, RefreshCw, CheckCircle } from 'lucide-react';
 
 const Reports: React.FC = () => {
   const [selectedReport, setSelectedReport] = useState('spend-analysis');

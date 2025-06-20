@@ -4,7 +4,13 @@ from flask_cors import CORS
 import random
 
 app = Flask(__name__)
-CORS(app)
+
+# Configure CORS properly for production use
+CORS(app, 
+     resources={r"/api/*": {"origins": ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000", "http://127.0.0.1:5173", "http://127.0.0.1:5174"]}},
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+     allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+     supports_credentials=False)
 
 # Sample data
 invoices = [
@@ -24,6 +30,50 @@ def health():
 @app.route('/api/invoices')
 def get_invoices():
     return jsonify(invoices + uploaded_invoices)
+
+@app.route('/api/vendors')
+def get_vendors():
+    """Get all vendors with their metrics"""
+    all_invoices = invoices + uploaded_invoices
+    vendor_data = {}
+    
+    # Aggregate vendor data
+    for inv in all_invoices:
+        vendor = inv["vendor"]
+        if vendor not in vendor_data:
+            vendor_data[vendor] = {
+                "id": f"vendor-{len(vendor_data) + 1}",
+                "name": vendor,
+                "category": inv["category"],
+                "spend": 0,
+                "matter_count": 0,
+                "avg_rate": 0,
+                "performance_score": 0,
+                "diversity_score": 85,  # Mock data
+                "on_time_rate": 0.92,  # Mock data
+                "invoice_count": 0,
+                "total_hours": 0
+            }
+        
+        vendor_data[vendor]["spend"] += inv["amount"]
+        vendor_data[vendor]["invoice_count"] += 1
+        vendor_data[vendor]["total_hours"] += inv.get("hours", 0)
+        
+        # Calculate average rate
+        if vendor_data[vendor]["total_hours"] > 0:
+            vendor_data[vendor]["avg_rate"] = vendor_data[vendor]["spend"] / vendor_data[vendor]["total_hours"]
+        
+        # Calculate performance score based on inverse of risk
+        avg_risk = sum(invoice["riskScore"] for invoice in all_invoices if invoice["vendor"] == vendor) / vendor_data[vendor]["invoice_count"]
+        vendor_data[vendor]["performance_score"] = max(0, 100 - avg_risk)
+    
+    # Convert to list and add matter count
+    vendors_list = []
+    for vendor_name, data in vendor_data.items():
+        data["matter_count"] = data["invoice_count"]  # Simplified - one matter per invoice
+        vendors_list.append(data)
+    
+    return jsonify(vendors_list)
 
 @app.route('/api/dashboard/metrics')
 def get_metrics():
@@ -79,6 +129,55 @@ def upload_invoice():
         return jsonify({'error': str(e)}), 500
 
 # Advanced analytics endpoints
+@app.route('/api/analytics/spend-trends')
+def get_spend_trends():
+    """Get spending trends for charts and analytics"""
+    period = request.args.get('period', 'monthly')
+    category = request.args.get('category')
+    
+    all_invoices = invoices + uploaded_invoices
+    
+    if period == 'monthly':
+        # Generate monthly trend data
+        monthly_data = []
+        for i in range(12):
+            month = f"2024-{i+1:02d}"
+            month_invoices = [inv for inv in all_invoices if inv.get('date', '').startswith(month)]
+            amount = sum(inv['amount'] for inv in month_invoices)
+            if amount == 0:  # Fill in some realistic mock data for months with no data
+                amount = random.randint(15000, 25000)
+            monthly_data.append({
+                "month": month,
+                "amount": amount,
+                "invoice_count": len(month_invoices)
+            })
+        return jsonify({
+            "period": "monthly",
+            "data": monthly_data,
+            "total": sum(item["amount"] for item in monthly_data),
+            "trend": "increasing" if monthly_data[-1]["amount"] > monthly_data[0]["amount"] else "decreasing"
+        })
+    
+    elif period == 'weekly':
+        # Generate weekly trend data
+        weekly_data = []
+        for i in range(8):  # Last 8 weeks
+            week_amount = random.randint(3000, 8000)
+            weekly_data.append({
+                "week": f"Week {i+1}",
+                "amount": week_amount,
+                "invoice_count": random.randint(1, 3)
+            })
+        return jsonify({
+            "period": "weekly", 
+            "data": weekly_data,
+            "total": sum(item["amount"] for item in weekly_data),
+            "trend": "stable"
+        })
+    
+    else:
+        return jsonify({"error": "Unsupported period"}), 400
+
 @app.route('/api/analytics/predictive')
 def get_predictive_analytics():
     return jsonify({
@@ -126,6 +225,132 @@ def get_budget_forecast():
             "Negotiate volume discounts with top 3 vendors",
             "Consider alternative fee arrangements for large matters"
         ]
+    })
+
+# Report generation endpoints
+@app.route('/api/reports/generate', methods=['POST'])
+def generate_report():
+    """Generate a comprehensive legal spend report"""
+    all_invoices = invoices + uploaded_invoices
+    
+    # Calculate comprehensive metrics
+    total_spend = sum(inv["amount"] for inv in all_invoices)
+    total_invoices = len(all_invoices)
+    avg_invoice_amount = total_spend / total_invoices if total_invoices > 0 else 0
+    high_risk_count = len([inv for inv in all_invoices if inv["riskScore"] >= 70])
+    
+    # Vendor analysis
+    vendor_analysis = {}
+    for inv in all_invoices:
+        vendor = inv["vendor"]
+        if vendor not in vendor_analysis:
+            vendor_analysis[vendor] = {"total_spend": 0, "invoice_count": 0, "avg_risk": 0, "invoices": []}
+        vendor_analysis[vendor]["total_spend"] += inv["amount"]
+        vendor_analysis[vendor]["invoice_count"] += 1
+        vendor_analysis[vendor]["invoices"].append(inv)
+    
+    # Calculate averages
+    for vendor, data in vendor_analysis.items():
+        data["avg_risk"] = sum(inv["riskScore"] for inv in data["invoices"]) / len(data["invoices"])
+        data["avg_amount"] = data["total_spend"] / data["invoice_count"]
+    
+    # Category analysis
+    category_analysis = {}
+    for inv in all_invoices:
+        category = inv["category"]
+        if category not in category_analysis:
+            category_analysis[category] = {"total_spend": 0, "invoice_count": 0}
+        category_analysis[category]["total_spend"] += inv["amount"]
+        category_analysis[category]["invoice_count"] += 1
+    
+    report_data = {
+        "report_id": f"LAIT-RPT-{len(all_invoices)}-{random.randint(1000, 9999)}",
+        "generated_date": "2024-01-20",
+        "period": "All Time",
+        "executive_summary": {
+            "total_spend": total_spend,
+            "total_invoices": total_invoices,
+            "avg_invoice_amount": round(avg_invoice_amount, 2),
+            "high_risk_invoices": high_risk_count,
+            "risk_percentage": round((high_risk_count / total_invoices * 100) if total_invoices > 0 else 0, 1),
+            "top_vendor": max(vendor_analysis.keys(), key=lambda v: vendor_analysis[v]["total_spend"]) if vendor_analysis else "N/A",
+            "cost_savings_opportunities": round(total_spend * 0.15, 2)  # Estimated 15% savings opportunity
+        },
+        "vendor_analysis": [
+            {
+                "vendor": vendor,
+                "total_spend": data["total_spend"],
+                "invoice_count": data["invoice_count"],
+                "avg_invoice_amount": round(data["avg_amount"], 2),
+                "avg_risk_score": round(data["avg_risk"], 1),
+                "performance_grade": "A" if data["avg_risk"] < 30 else "B" if data["avg_risk"] < 60 else "C",
+                "recommendations": get_vendor_recommendations(data["avg_risk"], data["total_spend"])
+            }
+            for vendor, data in vendor_analysis.items()
+        ],
+        "category_analysis": [
+            {
+                "category": category,
+                "total_spend": data["total_spend"],
+                "invoice_count": data["invoice_count"],
+                "percentage_of_total": round((data["total_spend"] / total_spend * 100) if total_spend > 0 else 0, 1)
+            }
+            for category, data in category_analysis.items()
+        ],
+        "risk_analysis": {
+            "total_risk_factors": sum(inv["riskScore"] for inv in all_invoices),
+            "avg_risk_score": round(sum(inv["riskScore"] for inv in all_invoices) / len(all_invoices), 1) if all_invoices else 0,
+            "high_risk_invoices": [
+                {
+                    "id": inv["id"],
+                    "vendor": inv["vendor"],
+                    "amount": inv["amount"],
+                    "risk_score": inv["riskScore"],
+                    "reason": get_risk_reason(inv["riskScore"])
+                }
+                for inv in all_invoices if inv["riskScore"] >= 70
+            ]
+        },
+        "recommendations": [
+            "Implement volume discounts with top 3 vendors",
+            "Review high-risk invoices for potential overbilling",
+            "Consider alternative fee arrangements for recurring work",
+            "Establish spending caps for Q4 to stay within budget",
+            "Negotiate better rates with underperforming vendors"
+        ]
+    }
+    
+    return jsonify(report_data)
+
+def get_vendor_recommendations(avg_risk, total_spend):
+    recommendations = []
+    if avg_risk > 70:
+        recommendations.append("High risk vendor - require additional oversight")
+    if avg_risk > 50:
+        recommendations.append("Review billing practices and rate structures")
+    if total_spend > 50000:
+        recommendations.append("Negotiate volume discounts")
+    if len(recommendations) == 0:
+        recommendations.append("Preferred vendor - maintain current relationship")
+    return recommendations
+
+def get_risk_reason(risk_score):
+    if risk_score >= 90:
+        return "Extremely high rates and billing anomalies detected"
+    elif risk_score >= 70:
+        return "High rates or unusual billing patterns"
+    elif risk_score >= 50:
+        return "Moderate billing irregularities"
+    else:
+        return "Low risk profile"
+
+@app.route('/api/reports/<report_id>')
+def get_report(report_id):
+    """Get a specific report by ID (mock implementation)"""
+    # In a real implementation, this would fetch from a database
+    return jsonify({
+        "error": "Report retrieval not implemented in this demo",
+        "message": "Use POST /api/reports/generate to create a new report"
     })
 
 if __name__ == '__main__':

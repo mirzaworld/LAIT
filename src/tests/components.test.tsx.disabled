@@ -4,14 +4,15 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthContext';
 import Dashboard from '../pages/Dashboard';
 import InvoiceUpload from '../pages/UploadInvoice';
-import { api } from '../services/api';
+import * as apiServices from '../services/api';
 
 // Mock API calls
 jest.mock('../services/api');
+const mockedApi = apiServices as jest.Mocked<typeof apiServices>;
 
 describe('Dashboard Component', () => {
   beforeEach(() => {
-    api.get.mockResolvedValue({
+    mockedApi.get.mockResolvedValue({
       data: {
         total_spend: 1000000,
         flagged_items_count: 5,
@@ -38,7 +39,7 @@ describe('Dashboard Component', () => {
   });
 
   it('handles API errors gracefully', async () => {
-    api.get.mockRejectedValue(new Error('API Error'));
+    mockedApi.get.mockRejectedValue(new Error('API Error'));
 
     render(
       <AuthProvider>
@@ -58,7 +59,7 @@ describe('Invoice Upload Component', () => {
   const mockFile = new File(['test pdf content'], 'test.pdf', { type: 'application/pdf' });
 
   beforeEach(() => {
-    api.post.mockResolvedValue({
+    mockedApi.post.mockResolvedValue({
       data: {
         id: 1,
         status: 'processing'
@@ -82,7 +83,7 @@ describe('Invoice Upload Component', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith('/api/invoices', expect.any(FormData));
+      expect(mockedApi.post).toHaveBeenCalledWith('/api/invoices', expect.any(FormData));
     });
   });
 
@@ -104,7 +105,7 @@ describe('Invoice Upload Component', () => {
   });
 
   it('handles upload errors', async () => {
-    api.post.mockRejectedValue(new Error('Upload failed'));
+    mockedApi.post.mockRejectedValue(new Error('Upload failed'));
 
     render(
       <AuthProvider>

@@ -59,3 +59,11 @@ ENV/
 # Database
 *.sqlite
 *.db
+
+# Large datasets (too big for GitHub)
+free_company_dataset.csv
+*_dataset.csv
+*.csv.gz
+*.parquet
+data/
+datasets/

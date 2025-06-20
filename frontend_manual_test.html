@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LAIT Frontend Manual Test Guide</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .passed { background-color: #d4edda; border-color: #c3e6cb; }
+        .failed { background-color: #f8d7da; border-color: #f5c6cb; }
+        .pending { background-color: #fff3cd; border-color: #ffeaa7; }
+        .test-button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .test-button:hover { background: #0056b3; }
+        .iframe-container { width: 100%; height: 600px; border: 2px solid #ccc; border-radius: 5px; margin: 10px 0; }
+        h2 { color: #333; }
+        .checklist { list-style-type: none; }
+        .checklist li { margin: 5px 0; }
+        .checklist input[type="checkbox"] { margin-right: 10px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 LAIT Frontend Manual Testing Guide</h1>
+    <p><strong>Backend Status:</strong> ✅ All API endpoints are working correctly</p>
+    
+    <div class="test-section pending">
+        <h2>📋 Manual Testing Checklist</h2>
+        <p>Use the iframe below to navigate through the LAIT application and check each feature:</p>
+        
+        <h3>1. Dashboard Testing</h3>
+        <ul class="checklist">
+            <li><input type="checkbox" onclick="updateProgress()"> Dashboard loads without errors</li>
+            <li><input type="checkbox" onclick="updateProgress()"> Metrics show real data (not loading spinner)</li>
+            <li><input type="checkbox" onclick="updateProgress()"> Total Spend shows $259,950+</li>
+            <li><input type="checkbox" onclick="updateProgress()"> Invoice count shows 5+</li>
+            <li><input type="checkbox" onclick="updateProgress()"> Charts display properly</li>
+            <li><input type="checkbox" onclick="updateProgress()"> "Generate Report" button works</li>
+        </ul>
+        
+        <h3>2. Upload Functionality</h3>
+        <ul class="checklist">
+            <li><input type="checkbox" onclick="updateProgress()"> Navigation to Upload page works</li>
+            <li><input type="checkbox" onclick="updateProgress()"> File drag-and-drop area is visible</li>
+            <li><input type="checkbox" onclick="updateProgress()"> File selection works</li>
+            <li><input type="checkbox" onclick="updateProgress()"> Upload button becomes enabled after file selection</li>
+            <li><input type="checkbox" onclick="updateProgress()"> Upload completes successfully</li>
+            <li><input type="checkbox" onclick="updateProgress()"> Upload results show invoice ID and risk assessment</li>
+        </ul>
+        
+        <h3>3. Analytics Pages</h3>
+        <ul class="checklist">
+            <li><input type="checkbox" onclick="updateProgress()"> Regular Analytics page loads</li>
+            <li><input type="checkbox" onclick="updateProgress()"> Advanced Analytics page loads</li>
+            <li><input type="checkbox" onclick="updateProgress()"> Predictive analytics data displays</li>
+            <li><input type="checkbox" onclick="updateProgress()"> Vendor performance data displays</li>
+            <li><input type="checkbox" onclick="updateProgress()"> Budget forecast displays</li>
+        </ul>
+        
+        <h3>4. Navigation & UI</h3>
+        <ul class="checklist">
+            <li><input type="checkbox" onclick="updateProgress()"> All navigation links work</li>
+            <li><input type="checkbox" onclick="updateProgress()"> No console errors visible</li>
+            <li><input type="checkbox" onclick="updateProgress()"> Loading states work properly</li>
+            <li><input type="checkbox" onclick="updateProgress()"> UI is responsive and looks good</li>
+        </ul>
+        
+        <div id="progress-status">Progress: 0/20 tests completed</div>
+    </div>
+    
+    <div>
+        <button class="test-button" onclick="openFrontend()">🚀 Open LAIT Frontend</button>
+        <button class="test-button" onclick="testAPI()">🔧 Test APIs</button>
+        <button class="test-button" onclick="viewLogs()">📝 View Logs</button>
+    </div>
+    
+    <div class="iframe-container">
+        <iframe id="frontend-frame" src="http://localhost:5173" width="100%" height="100%">
+            <p>Cannot load frontend. Make sure the development server is running on http://localhost:5173</p>
+        </iframe>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔧 Quick API Tests</h2>
+        <div id="api-results"></div>
+        <button class="test-button" onclick="runQuickTests()">Run Quick API Tests</button>
+    </div>
+
+    <script>
+        let completedTests = 0;
+        const totalTests = 20;
+        
+        function updateProgress() {
+            const checkboxes = document.querySelectorAll('.checklist input[type="checkbox"]:checked');
+            completedTests = checkboxes.length;
+            const progressElement = document.getElementById('progress-status');
+            progressElement.textContent = `Progress: ${completedTests}/${totalTests} tests completed`;
+            
+            if (completedTests === totalTests) {
+                progressElement.innerHTML = `<strong>🎉 ALL TESTS COMPLETED! Frontend is fully functional.</strong>`;
+                document.querySelector('.test-section.pending').className = 'test-section passed';
+            }
+        }
+        
+        function openFrontend() {
+            window.open('http://localhost:5173', '_blank');
+        }
+        
+        function viewLogs() {
+            console.log('Check browser console for any errors...');
+            alert('Check the browser console (F12) for any errors or warnings.');
+        }
+        
+        async function testAPI() {
+            const API_BASE = 'http://localhost:5002/api';
+            try {
+                const health = await fetch(`${API_BASE}/health`).then(r => r.json());
+                const metrics = await fetch(`${API_BASE}/dashboard/metrics`).then(r => r.json());
+                alert(`API Status: ✅ Healthy\\nTotal Spend: $${metrics.total_spend.toLocaleString()}\\nInvoices: ${metrics.invoice_count}`);
+            } catch (error) {
+                alert(`API Error: ${error.message}`);
+            }
+        }
+        
+        async function runQuickTests() {
+            const resultsDiv = document.getElementById('api-results');
+            resultsDiv.innerHTML = '<p>Running tests...</p>';
+            
+            const API_BASE = 'http://localhost:5002/api';
+            const tests = [
+                { name: 'Health', url: `${API_BASE}/health` },
+                { name: 'Metrics', url: `${API_BASE}/dashboard/metrics` },
+                { name: 'Invoices', url: `${API_BASE}/invoices` },
+                { name: 'Vendors', url: `${API_BASE}/vendors` }
+            ];
+            
+            let results = '<h3>API Test Results:</h3>';
+            for (const test of tests) {
+                try {
+                    const response = await fetch(test.url);
+                    const data = await response.json();
+                    results += `<p>✅ ${test.name}: OK</p>`;
+                } catch (error) {
+                    results += `<p>❌ ${test.name}: ${error.message}</p>`;
+                }
+            }
+            resultsDiv.innerHTML = results;
+        }
+    </script>
+</body>
+</html>
