@@ -13,7 +13,8 @@ import {
   Upload,
   AlertTriangle,
   CheckCircle,
-  LogOut
+  LogOut,
+  Scale
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
@@ -48,6 +49,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home },
     { name: 'Upload Invoice', href: '/invoices/upload', icon: Upload },
+    { name: 'Legal Intelligence', href: '/legal-intelligence', icon: Scale },
     { name: 'Analytics', href: '/analytics', icon: PieChart },
     { name: 'Reports', href: '/reports', icon: FileText },
     { name: 'Vendors', href: '/vendors', icon: Settings },

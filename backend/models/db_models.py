@@ -71,9 +71,29 @@ class Matter(Base):
     name = Column(String(255), nullable=False)
     category = Column(String(100))
     status = Column(String(50))
+    description = Column(String(2000))  # Case description for complexity analysis
+    court = Column(String(200))  # Court where case is filed
+    judge_name = Column(String(200))  # Assigned judge
+    opposing_counsel = Column(String(500))  # Opposing attorney/firm
+    case_type = Column(String(100))  # Type of legal matter
+    priority = Column(String(20))  # High, Medium, Low
+    
+    # Dates
     start_date = Column(Date)
     end_date = Column(Date)
+    expected_duration_months = Column(Integer)  # Expected duration
+    
+    # Financial
     budget = Column(Float)
+    estimated_cost = Column(Float)  # AI-estimated cost based on complexity
+    risk_multiplier = Column(Float, default=1.0)  # Complexity-based risk multiplier
+    
+    # Legal Intelligence Fields
+    complexity_score = Column(Integer)  # 1-10 complexity rating from CourtListener
+    success_probability = Column(Float)  # Estimated success probability
+    
+    # Metadata
+    additional_info = Column(JSON)  # Store CourtListener analysis results
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -84,10 +104,47 @@ class Vendor(Base):
     __tablename__ = 'vendors'
     
     id = Column(Integer, primary_key=True)
-    name = Column(String(200))
+    external_id = Column(String(100), unique=True)  # From company dataset
+    name = Column(String(200), nullable=False)
     vendor_type = Column(String(50))
+    
+    # Company Information
+    industry_category = Column(String(100))
+    practice_area = Column(String(100))  # Primary legal practice area
+    firm_size_category = Column(String(50))  # Large, Medium, Small, etc.
+    employee_count = Column(String(20))  # Employee range (1-10, 11-50, etc.)
+    founded_year = Column(Integer)
+    
+    # Location Information
+    country = Column(String(100))
+    state_province = Column(String(100))
+    city = Column(String(100))
+    address = Column(String(500))  # Full address if available
+    
+    # Contact Information
+    website = Column(String(255))
+    linkedin_url = Column(String(255))
+    phone = Column(String(50))
+    email = Column(String(255))
+    
+    # LAIT-specific fields
+    status = Column(String(20), default='Prospect')  # Prospect, Active, Inactive
     risk_profile = Column(Float)
+    performance_score = Column(Float)  # Overall performance rating
+    diversity_score = Column(Float)    # Diversity metrics
+    
+    # Analytics fields
+    total_spend = Column(Float, default=0.0)
+    invoice_count = Column(Integer, default=0)
+    avg_rate = Column(Float)
+    on_time_rate = Column(Float)  # Percentage of on-time deliveries
+    success_rate = Column(Float)  # Success rate for matters
+    
+    # Metadata
+    data_source = Column(String(50))  # Company Dataset, Manual Entry, etc.
     historical_performance = Column(JSON)
+    additional_info = Column(JSON)  # Store CourtListener verification and analysis
+    notes = Column(String(1000))
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -135,3 +192,58 @@ class AuditLog(Base):
     timestamp = Column(DateTime, default=datetime.utcnow)
     details = Column(String(1000))  # JSON or text for extra info
     user = relationship("User")
+
+class VendorMarketInsight(Base):
+    """Market insights derived from company dataset analysis"""
+    __tablename__ = 'vendor_market_insights'
+    
+    id = Column(Integer, primary_key=True)
+    practice_area = Column(String(100), nullable=False)
+    region = Column(String(100))
+    country = Column(String(100))
+    
+    # Market statistics
+    total_firms = Column(Integer)
+    avg_firm_size = Column(String(20))
+    market_concentration = Column(Float)  # HHI or similar measure
+    
+    # Competitive landscape
+    top_5_firms = Column(JSON)  # Names and sizes of top firms
+    emerging_firms_count = Column(Integer)  # Firms founded in last 5 years
+    
+    # Growth trends
+    new_entrants_last_year = Column(Integer)
+    market_growth_rate = Column(Float)
+    
+    # Geographic distribution
+    major_cities = Column(JSON)  # Cities with highest firm concentration
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class VendorBenchmark(Base):
+    """Benchmarking data for vendor performance comparison"""
+    __tablename__ = 'vendor_benchmarks'
+    
+    id = Column(Integer, primary_key=True)
+    vendor_id = Column(Integer, ForeignKey('vendors.id'))
+    benchmark_type = Column(String(50))  # Rate, Performance, Quality, etc.
+    
+    # Benchmark metrics
+    vendor_value = Column(Float)
+    market_average = Column(Float)
+    market_median = Column(Float)
+    percentile_rank = Column(Float)  # Where vendor ranks (0-100)
+    
+    # Peer comparison
+    peer_group = Column(String(100))  # Similar firms for comparison
+    peer_average = Column(Float)
+    
+    # Time period
+    period_start = Column(Date)
+    period_end = Column(Date)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    vendor = relationship("Vendor")

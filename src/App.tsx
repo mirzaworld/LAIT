@@ -16,6 +16,7 @@ import UploadInvoice from './pages/UploadInvoice';
 import InvoiceList from './pages/InvoiceList';
 import VendorPerformance from './pages/VendorPerformance';
 import RecommendationsAlerts from './pages/RecommendationsAlerts';
+import LegalIntelligence from './pages/LegalIntelligence';
 import { AppProvider, useApp } from './context/AppContext';
 import SettingsIntegrations from './pages/SettingsIntegrations';
 import 'react-toastify/dist/ReactToastify.css';
@@ -140,6 +141,13 @@ function AppContent() {
           <ProtectedRoute element={
             <Layout>
               <SettingsIntegrations />
+            </Layout>
+          } />
+        } />
+        <Route path="/legal-intelligence" element={
+          <ProtectedRoute element={
+            <Layout>
+              <LegalIntelligence />
             </Layout>
           } />
         } />
