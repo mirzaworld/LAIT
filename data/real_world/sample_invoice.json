@@ -1,0 +1,22 @@
+{
+  "invoice_number": "3023",
+  "date": "2013-08-31",
+  "due_date": "2013-08-31",
+  "client": "John Doe",
+  "matter": "Divorce - Contested",
+  "items": [
+    {"date": "2013-08-01", "description": "Client meeting and file setup", "attorney": "CG", "hours": 2.0, "rate": 120.0, "total": 240.0},
+    {"date": "2013-08-01", "description": "Initial consultation", "attorney": "MER", "hours": 1.0, "rate": 250.0, "total": 250.0},
+    {"date": "2013-08-05", "description": "Drafted complaint and e-filed", "attorney": "MD", "hours": 1.0, "rate": 90.0, "total": 90.0},
+    {"date": "2013-08-05", "description": "Reviewed and revised complaint", "attorney": "MER", "hours": 0.3, "rate": 250.0, "total": 75.0},
+    {"date": "2013-08-05", "description": "Email to client with updates", "attorney": "MD", "hours": 0.3, "rate": 90.0, "total": 27.0},
+    {"date": "2013-08-05", "description": "Case docket review", "attorney": "MER", "hours": 0.1, "rate": 250.0, "total": 25.0}
+  ],
+  "expenses": [
+    {"date": "2013-08-05", "description": "Court filing fee (Contested divorce)", "quantity": 1, "rate": 299.0, "total": 299.0},
+    {"date": "2013-08-23", "description": "Process server fee", "quantity": 1, "rate": 85.0, "total": 85.0}
+  ],
+  "services_subtotal": 707.0,
+  "expenses_subtotal": 384.0,
+  "total_due": 1091.0
+}

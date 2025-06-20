@@ -1,0 +1,182 @@
+{
+  "Estate Planning": {
+    "Attorney": {
+      "mean": 350.0,
+      "std": NaN,
+      "min": 350.0,
+      "max": 350.0
+    }
+  },
+  "General": {
+    "Associate": {
+      "mean": 275.0,
+      "std": NaN,
+      "min": 275.0,
+      "max": 275.0
+    },
+    "Partner": {
+      "mean": 400.0,
+      "std": NaN,
+      "min": 400.0,
+      "max": 400.0
+    }
+  },
+  "All": {
+    "Blended": {
+      "mean": 961.0,
+      "std": NaN,
+      "min": 961.0,
+      "max": 961.0
+    },
+    "Partner": {
+      "mean": 1081.0,
+      "std": 497.80317395532944,
+      "min": 729.0,
+      "max": 1433.0
+    },
+    "Associate": {
+      "mean": 784.0,
+      "std": 236.17366491630688,
+      "min": 617.0,
+      "max": 951.0
+    },
+    "Attorney (avg)": {
+      "mean": 300.0,
+      "std": NaN,
+      "min": 300.0,
+      "max": 300.0
+    },
+    "Firm Avg": {
+      "mean": 413.0675,
+      "std": 112.36629576968355,
+      "min": 313.69,
+      "max": 570.23
+    }
+  },
+  "Investigations": {
+    "Attorney": {
+      "mean": 288.85,
+      "std": 100.1970308941338,
+      "min": 218.00000000000003,
+      "max": 359.70000000000005
+    }
+  },
+  "Corporate": {
+    "Partner": {
+      "mean": 436.00000000000006,
+      "std": NaN,
+      "min": 436.00000000000006,
+      "max": 436.00000000000006
+    },
+    "Associate": {
+      "mean": 239.8,
+      "std": NaN,
+      "min": 239.8,
+      "max": 239.8
+    },
+    "Senior Partner": {
+      "mean": 1500.0,
+      "std": NaN,
+      "min": 1500.0,
+      "max": 1500.0
+    },
+    "Junior Partner": {
+      "mean": 1200.0,
+      "std": NaN,
+      "min": 1200.0,
+      "max": 1200.0
+    },
+    "Senior Associate": {
+      "mean": 800.0,
+      "std": NaN,
+      "min": 800.0,
+      "max": 800.0
+    },
+    "Junior Associate": {
+      "mean": 600.0,
+      "std": NaN,
+      "min": 600.0,
+      "max": 600.0
+    }
+  },
+  "Litigation": {
+    "Associate": {
+      "mean": 168.0,
+      "std": 186.67619023324855,
+      "min": 36.0,
+      "max": 300.0
+    },
+    "Partner": {
+      "mean": 315.0,
+      "std": 190.91883092036784,
+      "min": 180.0,
+      "max": 450.0
+    }
+  },
+  "IP": {
+    "Partner": {
+      "mean": 650.0,
+      "std": NaN,
+      "min": 650.0,
+      "max": 650.0
+    },
+    "Associate": {
+      "mean": 450.0,
+      "std": NaN,
+      "min": 450.0,
+      "max": 450.0
+    }
+  },
+  "Employment": {
+    "Partner": {
+      "mean": 500.0,
+      "std": NaN,
+      "min": 500.0,
+      "max": 500.0
+    },
+    "Associate": {
+      "mean": 350.0,
+      "std": NaN,
+      "min": 350.0,
+      "max": 350.0
+    }
+  },
+  "Real Estate": {
+    "Partner": {
+      "mean": 400.0,
+      "std": NaN,
+      "min": 400.0,
+      "max": 400.0
+    },
+    "Associate": {
+      "mean": 275.0,
+      "std": NaN,
+      "min": 275.0,
+      "max": 275.0
+    }
+  },
+  "Family Law": {
+    "Attorney": {
+      "mean": 350.0,
+      "std": NaN,
+      "min": 350.0,
+      "max": 350.0
+    }
+  },
+  "Personal Injury": {
+    "Partner": {
+      "mean": 600.0,
+      "std": NaN,
+      "min": 600.0,
+      "max": 600.0
+    }
+  },
+  "Criminal": {
+    "Attorney": {
+      "mean": 450.0,
+      "std": NaN,
+      "min": 450.0,
+      "max": 450.0
+    }
+  }
+}

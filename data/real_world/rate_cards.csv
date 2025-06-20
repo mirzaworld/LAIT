@@ -1,0 +1,35 @@
+practice_area,region,country,firm_name,role,rate_currency,rate_value,source_note,source_type
+Estate Planning,US,USA,Hickey Law Firm,Attorney,USD,350,"Published hourly rate",public_firm_site
+General,US,USA,Hurley Law LLC,Associate,USD,275,"Lower-end rate range",public_firm_site
+General,US,USA,Hurley Law LLC,Partner,USD,400,"Upper-end rate range",public_firm_site
+All,US,USA,AmLaw 100 (Brightflag),Blended,USD,961,"Brightflag: Am Law 100 avg",industry_report
+All,US,USA,AmLaw 100 (Brightflag),Partner,USD,1433,"Brightflag: Partner rate (top firms)",industry_report
+All,US,USA,AmLaw 100 (Brightflag),Partner,USD,729,"Brightflag: Partner rate (ranks 51-75)",industry_report
+All,US,USA,AmLaw 100 (Brightflag),Associate,USD,951,"Brightflag: Associate rate (top firms)",industry_report
+All,US,USA,AmLaw 100 (Brightflag),Associate,USD,617,"Brightflag: Associate rate (ranks 51-75)",industry_report
+All,US,USA,Clio Legal Trends,Attorney (avg),USD,300,"Clio report: US avg 2024",industry_report
+All,UK,GBR,Top 10 UK Firms (PwC),Firm Avg,GBP,449,"PwC via Legal Cheek: top 10 firms",industry_report
+All,UK,GBR,UK Firms #11-25 (PwC),Firm Avg,GBP,325,"PwC via Legal Cheek: ranks 11–25",industry_report
+All,UK,GBR,UK Firms #26-50 (PwC),Firm Avg,GBP,280,"PwC via Legal Cheek: ranks 26–50",industry_report
+All,UK,GBR,UK Firms #51-110 (PwC),Firm Avg,GBP,247,"PwC via Legal Cheek: ranks 51–110",industry_report
+Investigations,EU,NLD,Van Leeuwen Law Firm,Attorney,EUR,200,"Firm site: typical hourly rate",public_firm_site
+Investigations,EU,NLD,Van Leeuwen Law Firm,Attorney,EUR,330,"Firm site: upper range rate",public_firm_site
+Corporate,EU,DEU,Graf & Partner,Partner,EUR,400,"Firm site: partner hourly rate",public_firm_site
+Corporate,EU,DEU,Graf & Partner,Associate,EUR,220,"Firm site: associate hourly rate",public_firm_site
+Litigation,Asia,PAK,Hamza & Hamza Law,Associate,PKR,10000,"Law blog: lower-end rate range",industry_report
+Litigation,Asia,PAK,Hamza & Hamza Law,Partner,PKR,50000,"Law blog: upper-end rate range",industry_report
+Corporate,US,USA,Weil Gotshal,Senior Partner,USD,1500,"AmLaw 100 top tier",industry_report
+Corporate,US,USA,Weil Gotshal,Junior Partner,USD,1200,"AmLaw 100 top tier",industry_report
+Corporate,US,USA,Weil Gotshal,Senior Associate,USD,800,"AmLaw 100 top tier",industry_report
+Corporate,US,USA,Weil Gotshal,Junior Associate,USD,600,"AmLaw 100 top tier",industry_report
+Litigation,US,USA,Regional Firm,Partner,USD,450,"Mid-market regional",industry_report
+Litigation,US,USA,Regional Firm,Associate,USD,300,"Mid-market regional",industry_report
+IP,US,USA,Boutique IP Firm,Partner,USD,650,"Specialized IP practice",industry_report
+IP,US,USA,Boutique IP Firm,Associate,USD,450,"Specialized IP practice",industry_report
+Employment,US,USA,Employment Specialist,Partner,USD,500,"Employment law specialist",industry_report
+Employment,US,USA,Employment Specialist,Associate,USD,350,"Employment law specialist",industry_report
+Real Estate,US,USA,Real Estate Firm,Partner,USD,400,"Real estate transactions",industry_report
+Real Estate,US,USA,Real Estate Firm,Associate,USD,275,"Real estate transactions",industry_report
+Family Law,US,USA,Family Law Practice,Attorney,USD,350,"Family law specialist",industry_report
+Personal Injury,US,USA,PI Firm,Partner,USD,600,"Contingency + hourly",industry_report
+Criminal,US,USA,Criminal Defense,Attorney,USD,450,"Criminal defense specialist",industry_report

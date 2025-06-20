@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 import calendar
 from backend.models.vendor_analyzer import VendorAnalyzer
 from backend.models.matter_analyzer import MatterAnalyzer
+from backend.models.enhanced_invoice_analyzer import analyze_invoice_enhanced
 
 analytics_bp = Blueprint('analytics', __name__)
 
@@ -524,3 +525,58 @@ def general_spend_forecast():
         return jsonify({'forecast': forecast})
     except Exception as e:
         return jsonify({'message': str(e)}), 500
+
+@analytics_bp.route('/enhanced-analysis', methods=['POST'])
+@jwt_required()
+def enhanced_analysis():
+    """Get enhanced ML analysis using real-world legal billing data"""
+    try:
+        # Get invoice data from request
+        invoice_data = request.get_json()
+        
+        if not invoice_data:
+            return jsonify({'error': 'No invoice data provided'}), 400
+        
+        # Perform enhanced analysis
+        analysis_result = analyze_invoice_enhanced(invoice_data)
+        
+        return jsonify({
+            'status': 'success',
+            'analysis': analysis_result
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': f'Enhanced analysis failed: {str(e)}'
+        }), 500
+
+@analytics_bp.route('/ml-models/status', methods=['GET'])
+@jwt_required()
+def ml_models_status():
+    """Get status of ML models"""
+    try:
+        import os
+        from backend.models.enhanced_invoice_analyzer import EnhancedInvoiceAnalyzer
+        
+        analyzer = EnhancedInvoiceAnalyzer()
+        
+        # Check model availability
+        models_status = {
+            'outlier_detection': 'outlier' in analyzer.models,
+            'spend_prediction': 'spend' in analyzer.models,
+            'rate_benchmarks': len(analyzer.rate_benchmarks) > 0,
+            'total_benchmarks': len(analyzer.rate_benchmarks),
+            'models_directory': analyzer.models_dir
+        }
+        
+        return jsonify({
+            'status': 'success',
+            'models': models_status
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': f'Failed to check model status: {str(e)}'
+        }), 500
