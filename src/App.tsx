@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -19,6 +19,14 @@ import RecommendationsAlerts from './pages/RecommendationsAlerts';
 import { AppProvider, useApp } from './context/AppContext';
 import SettingsIntegrations from './pages/SettingsIntegrations';
 import 'react-toastify/dist/ReactToastify.css';
+
+// Set mock token for development
+const setDevelopmentToken = () => {
+  if (!localStorage.getItem('lait_token') && !localStorage.getItem('token')) {
+    console.log('Setting development token for LAIT demo');
+    localStorage.setItem('lait_token', 'mock-jwt-token-for-development');
+  }
+};
 
 // Route guard component to handle authentication
 const ProtectedRoute: React.FC<{element: React.ReactNode}> = ({ element }) => {
@@ -148,6 +156,10 @@ function AppContent() {
 }
 
 function App() {
+  useEffect(() => {
+    setDevelopmentToken();
+  }, []);
+
   return (
     <AuthProvider>
       <NotificationProvider>

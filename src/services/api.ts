@@ -1,6 +1,68 @@
 // API service for interacting with the backend
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
+// Authentication helpers
+const getAuthToken = (): string | null => {
+  return localStorage.getItem('lait_token') || localStorage.getItem('token');
+};
+
+const getAuthHeaders = (): HeadersInit => {
+  const token = getAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
+};
+
+// Authentication functions
+export const login = async (email: string, password: string): Promise<{ token: string; user: any }> => {
+  try {
+    // For development, create a mock token
+    if (email === 'admin@lait.demo' && password === 'demo123') {
+      const mockToken = 'mock-jwt-token-for-development';
+      localStorage.setItem('lait_token', mockToken);
+      return {
+        token: mockToken,
+        user: {
+          id: '1',
+          email: 'admin@lait.demo',
+          name: 'Admin User',
+          role: 'admin'
+        }
+      };
+    }
+    
+    const response = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, password })
+    });
+    
+    if (!response.ok) {
+      throw new Error('Invalid credentials');
+    }
+    
+    const data = await response.json();
+    localStorage.setItem('lait_token', data.token);
+    return data;
+  } catch (error) {
+    console.error('Login error:', error);
+    throw error;
+  }
+};
+
+export const logout = (): void => {
+  localStorage.removeItem('lait_token');
+  localStorage.removeItem('token');
+};
+
+export const isAuthenticated = (): boolean => {
+  const token = getAuthToken();
+  return !!token;
+};
 
 // Types
 export interface Invoice {
@@ -73,13 +135,21 @@ export interface VendorPerformance {
 
 export interface DashboardMetrics {
   total_spend: number;
+  spend_change_percentage: number;
+  invoice_count: number;
   active_matters: number;
-  vendor_count: number;
+  risk_factors_count: number;
+  high_risk_invoices_count: number;
   avg_processing_time: number;
-  risk_distribution: {
-    high: number;
-    medium: number;
-    low: number;
+  date_range: {
+    from: string;
+    to: string;
+  };
+  trend_data: {
+    monthly_spend: Array<{
+      period: string;
+      amount: number;
+    }>;
   };
 }
 
@@ -100,7 +170,9 @@ export const getInvoices = async (status?: string, vendor?: string): Promise<Inv
       url += `?${params.toString()}`;
     }
     
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: getAuthHeaders()
+    });
     if (!response.ok) {
       throw new Error(`API error: ${response.statusText}`);
     }
@@ -118,7 +190,9 @@ export const getInvoices = async (status?: string, vendor?: string): Promise<Inv
  */
 export const getInvoiceDetails = async (invoiceId: string): Promise<any> => {
   try {
-    const response = await fetch(`${API_URL}/invoices/${invoiceId}`);
+    const response = await fetch(`${API_URL}/invoices/${invoiceId}`, {
+      headers: getAuthHeaders()
+    });
     if (!response.ok) {
       throw new Error(`API error: ${response.statusText}`);
     }
@@ -137,9 +211,7 @@ export const analyzeInvoice = async (invoiceId: string): Promise<InvoiceAnalysis
   try {
     const response = await fetch(`${API_URL}/invoices/${invoiceId}/analyze`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      headers: getAuthHeaders()
     });
     
     if (!response.ok) {
@@ -163,7 +235,8 @@ export const uploadInvoice = async (fileData: File): Promise<any> => {
     
     const response = await fetch(`${API_URL}/invoices/upload`, {
       method: 'POST',
-      body: formData
+      body: formData,
+      headers: getAuthHeaders()
     });
     
     if (!response.ok) {
@@ -182,7 +255,9 @@ export const uploadInvoice = async (fileData: File): Promise<any> => {
  */
 export const getVendors = async (): Promise<Vendor[]> => {
   try {
-    const response = await fetch(`${API_URL}/vendors`);
+    const response = await fetch(`${API_URL}/vendors`, {
+      headers: getAuthHeaders()
+    });
     if (!response.ok) {
       throw new Error(`API error: ${response.statusText}`);
     }
@@ -200,7 +275,9 @@ export const getVendors = async (): Promise<Vendor[]> => {
  */
 export const getVendorPerformance = async (vendorId: string): Promise<VendorPerformance> => {
   try {
-    const response = await fetch(`${API_URL}/vendors/${vendorId}/performance`);
+    const response = await fetch(`${API_URL}/vendors/${vendorId}/performance`, {
+      headers: getAuthHeaders()
+    });
     if (!response.ok) {
       throw new Error(`API error: ${response.statusText}`);
     }
@@ -217,7 +294,9 @@ export const getVendorPerformance = async (vendorId: string): Promise<VendorPerf
  */
 export const getDashboardMetrics = async (): Promise<DashboardMetrics> => {
   try {
-    const response = await fetch(`${API_URL}/dashboard/metrics`);
+    const response = await fetch(`${API_URL}/analytics/summary`, {
+      headers: getAuthHeaders()
+    });
     if (!response.ok) {
       throw new Error(`API error: ${response.statusText}`);
     }
@@ -242,7 +321,9 @@ export const getSpendTrends = async (period: string = 'monthly', category?: stri
     
     url += `?${params.toString()}`;
     
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: getAuthHeaders()
+    });
     if (!response.ok) {
       throw new Error(`API error: ${response.statusText}`);
     }

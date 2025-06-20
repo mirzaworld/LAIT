@@ -89,15 +89,15 @@ const Dashboard: React.FC = () => {
     {
       title: 'Total Spend',
       value: apiMetrics ? `$${apiMetrics.total_spend.toLocaleString()}` : '$0',
-      change: '+12.5%',
-      changeType: 'increase' as const,
+      change: apiMetrics ? `${apiMetrics.spend_change_percentage >= 0 ? '+' : ''}${apiMetrics.spend_change_percentage.toFixed(1)}%` : '+0%',
+      changeType: (apiMetrics && apiMetrics.spend_change_percentage >= 0 ? 'increase' : 'decrease') as 'increase' | 'decrease',
       icon: DollarSign,
-      period: 'vs last quarter',
+      period: 'vs last period',
       onClick: () => handleViewAnalytics('spend')
     },
     {
       title: 'Invoices Processed',
-      value: apiMetrics ? apiMetrics.active_matters.toString() : '0',
+      value: apiMetrics ? apiMetrics.invoice_count.toString() : '0',
       change: '+8',
       changeType: 'increase' as const,
       icon: FileText,
@@ -105,16 +105,16 @@ const Dashboard: React.FC = () => {
       onClick: () => handleViewAnalytics('invoices')
     },
     {
-      title: 'Outlier Flags',
-      value: apiMetrics ? apiMetrics.vendor_count.toString() : '0',
-      change: '-3',
+      title: 'High Risk Flags',
+      value: apiMetrics ? apiMetrics.high_risk_invoices_count.toString() : '0',
+      change: apiMetrics ? `${apiMetrics.risk_factors_count}` : '0',
       changeType: 'decrease' as const,
       icon: AlertTriangle,
-      period: 'active vendors',
+      period: 'total risk factors',
       onClick: () => handleViewAnalytics('outliers')
     },
     {
-      title: '% Change vs Prior Period',
+      title: 'Avg Processing Time',
       value: apiMetrics ? `${apiMetrics.avg_processing_time.toFixed(1)} days` : '0 days',
       change: '-18%',
       changeType: 'decrease' as const,

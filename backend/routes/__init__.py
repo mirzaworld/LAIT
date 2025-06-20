@@ -1,20 +1,21 @@
 # Import all routes for easy importing
 
 from backend.routes.auth import auth_bp
-from backend.routes.invoice import invoice_bp
-# Import only one invoice blueprint
-# from backend.routes.invoices import invoices_bp
+# from backend.routes.invoice import invoice_bp
+from backend.routes.invoices import invoices_bp
 from backend.routes.analytics import analytics_bp
 from backend.routes.admin import admin_bp
 from backend.routes.notification import notification_bp
+from backend.routes.vendors import vendors_bp
 
 # List of all blueprints
 blueprints = [
     (auth_bp, '/api/auth'),
-    (invoice_bp, '/api/invoices'),
+    (invoices_bp, None),  # url_prefix already included in blueprint
     (analytics_bp, '/api/analytics'),
     (admin_bp, '/api/admin'),
-    (notification_bp, '/api/notifications')
+    (notification_bp, '/api/notifications'),
+    (vendors_bp, None)  # url_prefix already included in blueprint
 ]
 
 # We're removing this block to avoid duplicate blueprint registration
