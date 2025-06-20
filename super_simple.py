@@ -3,7 +3,7 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176"])
 
 @app.route('/api/health')
 def health():
