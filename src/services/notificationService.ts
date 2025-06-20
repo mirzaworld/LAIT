@@ -22,7 +22,7 @@ class NotificationService {
   private listeners: ((notification: Notification) => void)[] = [];
 
   constructor() {
-    this.baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    this.baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
     this.connect();
   }
 

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LAIT - Legal AI Invoice Tracking</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <div id="root">
+    <div class="min-h-screen flex flex-col justify-center items-center bg-gray-50 px-4">
+      <div class="w-full max-w-md">
+        <div class="mb-8 text-center">
+          <div class="flex items-center justify-center">
+            <div class="flex items-center justify-center w-12 h-12 bg-blue-600 rounded-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+              </svg>
+            </div>
+          </div>
+          <h2 class="mt-6 text-3xl font-bold text-gray-900">LAIT Legal AI</h2>
+          <p class="mt-2 text-sm text-gray-600">Enhanced ML-Powered Legal Billing Intelligence</p>
+        </div>
+
+        <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          <div class="mb-4 p-3 bg-blue-100 border border-blue-400 text-blue-700 rounded text-sm">
+            <strong>Demo Credentials:</strong><br />
+            Email: admin@lait.com<br />
+            Password: admin123
+          </div>
+          
+          <form id="loginForm" class="space-y-6">
+            <div>
+              <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
+              <div class="mt-1">
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value="admin@lait.com"
+                  required
+                  class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  placeholder="Enter your email"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+              <div class="mt-1">
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  value="admin123"
+                  required
+                  class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  placeholder="Enter your password"
+                />
+              </div>
+            </div>
+
+            <div>
+              <button
+                type="submit"
+                class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Sign in
+              </button>
+            </div>
+          </form>
+          
+          <div id="error" class="mt-4 hidden p-3 bg-red-100 border border-red-400 text-red-700 rounded"></div>
+          
+          <div id="dashboard" class="hidden">
+            <div class="mt-8 text-center">
+              <h3 class="text-xl font-bold text-gray-900">LAIT Dashboard</h3>
+              <p class="mt-2 text-sm text-gray-600">Legal AI Invoice Tracking System</p>
+              
+              <div class="mt-6 grid grid-cols-1 gap-4">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                  <h4 class="font-medium text-gray-900">Enhanced ML Models</h4>
+                  <p class="text-sm text-gray-600 mt-1">Real-world legal billing data analysis</p>
+                  <div class="mt-2 flex items-center">
+                    <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                    <span class="text-xs text-green-600">Active & Operational</span>
+                  </div>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-lg">
+                  <h4 class="font-medium text-gray-900">Rate Benchmarking</h4>
+                  <p class="text-sm text-gray-600 mt-1">12 practice areas, 26 role benchmarks</p>
+                  <div class="mt-2 flex items-center">
+                    <div class="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                    <span class="text-xs text-blue-600">AmLaw 100 + Industry Data</span>
+                  </div>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-lg">
+                  <h4 class="font-medium text-gray-900">Outlier Detection</h4>
+                  <p class="text-sm text-gray-600 mt-1">Real-time billing anomaly detection</p>
+                  <div class="mt-2 flex items-center">
+                    <div class="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
+                    <span class="text-xs text-yellow-600">Production Ready</span>
+                  </div>
+                </div>
+              </div>
+              
+              <button id="logoutBtn" class="mt-6 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const loginForm = document.getElementById('loginForm');
+      const errorDiv = document.getElementById('error');
+      const dashboard = document.getElementById('dashboard');
+      const logoutBtn = document.getElementById('logoutBtn');
+      
+      // Check if already logged in
+      const token = localStorage.getItem('lait_token');
+      if (token) {
+        showDashboard();
+      }
+      
+      loginForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        
+        try {
+          const response = await fetch('http://localhost:8000/api/auth/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password }),
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            localStorage.setItem('lait_token', data.token);
+            localStorage.setItem('lait_user', JSON.stringify(data.user));
+            showDashboard();
+            hideError();
+          } else {
+            showError('Invalid credentials. Please try again.');
+          }
+        } catch (error) {
+          console.error('Login error:', error);
+          showError('Connection error. Please check if the backend is running.');
+        }
+      });
+      
+      logoutBtn.addEventListener('click', function() {
+        localStorage.removeItem('lait_token');
+        localStorage.removeItem('lait_user');
+        hideDashboard();
+      });
+      
+      function showDashboard() {
+        loginForm.style.display = 'none';
+        dashboard.classList.remove('hidden');
+        hideError();
+      }
+      
+      function hideDashboard() {
+        loginForm.style.display = 'block';
+        dashboard.classList.add('hidden');
+      }
+      
+      function showError(message) {
+        errorDiv.textContent = message;
+        errorDiv.classList.remove('hidden');
+      }
+      
+      function hideError() {
+        errorDiv.classList.add('hidden');
+      }
+    });
+  </script>
+</body>
+</html>

@@ -40,7 +40,7 @@ export const useNotifications = () => {
     
     // Initialize socket connection
     useEffect(() => {
-        const newSocket = io(process.env.REACT_APP_API_URL || 'http://localhost:5000');
+        const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:8000');
         setSocket(newSocket);
         
         return () => {

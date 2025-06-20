@@ -45,7 +45,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   }
 
-  const API_BASE_URL = process.env.API_URL || 'http://localhost:8080/api';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
   // Check token and load user data on startup
   useEffect(() => {

@@ -557,17 +557,22 @@ def ml_models_status():
     """Get status of ML models"""
     try:
         import os
-        from backend.models.enhanced_invoice_analyzer import EnhancedInvoiceAnalyzer
+        models_dir = '/app/backend/ml/models'
         
-        analyzer = EnhancedInvoiceAnalyzer()
+        # Check what model files exist
+        model_files = []
+        if os.path.exists(models_dir):
+            model_files = [f for f in os.listdir(models_dir) if f.endswith('.joblib')]
         
-        # Check model availability
+        # Check for benchmark file
+        benchmark_file = os.path.join(models_dir, 'rate_benchmarks.json')
+        has_benchmarks = os.path.exists(benchmark_file)
+        
         models_status = {
-            'outlier_detection': 'outlier' in analyzer.models,
-            'spend_prediction': 'spend' in analyzer.models,
-            'rate_benchmarks': len(analyzer.rate_benchmarks) > 0,
-            'total_benchmarks': len(analyzer.rate_benchmarks),
-            'models_directory': analyzer.models_dir
+            'models_directory': models_dir,
+            'model_files': model_files,
+            'has_benchmarks': has_benchmarks,
+            'total_files': len(model_files)
         }
         
         return jsonify({
