@@ -1,5 +1,5 @@
 // Quick test script to verify API endpoints
-const baseURL = 'http://localhost:8000/api';
+const baseURL = 'http://localhost:5003/api';
 const token = 'mock-jwt-token-for-development';
 
 async function testEndpoint(url, name) {

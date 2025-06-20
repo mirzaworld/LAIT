@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // Final comprehensive test of all LAIT features
-const API_URL = 'http://localhost:5002/api';
+const API_URL = 'http://localhost:5003/api';
 
 async function testEndpoint(endpoint, description) {
     try {

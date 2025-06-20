@@ -132,6 +132,58 @@ export function useSpendTrends(period: string = 'monthly', category?: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Function to transform API response to chart-compatible format
+  const transformApiResponse = (apiData: any): any => {
+    // Default empty structure
+    const defaultReturn = { labels: [], datasets: [] };
+    
+    if (!apiData) return defaultReturn;
+    
+    // Handle quarterly breakdown data
+    if (apiData.quarterly_breakdown && Array.isArray(apiData.quarterly_breakdown)) {
+      const quarters = apiData.quarterly_breakdown.map((item: any) => item.quarter);
+      const totalSpend = apiData.quarterly_breakdown.map((item: any) => item.total_spend);
+      const avgValues = apiData.quarterly_breakdown.map((item: any) => item.avg_invoice_value);
+      
+      return {
+        labels: quarters,
+        datasets: [
+          {
+            label: 'Total Spend',
+            data: totalSpend
+          },
+          {
+            label: 'Average Invoice Value',
+            data: avgValues
+          }
+        ]
+      };
+    }
+    
+    // Handle monthly breakdown data
+    if (apiData.monthly_breakdown && Array.isArray(apiData.monthly_breakdown)) {
+      const months = apiData.monthly_breakdown.map((item: any) => item.month);
+      const totalSpend = apiData.monthly_breakdown.map((item: any) => item.total_spend);
+      
+      return {
+        labels: months,
+        datasets: [
+          {
+            label: 'Monthly Spend',
+            data: totalSpend
+          }
+        ]
+      };
+    }
+    
+    // If the API already returns the expected format
+    if (apiData.labels && apiData.datasets) {
+      return apiData;
+    }
+    
+    return defaultReturn;
+  };
+
   const fetchTrends = useCallback(async () => {
     try {
       setLoading(true);
@@ -199,20 +251,10 @@ export function useSpendTrends(period: string = 'monthly', category?: string) {
         
         await new Promise(resolve => setTimeout(resolve, 500));
       } else {
-        data = await getSpendTrends(period, category);
+        const apiResponse = await getSpendTrends(period, category);
         
-        // If API returns null/undefined, provide default structure
-        if (!data) {
-          data = { labels: [], datasets: [] };
-        }
-        
-        // Ensure returned data has required structure
-        if (!data.datasets) {
-          data.datasets = [];
-        }
-        if (!data.labels) {
-          data.labels = [];
-        }
+        // Transform API response to chart-compatible format
+        data = transformApiResponse(apiResponse);
       }
       
       setTrends(data);
