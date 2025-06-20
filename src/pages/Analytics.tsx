@@ -4,6 +4,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title } from 'chart.js';
 import { Doughnut, Bar, Line } from 'react-chartjs-2';
 import { pdfService } from '../services/pdfService';
+import LegalAnalytics from '../components/LegalAnalytics';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title);
 
@@ -306,7 +308,22 @@ const Analytics: React.FC = () => {
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">Spend by Category</h3>
           <div className="h-80">
-            <Doughnut data={spendByCategory} options={doughnutOptions} />
+            <ErrorBoundary fallback={({ error }) => (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
+                  <p className="text-gray-600">Chart temporarily unavailable</p>
+                  <button 
+                    onClick={() => window.location.reload()} 
+                    className="mt-2 text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Try again
+                  </button>
+                </div>
+              </div>
+            )}>
+              <Doughnut data={spendByCategory} options={doughnutOptions} />
+            </ErrorBoundary>
           </div>
         </div>
 
@@ -314,7 +331,22 @@ const Analytics: React.FC = () => {
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">Monthly Trends</h3>
           <div className="h-80">
-            <Bar data={monthlyTrends} options={barOptions} />
+            <ErrorBoundary fallback={({ error }) => (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
+                  <p className="text-gray-600">Chart temporarily unavailable</p>
+                  <button 
+                    onClick={() => window.location.reload()} 
+                    className="mt-2 text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Try again
+                  </button>
+                </div>
+              </div>
+            )}>
+              <Bar data={monthlyTrends} options={barOptions} />
+            </ErrorBoundary>
           </div>
         </div>
       </div>
@@ -340,6 +372,28 @@ const Analytics: React.FC = () => {
           {/* Add processing performance metrics */}
         </div>
       )}
+
+      {/* Legal Analytics Component */}
+      {/* Legal Analytics Component */}
+      <ErrorBoundary fallback={({ error }) => (
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="text-center">
+            <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Legal Analytics Unavailable</h3>
+            <p className="text-gray-600 mb-4">
+              Unable to load legal analytics data. This may be due to external service connectivity.
+            </p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}>
+        <LegalAnalytics />
+      </ErrorBoundary>
     </div>
   );
 };

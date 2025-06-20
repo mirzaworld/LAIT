@@ -5,6 +5,7 @@ import { NotificationProvider } from './context/NotificationContext';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Analytics from './pages/Analytics';
+import AdvancedAnalytics from './pages/AdvancedAnalytics';
 import Invoices from './pages/Invoices';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
@@ -78,6 +79,13 @@ function AppContent() {
           <ProtectedRoute element={
             <Layout>
               <Analytics />
+            </Layout>
+          } />
+        } />
+        <Route path="/analytics/advanced" element={
+          <ProtectedRoute element={
+            <Layout>
+              <AdvancedAnalytics />
             </Layout>
           } />
         } />

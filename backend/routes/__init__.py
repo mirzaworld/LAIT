@@ -1,13 +1,13 @@
 # Import all routes for easy importing
 
-from backend.routes.auth import auth_bp
-# from backend.routes.invoice import invoice_bp
-from backend.routes.invoices import invoices_bp
-from backend.routes.analytics import analytics_bp
-from backend.routes.admin import admin_bp
-from backend.routes.notification import notification_bp
-from backend.routes.vendors import vendors_bp
-from backend.routes.legal_intelligence import legal_intel_bp
+from routes.auth import auth_bp
+# from routes.invoice import invoice_bp
+from routes.invoices import invoices_bp
+from routes.analytics import analytics_bp
+from routes.admin import admin_bp
+from routes.notification import notification_bp
+from routes.vendors import vendors_bp
+from routes.legal_intelligence import legal_intel_bp
 
 # List of all blueprints
 blueprints = [

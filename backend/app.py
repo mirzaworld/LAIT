@@ -103,23 +103,19 @@ def create_app():
     # Import and register blueprints
     try:
         # Try importing from the routes package
-        from backend.routes import blueprints
+        from routes import blueprints
         
         for blueprint, url_prefix in blueprints:
             flask_app.register_blueprint(blueprint, url_prefix=url_prefix)
             logger.info(f"Registered blueprint {blueprint.name} at {url_prefix}")
     except ImportError as e:
         try:
-            # Fallback to direct imports
-            from backend.routes.invoice import invoice_bp
-            from backend.routes.auth import auth_bp
-            from backend.routes.analytics import analytics_bp
-            from backend.routes.admin import admin_bp
-            from backend.routes.notification import notification_bp
+            # Fallback to direct imports from backend.routes
+            from backend.routes import blueprints
             
-            # Don't register blueprints here, as they are already registered in routes/__init__.py
-            # This prevents duplicate blueprint registration
-            pass
+            for blueprint, url_prefix in blueprints:
+                flask_app.register_blueprint(blueprint, url_prefix=url_prefix)
+                logger.info(f"Registered blueprint {blueprint.name} at {url_prefix}")
         except ImportError as e:
             logger.warning(f"Routes not found, skipping blueprint registration: {e}")
     

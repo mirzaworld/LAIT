@@ -27,7 +27,7 @@ const UploadInvoice: React.FC = () => {
   const handleFileDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     const droppedFiles = Array.from(event.dataTransfer.files).filter(
-      file => file.type === 'application/pdf'
+      file => file.type === 'application/pdf' || file.type === 'text/plain' || file.name.endsWith('.pdf')
     );
     setFiles((prevFiles) => [...prevFiles, ...droppedFiles]);
     setError(null);
@@ -35,7 +35,7 @@ const UploadInvoice: React.FC = () => {
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(event.target.files || []).filter(
-      file => file.type === 'application/pdf'
+      file => file.type === 'application/pdf' || file.type === 'text/plain' || file.name.endsWith('.pdf')
     );
     setFiles((prevFiles) => [...prevFiles, ...selectedFiles]);
     setError(null);
@@ -53,7 +53,7 @@ const UploadInvoice: React.FC = () => {
         const formData = new FormData();
         formData.append('file', file);
 
-        const response = await fetch('http://localhost:5000/api/upload-invoice', {
+        const response = await fetch('http://localhost:5002/api/upload-invoice', {
           method: 'POST',
           body: formData,
         });
@@ -106,7 +106,7 @@ const UploadInvoice: React.FC = () => {
               type="file"
               className="hidden"
               multiple
-              accept=".pdf"
+              accept=".pdf,.txt"
               onChange={handleFileSelect}
             />
           </label>

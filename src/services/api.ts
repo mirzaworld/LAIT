@@ -1,6 +1,6 @@
 // API service for interacting with the backend
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002/api';
 
 // Authentication helpers
 const getAuthToken = (): string | null => {
@@ -170,17 +170,30 @@ export const getInvoices = async (status?: string, vendor?: string): Promise<Inv
       url += `?${params.toString()}`;
     }
     
+    console.log('Fetching invoices from:', url);
+    
     const response = await fetch(url, {
-      headers: getAuthHeaders()
+      headers: getAuthHeaders(),
+      mode: 'cors',
+      credentials: 'omit'
     });
+    
+    console.log('Invoice response status:', response.status);
+    
     if (!response.ok) {
-      throw new Error(`API error: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('API error response:', errorText);
+      throw new Error(`API error (${response.status}): ${response.statusText} - ${errorText}`);
     }
     
     const data = await response.json();
-    return data.invoices;
+    console.log('Invoice data received:', data.length, 'invoices');
+    return data; // Backend returns invoices array directly
   } catch (error) {
     console.error('Error fetching invoices:', error);
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('Unable to connect to the API server. Please ensure the backend is running on http://localhost:5002');
+    }
     throw error;
   }
 };
@@ -263,7 +276,7 @@ export const getVendors = async (): Promise<Vendor[]> => {
     }
     
     const data = await response.json();
-    return data.vendors;
+    return data; // Backend returns vendors array directly
   } catch (error) {
     console.error('Error fetching vendors:', error);
     throw error;
@@ -294,16 +307,30 @@ export const getVendorPerformance = async (vendorId: string): Promise<VendorPerf
  */
 export const getDashboardMetrics = async (): Promise<DashboardMetrics> => {
   try {
-    const response = await fetch(`${API_URL}/analytics/summary`, {
-      headers: getAuthHeaders()
+    console.log('Fetching dashboard metrics from:', `${API_URL}/dashboard/metrics`);
+    
+    const response = await fetch(`${API_URL}/dashboard/metrics`, {
+      headers: getAuthHeaders(),
+      mode: 'cors',
+      credentials: 'omit'
     });
+    
+    console.log('Metrics response status:', response.status);
+    
     if (!response.ok) {
-      throw new Error(`API error: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('Metrics API error response:', errorText);
+      throw new Error(`Metrics API error (${response.status}): ${response.statusText} - ${errorText}`);
     }
     
-    return await response.json();
+    const data = await response.json();
+    console.log('Metrics data received:', data);
+    return data;
   } catch (error) {
     console.error('Error fetching dashboard metrics:', error);
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('Unable to connect to the API server. Please ensure the backend is running on http://localhost:5002');
+    }
     throw error;
   }
 };

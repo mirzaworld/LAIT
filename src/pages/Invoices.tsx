@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, Search, Filter, Download, Eye, CheckCircle, XCircle, Clock, AlertTriangle, AlertCircle, Zap } from 'lucide-react';
+import { useInvoices } from '../hooks/useApi';
+import { Invoice } from '../services/api';
 
 const Invoices: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -9,68 +11,17 @@ const Invoices: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<any>(null);
 
-  const invoices = [
-    {
-      id: 'INV-2024-001',
-      vendor: 'Morrison & Foerster LLP',
-      amount: 45750,
-      status: 'approved',
-      date: '2024-01-15',
-      dueDate: '2024-02-14',
-      matter: 'IP Litigation - TechCorp vs CompetitorX',
-      riskScore: 15,
-      category: 'Litigation',
-      description: 'Discovery and motion practice for Q4 2024'
-    },
-    {
-      id: 'INV-2024-002',
-      vendor: 'Baker McKenzie',
-      amount: 23400,
-      status: 'pending',
-      date: '2024-01-14',
-      dueDate: '2024-02-13',
-      matter: 'M&A Advisory - Acquisition of StartupY',
-      riskScore: 45,
-      category: 'Corporate',
-      description: 'Due diligence and transaction documentation'
-    },
-    {
-      id: 'INV-2024-003',
-      vendor: 'Latham & Watkins',
-      amount: 67800,
-      status: 'flagged',
-      date: '2024-01-13',
-      dueDate: '2024-02-12',
-      matter: 'Regulatory Compliance - FDA Approval',
-      riskScore: 85,
-      category: 'Regulatory',
-      description: '340% increase from previous billing period'
-    },
-    {
-      id: 'INV-2024-004',
-      vendor: 'Skadden Arps',
-      amount: 34200,
-      status: 'processing',
-      date: '2024-01-12',
-      dueDate: '2024-02-11',
-      matter: 'Employment Law - Class Action Defense',
-      riskScore: 25,
-      category: 'Employment',
-      description: 'Motion to dismiss and initial discovery'
-    },
-    {
-      id: 'INV-2024-005',
-      vendor: 'White & Case',
-      amount: 52300,
-      status: 'approved',
-      date: '2024-01-11',
-      dueDate: '2024-02-10',
-      matter: 'International Trade - Export Compliance',
-      riskScore: 35,
-      category: 'Trade',
-      description: 'Regulatory analysis and compliance audit'
-    }
-  ];
+  // Use API hook instead of hardcoded data
+  const { invoices, loading, error, refetch } = useInvoices(
+    statusFilter !== 'all' ? statusFilter : undefined
+  );
+
+  // Filter invoices based on search term
+  const filteredInvoices = invoices.filter(invoice =>
+    invoice.vendor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    invoice.matter.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    invoice.id.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -111,14 +62,6 @@ const Invoices: React.FC = () => {
     if (score >= 40) return 'text-warning-600 bg-warning-100';
     return 'text-success-600 bg-success-100';
   };
-
-  const filteredInvoices = invoices.filter(invoice => {
-    const matchesSearch = invoice.vendor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         invoice.matter.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         invoice.id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
 
   const toggleInvoiceSelection = (invoiceId: string) => {
     setSelectedInvoices(prev => 
@@ -181,6 +124,36 @@ const Invoices: React.FC = () => {
 
   return (
     <div className="p-6 space-y-6 animate-fade-in">
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+            <p className="mt-2 text-sm text-gray-500">Loading invoices...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-danger-50 text-danger-700 p-4 rounded-lg flex items-center">
+          <AlertTriangle className="w-5 h-5 mr-2" />
+          <div>
+            <p className="font-medium">Error loading invoices</p>
+            <p className="text-sm">{error}</p>
+            <button 
+              onClick={refetch}
+              className="mt-2 text-sm underline hover:no-underline"
+            >
+              Try again
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content - Only show when not loading and no error */}
+      {!loading && !error && (
+        <>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -457,6 +430,8 @@ const Invoices: React.FC = () => {
           </button>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 };

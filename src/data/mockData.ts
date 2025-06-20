@@ -12,7 +12,10 @@ export const mockInvoices: Invoice[] = [
     matter: 'IP Litigation - TechCorp',
     riskScore: 25,
     category: 'Litigation',
-    description: 'Monthly legal services for patent litigation matter'
+    description: 'Monthly legal services for patent litigation matter',
+    hours: 65,
+    rate: 950,
+    total: 45750
   },
   {
     id: 'INV-2024-002',
@@ -24,7 +27,10 @@ export const mockInvoices: Invoice[] = [
     matter: 'M&A Advisory',
     riskScore: 45,
     category: 'Corporate',
-    description: 'Due diligence services for potential acquisition'
+    description: 'Due diligence services for potential acquisition',
+    hours: 32,
+    rate: 850,
+    total: 23400
   },
   {
     id: 'INV-2024-003',
@@ -36,7 +42,10 @@ export const mockInvoices: Invoice[] = [
     matter: 'Regulatory Compliance',
     riskScore: 85,
     category: 'Compliance',
-    description: 'Regulatory compliance review and implementation'
+    description: 'Regulatory compliance review and implementation',
+    hours: 78,
+    rate: 1100,
+    total: 67800
   },
   {
     id: 'INV-2024-004',
@@ -48,7 +57,10 @@ export const mockInvoices: Invoice[] = [
     matter: 'Employment Law',
     riskScore: 15,
     category: 'Labor',
-    description: 'Employee handbook updates and compliance review'
+    description: 'Employee handbook updates and compliance review',
+    hours: 38,
+    rate: 1050,
+    total: 34200
   },
   {
     id: 'INV-2024-005',
@@ -60,7 +72,10 @@ export const mockInvoices: Invoice[] = [
     matter: 'International Trade',
     riskScore: 35,
     category: 'Trade',
-    description: 'International trade agreement compliance review'
+    description: 'International trade agreement compliance review',
+    hours: 62,
+    rate: 900,
+    total: 52300
   }
 ];
 
@@ -124,13 +139,31 @@ export const mockVendors: Vendor[] = [
 
 export const mockDashboardMetrics: DashboardMetrics = {
   total_spend: 2847392,
+  spend_change_percentage: 12.5,
+  invoice_count: 234,
   active_matters: 156,
-  vendor_count: 47,
+  risk_factors_count: 18,
+  high_risk_invoices_count: 15,
   avg_processing_time: 3.2,
-  risk_distribution: {
-    high: 15,
-    medium: 35,
-    low: 50
+  date_range: {
+    from: '2024-01-01',
+    to: '2024-12-31'
+  },
+  trend_data: {
+    monthly_spend: [
+      { period: '2024-01', amount: 235000 },
+      { period: '2024-02', amount: 242000 },
+      { period: '2024-03', amount: 238000 },
+      { period: '2024-04', amount: 251000 },
+      { period: '2024-05', amount: 247000 },
+      { period: '2024-06', amount: 258000 },
+      { period: '2024-07', amount: 265000 },
+      { period: '2024-08', amount: 271000 },
+      { period: '2024-09', amount: 269000 },
+      { period: '2024-10', amount: 278000 },
+      { period: '2024-11', amount: 284000 },
+      { period: '2024-12', amount: 292000 }
+    ]
   }
 };
 

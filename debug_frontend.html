@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Frontend API</title>
+</head>
+<body>
+    <h1>Frontend API Debug</h1>
+    <div id="results"></div>
+    
+    <script>
+        const API_URL = 'http://localhost:5002/api';
+        
+        async function testAPI() {
+            const results = document.getElementById('results');
+            
+            try {
+                console.log('Testing dashboard metrics...');
+                results.innerHTML += '<h2>Testing Dashboard Metrics</h2>';
+                
+                const response = await fetch(`${API_URL}/dashboard/metrics`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('Response status:', response.status);
+                results.innerHTML += `<p>Status: ${response.status}</p>`;
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('Data received:', data);
+                results.innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                
+                // Test specific fields the frontend expects
+                results.innerHTML += '<h3>Field Check:</h3>';
+                const requiredFields = ['total_spend', 'spend_change_percentage', 'invoice_count'];
+                requiredFields.forEach(field => {
+                    const value = data[field];
+                    results.innerHTML += `<p>${field}: ${value} (${typeof value})</p>`;
+                });
+                
+            } catch (error) {
+                console.error('Error:', error);
+                results.innerHTML += `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+        
+        // Run test when page loads
+        testAPI();
+    </script>
+</body>
+</html>

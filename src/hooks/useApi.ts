@@ -11,7 +11,7 @@ import {
 import { mockInvoices, mockVendors, mockDashboardMetrics, mockSpendTrends } from '../data/mockData';
 
 // Use this to toggle between API and mock data
-const USE_MOCK_DATA = false; // Using real API data
+const USE_MOCK_DATA = false; // Using real API data now that endpoints are working
 
 export function useInvoices(status?: string, vendor?: string) {
   const [invoices, setInvoices] = useState<Invoice[]>([]);

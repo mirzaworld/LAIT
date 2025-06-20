@@ -11,10 +11,11 @@ from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 
 # Add backend to path for imports
-sys.path.append('/Users/mirza/Documents/GitHub/LAIT/backend')
+sys.path.append('/app/backend')
+sys.path.append('/app')
 
-from models.db_models import Base, Vendor
-from db.database import get_db_session
+from backend.models.db_models import Base, Vendor
+from backend.db.database import get_db_session
 
 def categorize_practice_area(industry: str, name: str = '') -> str:
     """Categorize companies into primary practice areas"""
@@ -97,7 +98,7 @@ def import_legal_companies():
     print("Starting import of legal companies...")
     
     # Read the sample data
-    csv_path = '/Users/mirza/Documents/GitHub/LAIT/backend/data_processing/legal_companies_sample.csv'
+    csv_path = '/app/backend/data_processing/legal_companies_sample.csv'
     df = pd.read_csv(csv_path)
     
     print(f"Loaded {len(df)} companies from CSV")
