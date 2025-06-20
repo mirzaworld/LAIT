@@ -32,7 +32,7 @@ const SpendChart: React.FC = () => {
   
   // Build the default chart data
   const createChartData = () => {
-    if (!trends) {
+    if (!trends || !trends.datasets) {
       return {
         labels: [],
         datasets: []
@@ -41,17 +41,17 @@ const SpendChart: React.FC = () => {
     
     // Use the data from the hooks (which uses mockData in dev)
     return {
-      labels: trends.labels,
+      labels: trends.labels || [],
       datasets: [
         // Add datasets from trends
-        ...trends.datasets.map((dataset: any, index: number) => ({
+        ...(Array.isArray(trends.datasets) ? trends.datasets.map((dataset: any, index: number) => ({
           label: dataset.label,
           data: dataset.data,
           borderColor: getDatasetColor(index, 'border'),
           backgroundColor: getDatasetColor(index, 'background'),
           tension: 0.4,
           fill: true,
-        })),
+        })) : []),
         // Add budget line (constant value)
         {
           label: 'Budget Threshold',

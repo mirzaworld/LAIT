@@ -142,6 +142,14 @@ export function useSpendTrends(period: string = 'monthly', category?: string) {
       if (USE_MOCK_DATA) {
         data = {...mockSpendTrends};
         
+        // Ensure data has the expected structure to avoid errors
+        if (!data.datasets) {
+          data.datasets = [];
+        }
+        if (!data.labels) {
+          data.labels = [];
+        }
+        
         // Filter by period if needed
         if (period !== 'monthly') {
           // Simplify data based on period
@@ -149,30 +157,40 @@ export function useSpendTrends(period: string = 'monthly', category?: string) {
             data = {
               ...data,
               labels: ['Q1', 'Q2', 'Q3', 'Q4'],
-              datasets: data.datasets.map((dataset: any) => ({
-                ...dataset,
-                data: [
-                  dataset.data.slice(0, 3).reduce((sum: number, val: number) => sum + val, 0),
-                  dataset.data.slice(3, 6).reduce((sum: number, val: number) => sum + val, 0),
-                  dataset.data.slice(6, 9).reduce((sum: number, val: number) => sum + val, 0),
-                  dataset.data.slice(9, 12).reduce((sum: number, val: number) => sum + val, 0)
-                ]
-              }))
+              datasets: Array.isArray(data.datasets) ? data.datasets.map((dataset: any) => {
+                if (!Array.isArray(dataset.data)) {
+                  return { ...dataset, data: [0, 0, 0, 0] };
+                }
+                return {
+                  ...dataset,
+                  data: [
+                    dataset.data.slice(0, 3).reduce((sum: number, val: number) => sum + val, 0),
+                    dataset.data.slice(3, 6).reduce((sum: number, val: number) => sum + val, 0),
+                    dataset.data.slice(6, 9).reduce((sum: number, val: number) => sum + val, 0),
+                    dataset.data.slice(9, 12).reduce((sum: number, val: number) => sum + val, 0)
+                  ]
+                };
+              }) : []
             };
           } else if (period === 'annually') {
             data = {
               ...data,
               labels: ['2024'],
-              datasets: data.datasets.map((dataset: any) => ({
-                ...dataset,
-                data: [dataset.data.reduce((sum: number, val: number) => sum + val, 0)]
-              }))
+              datasets: Array.isArray(data.datasets) ? data.datasets.map((dataset: any) => {
+                if (!Array.isArray(dataset.data)) {
+                  return { ...dataset, data: [0] };
+                }
+                return {
+                  ...dataset,
+                  data: [dataset.data.reduce((sum: number, val: number) => sum + val, 0)]
+                };
+              }) : []
             };
           }
         }
         
         // Filter by category if needed
-        if (category) {
+        if (category && Array.isArray(data.datasets)) {
           data = {
             ...data,
             datasets: data.datasets.filter((dataset: any) => dataset.label === category)
@@ -182,11 +200,27 @@ export function useSpendTrends(period: string = 'monthly', category?: string) {
         await new Promise(resolve => setTimeout(resolve, 500));
       } else {
         data = await getSpendTrends(period, category);
+        
+        // If API returns null/undefined, provide default structure
+        if (!data) {
+          data = { labels: [], datasets: [] };
+        }
+        
+        // Ensure returned data has required structure
+        if (!data.datasets) {
+          data.datasets = [];
+        }
+        if (!data.labels) {
+          data.labels = [];
+        }
       }
       
       setTrends(data);
     } catch (err) {
+      console.error("Error in useSpendTrends:", err);
       setError(err instanceof Error ? err.message : 'Failed to fetch spend trends');
+      // Provide default values on error
+      setTrends({ labels: [], datasets: [] });
     } finally {
       setLoading(false);
     }

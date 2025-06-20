@@ -40,12 +40,30 @@ export const useNotifications = () => {
     
     // Initialize socket connection
     useEffect(() => {
-        const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:8000');
-        setSocket(newSocket);
-        
-        return () => {
-            newSocket.close();
-        };
+        try {
+            // Only attempt to connect to socket.io if it's enabled
+            // This prevents errors when the backend doesn't have socket.io support
+            const SOCKET_ENABLED = import.meta.env.VITE_SOCKET_ENABLED === 'true';
+            
+            if (SOCKET_ENABLED) {
+                const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:5003');
+                setSocket(newSocket);
+                
+                // Add error handling
+                newSocket.on('connect_error', (err) => {
+                    console.log('Socket connection error:', err.message);
+                    // Don't show toasts for connection errors to avoid spamming the UI
+                });
+                
+                return () => {
+                    newSocket.close();
+                };
+            } else {
+                console.log('Real-time notifications disabled');
+            }
+        } catch (err) {
+            console.error('Failed to initialize socket:', err);
+        }
     }, []);
     
     // Handle incoming notifications

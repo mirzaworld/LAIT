@@ -22,6 +22,7 @@ import base64
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
+from flask_socketio import SocketIO
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -45,9 +46,21 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 CORS(app)
+# Initialize SocketIO with CORS support
+socketio = SocketIO(cors_allowed_origins="*")
+socketio.init_app(app)
 
 # Global data storage
 invoices = []
+
+# Socket.IO event handlers
+@socketio.on('connect')
+def handle_connect():
+    logger.info("Client connected to Socket.IO")
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    logger.info("Client disconnected from Socket.IO")
 legal_companies = []
 uploaded_invoices = []
 ml_models = {}
@@ -1590,6 +1603,11 @@ if __name__ == '__main__':
     port = int(os.environ.get('API_PORT', 5003))
     host = os.environ.get('API_HOST', '0.0.0.0')
     debug = os.environ.get('DEBUG', 'True').lower() == 'true'
+    
+    # Use Socket.IO to run the application instead of regular Flask run
+    if __name__ == '__main__':
+        print(f"🚀 Starting enhanced LAIT API with Socket.IO support on http://{host}:{port}")
+        socketio.run(app, host=host, port=port, debug=debug)
     
     print(f"🌐 Starting unified production server on port {port}...")
     print(f"📡 API documentation available at http://localhost:{port}/")

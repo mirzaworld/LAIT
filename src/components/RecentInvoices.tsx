@@ -119,7 +119,7 @@ const RecentInvoices: React.FC = () => {
                 <div className="flex items-center space-x-4">
                   <div className="text-right">
                     <p className="text-sm font-semibold text-gray-900">
-                      ${invoice.amount.toLocaleString()}
+                      ${invoice.amount ? invoice.amount.toLocaleString() : '0'}
                     </p>
                     <span className={getStatusBadge(invoice.status)}>
                       {invoice.status}

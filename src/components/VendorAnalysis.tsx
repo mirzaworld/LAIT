@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { AlertTriangle, ArrowUpRight, Loader2 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line
 } from 'recharts';
-import { AlertTriangle, ArrowUpRight, Loader2 } from 'lucide-react';
 
 interface VendorAnalysisProps {
   vendorId?: string;
