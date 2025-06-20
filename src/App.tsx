@@ -20,11 +20,14 @@ import { AppProvider, useApp } from './context/AppContext';
 import SettingsIntegrations from './pages/SettingsIntegrations';
 import 'react-toastify/dist/ReactToastify.css';
 
-// Set mock token for development
+// Set mock token for development and auto-authenticate
 const setDevelopmentToken = () => {
   if (!localStorage.getItem('lait_token') && !localStorage.getItem('token')) {
     console.log('Setting development token for LAIT demo');
     localStorage.setItem('lait_token', 'mock-jwt-token-for-development');
+    
+    // Also trigger a state update by dispatching a storage event
+    window.dispatchEvent(new Event('storage'));
   }
 };
 

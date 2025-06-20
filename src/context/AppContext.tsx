@@ -74,7 +74,9 @@ export const AppContext = createContext<AppContextType>(defaultContextValue);
 
 export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return !!auth.currentUser;
+    // For development, check if we have a token
+    const token = localStorage.getItem('lait_token') || localStorage.getItem('token');
+    return !!token || !!auth.currentUser;
   });
   
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -121,8 +123,80 @@ export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children })
     return () => unsubscribe();
   }, []);
 
+  // Listen for token changes (for development auto-authentication)
+  useEffect(() => {
+    const checkToken = () => {
+      const token = localStorage.getItem('lait_token') || localStorage.getItem('token');
+      if (token && !isAuthenticated) {
+        setIsAuthenticated(true);
+        
+        // Set mock user profile if none exists
+        if (!userProfile) {
+          const mockProfile: UserProfile = {
+            uid: 'dev-user-1',
+            prefix: 'Mr.',
+            firstName: 'John',
+            middleName: 'Legal',
+            lastName: 'Demo',
+            email: 'admin@lait.demo',
+            phone: '+1-555-0123',
+            dateOfBirth: '1980-01-01',
+            organizationType: 'Law Firm',
+            termsAccepted: true,
+            phoneVerified: true,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+          setUserProfile(mockProfile);
+        }
+      } else if (!token && isAuthenticated && !auth.currentUser) {
+        setIsAuthenticated(false);
+        setUserProfile(null);
+      }
+    };
+
+    // Check immediately
+    checkToken();
+
+    // Listen for storage events
+    window.addEventListener('storage', checkToken);
+    
+    return () => {
+      window.removeEventListener('storage', checkToken);
+    };
+  }, [isAuthenticated, userProfile]);
+
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
+      // Development mode authentication
+      if ((email === 'admin@lait.demo' && password === 'demo123') || 
+          (email === 'demo' && password === 'demo')) {
+        const mockToken = 'mock-jwt-token-for-development';
+        localStorage.setItem('lait_token', mockToken);
+        setIsAuthenticated(true);
+        
+        // Set mock user profile for development
+        const mockProfile: UserProfile = {
+          uid: 'dev-user-1',
+          prefix: 'Mr.',
+          firstName: 'John',
+          middleName: 'Legal',
+          lastName: 'Demo',
+          email: 'admin@lait.demo',
+          phone: '+1-555-0123',
+          dateOfBirth: '1980-01-01',
+          organizationType: 'Law Firm',
+          termsAccepted: true,
+          phoneVerified: true,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        setUserProfile(mockProfile);
+        
+        return true;
+      }
+
+      // Firebase authentication (if configured)
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const token = await userCredential.user.getIdToken();
       localStorage.setItem('authToken', token);
@@ -236,8 +310,16 @@ export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children })
 
   const logout = async () => {
     try {
-      await signOut(auth);
+      // Clear development tokens
+      localStorage.removeItem('lait_token');
+      localStorage.removeItem('token');
       localStorage.removeItem('authToken');
+      
+      // Sign out from Firebase if authenticated
+      if (auth.currentUser) {
+        await signOut(auth);
+      }
+      
       setIsAuthenticated(false);
       setUserProfile(null);
     } catch (error) {
