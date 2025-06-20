@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LAIT API Integration Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .loading { background: #fff3cd; border-color: #ffeaa7; }
+        pre { background: #f8f9fa; padding: 10px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <h1>LAIT API Integration Test</h1>
+    <div id="tests"></div>
+    
+    <script>
+        const API_URL = 'http://localhost:8000/api';
+        const testsContainer = document.getElementById('tests');
+        
+        function addTest(name, status, data) {
+            const div = document.createElement('div');
+            div.className = `test ${status}`;
+            div.innerHTML = `
+                <h3>${name}</h3>
+                <p>Status: ${status}</p>
+                ${data ? `<pre>${JSON.stringify(data, null, 2)}</pre>` : ''}
+            `;
+            testsContainer.appendChild(div);
+        }
+        
+        async function testEndpoint(name, endpoint) {
+            addTest(name, 'loading', null);
+            try {
+                const response = await fetch(`${API_URL}${endpoint}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                addTest(name, 'success', data);
+                return data;
+            } catch (error) {
+                addTest(name, 'error', { error: error.message });
+                return null;
+            }
+        }
+        
+        async function runTests() {
+            await testEndpoint('Analytics Summary', '/analytics/summary');
+            await testEndpoint('Spend Trends', '/analytics/spend-trends');
+            await testEndpoint('Vendors', '/vendors');
+            await testEndpoint('Invoices', '/invoices');
+        }
+        
+        runTests();
+    </script>
+</body>
+</html>
