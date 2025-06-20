@@ -1,31 +1,8 @@
-import React, { useState } from 'react';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  BarElement,
-  Filler,
-} from 'chart.js';
+import React, { useState, useEffect } from 'react';
 import { Line } from 'react-chartjs-2';
 import { Loader2 } from 'lucide-react';
 import { useSpendTrends } from '../hooks/useApi';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
+import { ChartJS, defaultChartOptions } from '../utils/chartConfig';
 
 const SpendChart: React.FC = () => {
   const [period, setPeriod] = useState<string>('monthly');

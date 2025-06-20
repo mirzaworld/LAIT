@@ -1,0 +1,35 @@
+## LAIT Memory Analysis Report ##
+
+Current Process Memory Usage:
+- RSS (Resident Set Size): 36.47 MB
+- Heap Total: 5.05 MB
+- Heap Used: 3.94 MB
+- External: 1.45 MB
+- ArrayBuffers: 10.27 KB
+
+Large Files (over 5MB):
+- /Users/mirza/Documents/GitHub/LAIT/backend/backend/backend/venv/lib/python3.11/site-packages/numpy/.dylibs/libopenblas64_.0.dylib (21.62 MB)
+- /Users/mirza/Documents/GitHub/LAIT/backend/backend/backend/venv/lib/python3.11/site-packages/cryptography/hazmat/bindings/_rust.abi3.so (20.47 MB)
+- /Users/mirza/Documents/GitHub/LAIT/backend/venv/lib/python3.13/site-packages/cryptography/hazmat/bindings/_rust.abi3.so (20.47 MB)
+- /Users/mirza/Documents/GitHub/LAIT/backend/ml/models/enhanced_spend_model.joblib (13.75 MB)
+- /Users/mirza/Documents/GitHub/LAIT/backend/venv/lib/python3.13/site-packages/language_data/__pycache__/name_data.cpython-313.pyc (6.92 MB)
+- /Users/mirza/Documents/GitHub/LAIT/backend/venv/lib/python3.13/site-packages/xgboost/lib/libxgboost.dylib (6.52 MB)
+- /Users/mirza/Documents/GitHub/LAIT/backend/venv/lib/python3.13/site-packages/en_core_web_sm/en_core_web_sm-3.8.0/tok2vec/model (5.98 MB)
+- /Users/mirza/Documents/GitHub/LAIT/backend/venv/lib/python3.13/site-packages/en_core_web_sm/en_core_web_sm-3.8.0/ner/model (5.87 MB)
+- /Users/mirza/Documents/GitHub/LAIT/backend/backend/backend/venv/lib/python3.11/site-packages/pypdfium2_raw/libpdfium.dylib (5.48 MB)
+- /Users/mirza/Documents/GitHub/LAIT/backend/venv/lib/python3.13/site-packages/pypdfium2_raw/libpdfium.dylib (5.48 MB)
+
+Node.js Memory Settings:
+- RSS: 34.64 MB
+- Heap Total: 4.8 MB
+- Heap Used: 3.29 MB
+- V8 Options: 
+  --max-heap-size (max size of the heap (in Mbytes) both max_semi_space_size and max_old_space_size take precedence. All three flags cannot be specified at the same time.)
+
+
+Recommendations:
+- Increase Node.js memory: NODE_OPTIONS=--max-old-space-size=4096 npm run dev
+- Use chunked file processing for large file uploads
+- Implement pagination for large dataset tables
+- Ensure proper cleanup of temporary files on the server
+- Monitor memory usage during file processing operations

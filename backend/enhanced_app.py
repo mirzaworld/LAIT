@@ -884,6 +884,16 @@ def upload_invoice():
         if file.filename == '':
             logger.warning("Empty filename in upload request")
             return jsonify({"error": "No file selected"}), 400
+            
+        # Check file size limit (10MB)
+        max_file_size = 10 * 1024 * 1024  # 10 MB
+        file.seek(0, os.SEEK_END)
+        file_size = file.tell()
+        file.seek(0)
+        
+        if file_size > max_file_size:
+            logger.warning(f"File too large: {file_size} bytes (limit: {max_file_size} bytes)")
+            return jsonify({"error": f"File too large. Maximum size is {max_file_size/1024/1024:.1f} MB"}), 413
         
         # Extract metadata from form
         vendor = request.form.get('vendor', 'Unknown Vendor')
@@ -895,10 +905,27 @@ def upload_invoice():
         # Generate a unique invoice ID
         invoice_id = f"INV-{int(time.time())[-6:]}"
         
-        # Store file content (in a production system, this would save to disk/cloud storage)
-        file_content = file.read()
-        file_size = len(file_content)
+        # Store file metadata but don't keep the full content in memory
+        # In a production system, save to disk/cloud storage with chunked processing
         logger.info(f"Received file: {file.filename}, size: {file_size} bytes")
+        
+        # Process the file in chunks if needed - this is a memory-efficient approach
+        chunk_size = 1024 * 1024  # 1MB chunks
+        temp_filename = None
+        
+        # Only save file to temp storage if it's larger than 1MB
+        if file_size > chunk_size:
+            import tempfile
+            with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+                temp_filename = temp_file.name
+                while True:
+                    chunk = file.read(chunk_size)
+                    if not chunk:
+                        break
+                    temp_file.write(chunk)
+        else:
+            # Small files can still be read in one go
+            file_content = file.read()
         
         # Calculate risk score based on various factors
         risk_score = calculate_dynamic_risk_score({
@@ -940,6 +967,14 @@ def upload_invoice():
         # Add to global uploaded invoices list
         uploaded_invoices.append(new_invoice)
         
+        # Clean up temp file if created
+        if temp_filename and os.path.exists(temp_filename):
+            try:
+                os.remove(temp_filename)
+                logger.info(f"Temporary file {temp_filename} removed")
+            except Exception as cleanup_error:
+                logger.error(f"Error removing temporary file: {cleanup_error}")
+                
         # Return success with analysis
         logger.info(f"Invoice {invoice_id} uploaded successfully with risk score {risk_score}")
         

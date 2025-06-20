@@ -4,11 +4,13 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "NODE_OPTIONS='--max-old-space-size=4096' vite",
+    "build": "NODE_OPTIONS='--max-old-space-size=4096' vite build",
     "typecheck": "tsc --noEmit",
     "lint": "npx eslint . --ext js,jsx,ts,tsx",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "memory-check": "node scripts/memory_check.cjs",
+    "start-optimized": "./run_with_increased_memory.sh"
   },
   "dependencies": {
     "@types/firebase": "^2.4.32",

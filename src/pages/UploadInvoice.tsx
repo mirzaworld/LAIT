@@ -18,46 +18,114 @@ const UploadInvoice: React.FC = () => {
   const [uploadResults, setUploadResults] = useState<Record<string, UploadResult>>({});
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  
+  // Constants
+  const MAX_FILES = 5; // Maximum number of files that can be uploaded at once
+
+  // Max file size: 10MB
+  const MAX_FILE_SIZE = 10 * 1024 * 1024;
+  
+  const validateFile = (file: File): boolean => {
+    // Check file type
+    const isValidType = file.type === 'application/pdf' || 
+                       file.type === 'text/plain' || 
+                       file.name.endsWith('.pdf');
+                       
+    // Check file size
+    const isValidSize = file.size <= MAX_FILE_SIZE;
+    
+    if (!isValidType) {
+      setError('Only PDF and text files are allowed');
+      return false;
+    }
+    
+    if (!isValidSize) {
+      setError(`File size exceeds the limit of ${MAX_FILE_SIZE / (1024 * 1024)}MB`);
+      return false;
+    }
+    
+    return true;
+  };
+  
+  // Check if adding files would exceed the maximum allowed
+  const checkMaxFiles = (newFilesCount: number): boolean => {
+    if (files.length + newFilesCount > MAX_FILES) {
+      setError(`Cannot upload more than ${MAX_FILES} files at once`);
+      return false;
+    }
+    return true;
+  };
 
   const handleFileDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
-    const droppedFiles = Array.from(event.dataTransfer.files).filter(
-      file => file.type === 'application/pdf' || file.type === 'text/plain' || file.name.endsWith('.pdf')
-    );
-    setFiles((prevFiles) => [...prevFiles, ...droppedFiles]);
     setError(null);
+    
+    const filesToProcess = Array.from(event.dataTransfer.files);
+    
+    // Check if adding these files would exceed the maximum
+    if (!checkMaxFiles(filesToProcess.length)) {
+      return;
+    }
+    
+    const validFiles = filesToProcess.filter(validateFile);
+    if (validFiles.length > 0) {
+      setFiles((prevFiles) => [...prevFiles, ...validFiles]);
+    }
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = Array.from(event.target.files || []).filter(
-      file => file.type === 'application/pdf' || file.type === 'text/plain' || file.name.endsWith('.pdf')
-    );
-    setFiles((prevFiles) => [...prevFiles, ...selectedFiles]);
     setError(null);
+    
+    const filesToProcess = Array.from(event.target.files || []);
+    
+    // Check if adding these files would exceed the maximum
+    if (!checkMaxFiles(filesToProcess.length)) {
+      return;
+    }
+    
+    const validFiles = filesToProcess.filter(validateFile);
+    if (validFiles.length > 0) {
+      setFiles((prevFiles) => [...prevFiles, ...validFiles]);
+    }
   };
 
   const handleUploadAll = async () => {
     setIsUploading(true);
     setError(null);
     
+    // Process files one by one to avoid memory issues
     for (const file of files) {
-      setUploadProgress(prev => ({ ...prev, [file.name]: 0 }));
-
       try {
+        setUploadProgress(prev => ({ ...prev, [file.name]: 0 }));
         console.log(`Uploading file: ${file.name}`);
+        
+        // Simulate progress to give feedback
+        const progressInterval = setInterval(() => {
+          setUploadProgress(prev => {
+            const currentProgress = prev[file.name] || 0;
+            if (currentProgress < 90) {
+              return { ...prev, [file.name]: currentProgress + 10 };
+            }
+            return prev;
+          });
+        }, 300);
         
         // Use the API service function
         const result = await uploadInvoice(
           file,
-          'Unknown Vendor', // Default vendor - could be extracted from file or user input
+          'Unknown Vendor', // Default vendor
           undefined, // Amount will be extracted from file
           undefined, // Date will be extracted from file
           'Legal Services', // Default category
           `Uploaded via web interface: ${file.name}`
         );
         
+        clearInterval(progressInterval);
         setUploadProgress(prev => ({ ...prev, [file.name]: 100 }));
         setUploadResults(prev => ({ ...prev, [file.name]: result }));
+        
+        // Add a small delay between file uploads to prevent overwhelming the server
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         console.log(`Successfully uploaded ${file.name}:`, result);
       } catch (error) {

@@ -15,6 +15,16 @@ An enterprise-grade AI-powered legal intelligence platform that surpasses Thomso
 
 ### **Start the System**
 
+#### Option 1: Memory-Optimized Start (Recommended)
+
+```bash
+# Single command to start both backend and frontend with optimized memory settings
+cd /Users/mirza/Documents/GitHub/LAIT
+npm run start-optimized
+```
+
+#### Option 2: Manual Start
+
 ```bash
 # Terminal 1 - Start the Unified Backend
 cd /Users/mirza/Documents/GitHub/LAIT
@@ -84,9 +94,16 @@ After consolidation, the project structure has been simplified:
 └── requirements.txt           # Python dependencies
 ```
 
+## � **Documentation**
+
+- [Comprehensive Project Documentation](./COMPREHENSIVE_PROJECT_DOCUMENTATION.md) - Full technical details, deployment guides, and API references
+- [Memory Management Guide](./docs/MEMORY_MANAGEMENT.md) - Solutions for handling memory issues and optimization strategies
+- [Backend API Documentation](./backend/README.md) - Backend API endpoints and usage
+- [Frontend Development Guide](./src/README.md) - Frontend component structure and development
+
 ## 📞 **Support**
 
-For detailed technical documentation, deployment guides, API references, and development instructions, please refer to the [Comprehensive Project Documentation](./COMPREHENSIVE_PROJECT_DOCUMENTATION.md).
+For technical assistance or to report issues, please refer to the documentation above or contact the development team.
 
 ---
 
