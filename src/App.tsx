@@ -160,14 +160,9 @@ function AppContent() {
           } />
         } />
         
-        {/* Root path for non-authenticated users */}
-        <Route path="/" element={
-          <AuthRoute element={<Navigate to="/landing" replace />} />
-        } />
-        
         {/* Catch-all route - redirect to landing if not authenticated, dashboard if authenticated */}
         <Route path="*" element={
-          <AuthRoute element={<Navigate to="/landing" replace />} />
+          <ProtectedRoute element={<Navigate to="/" replace />} />
         } />
       </Routes>
     </Router>

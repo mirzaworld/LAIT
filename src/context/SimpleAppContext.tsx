@@ -12,7 +12,11 @@ interface SimpleAppContextType {
 const SimpleAppContext = createContext<SimpleAppContextType | undefined>(undefined);
 
 export const SimpleAppProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    // For development, check if we have a token or auto-authenticate
+    const token = localStorage.getItem('lait_token');
+    return !!token;
+  });
   const [user, setUser] = useState(null);
   const [darkMode, setDarkMode] = useState(false);
 
@@ -24,6 +28,17 @@ export const SimpleAppProvider: React.FC<{children: React.ReactNode}> = ({ child
     if (token && userData) {
       setIsAuthenticated(true);
       setUser(JSON.parse(userData));
+    } else if (!token) {
+      // For development, set a mock token if none exists
+      console.log('Setting development token for LAIT demo');
+      localStorage.setItem('lait_token', 'mock-jwt-token-for-development');
+      localStorage.setItem('lait_user', JSON.stringify({ 
+        id: '1', 
+        email: 'demo@lait.com', 
+        name: 'Demo User' 
+      }));
+      setIsAuthenticated(true);
+      setUser({ id: '1', email: 'demo@lait.com', name: 'Demo User' });
     }
   }, []);
 

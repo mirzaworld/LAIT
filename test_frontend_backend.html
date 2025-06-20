@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LAIT Frontend-Backend Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .test { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .loading { background-color: #fff3cd; border-color: #ffeaa7; }
+        button { padding: 10px 20px; margin: 10px 0; cursor: pointer; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>LAIT Frontend-Backend Integration Test</h1>
+    
+    <button onclick="testAllEndpoints()">Test All Endpoints</button>
+    <button onclick="clearResults()">Clear Results</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:5002/api';
+        
+        async function testEndpoint(name, url, method = 'GET', body = null) {
+            const resultsDiv = document.getElementById('results');
+            
+            // Add loading indicator
+            const testDiv = document.createElement('div');
+            testDiv.className = 'test loading';
+            testDiv.innerHTML = `<h3>Testing ${name}...</h3><p>URL: ${url}</p>`;
+            resultsDiv.appendChild(testDiv);
+            
+            try {
+                const options = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                };
+                
+                if (body) {
+                    options.body = JSON.stringify(body);
+                }
+                
+                const response = await fetch(url, options);
+                const data = await response.json();
+                
+                testDiv.className = response.ok ? 'test success' : 'test error';
+                testDiv.innerHTML = `
+                    <h3>${name} - ${response.ok ? 'SUCCESS' : 'FAILED'}</h3>
+                    <p>URL: ${url}</p>
+                    <p>Status: ${response.status} ${response.statusText}</p>
+                    <pre>${JSON.stringify(data, null, 2).substring(0, 1000)}${JSON.stringify(data, null, 2).length > 1000 ? '...' : ''}</pre>
+                `;
+            } catch (error) {
+                testDiv.className = 'test error';
+                testDiv.innerHTML = `
+                    <h3>${name} - ERROR</h3>
+                    <p>URL: ${url}</p>
+                    <p>Error: ${error.message}</p>
+                `;
+            }
+        }
+        
+        async function testAllEndpoints() {
+            clearResults();
+            
+            // Test basic endpoints
+            await testEndpoint('Health Check', `${API_BASE}/health`);
+            await testEndpoint('Dashboard Metrics', `${API_BASE}/dashboard/metrics`);
+            await testEndpoint('Invoices List', `${API_BASE}/invoices`);
+            await testEndpoint('Vendors List', `${API_BASE}/vendors`);
+            await testEndpoint('Spend Trends', `${API_BASE}/analytics/spend-trends`);
+            
+            // Test report generation
+            await testEndpoint('Generate Report', `${API_BASE}/reports/generate`, 'POST', {
+                report_type: 'summary',
+                filters: {}
+            });
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        // Test on page load
+        window.onload = function() {
+            document.getElementById('results').innerHTML = '<p>Click "Test All Endpoints" to verify frontend-backend communication.</p>';
+        };
+    </script>
+</body>
+</html>

@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { SimpleAppProvider, useSimpleApp } from './context/SimpleAppContext';
 import SimpleLayout from './components/SimpleLayout';
-import Dashboard from './pages/Dashboard';
+import SimpleDashboard from './pages/SimpleDashboard';
 import Analytics from './pages/Analytics';
 import Invoices from './pages/Invoices';
 import Reports from './pages/Reports';
@@ -41,8 +41,8 @@ function AppContent() {
         
         {/* Protected routes */}
         <Route path="/" element={<ProtectedRoute element={<SimpleLayout />} />}>
-          <Route index element={<Dashboard />} />
-          <Route path="dashboard" element={<Dashboard />} />
+          <Route index element={<SimpleDashboard />} />
+          <Route path="dashboard" element={<SimpleDashboard />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="invoices" element={<Invoices />} />
           <Route path="reports" element={<Reports />} />
