@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart3, PieChart, TrendingUp, Filter, Download, Calendar, AlertTriangle, ChevronLeft } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title } from 'chart.js';
 import { Doughnut, Bar, Line } from 'react-chartjs-2';
 import { pdfService } from '../services/pdfService';
 import LegalAnalytics from '../components/LegalAnalytics';
 import ErrorBoundary from '../components/ErrorBoundary';
-
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title);
+import '../utils/chartConfig';
 
 const Analytics: React.FC = () => {
   const location = useLocation();

@@ -292,11 +292,34 @@ class LegalDataService {
    */
   async searchOpinions(params: SearchParams): Promise<SearchResult> {
     try {
+      // Validate and format dates
+      if (params.filed_after) {
+        const afterDate = new Date(params.filed_after);
+        params.filed_after = afterDate.toISOString().split('T')[0];
+      }
+      if (params.filed_before) {
+        const beforeDate = new Date(params.filed_before);
+        params.filed_before = beforeDate.toISOString().split('T')[0];
+      }
+
+      // Add required query parameter if not present
+      if (!params.q) {
+        params.q = '*';  // Match all if no specific query
+      }
+
       const response: AxiosResponse<SearchResult> = await axios.get(
         `${COURTLISTENER_SEARCH_API}/`,
         {
-          params: { ...params, type: 'o' },
-          headers: this.getHeaders(),
+          params: { 
+            ...params,
+            type: 'o',
+            format: 'json',
+            page_size: 20
+          },
+          headers: {
+            ...this.getHeaders(),
+            'Accept': 'application/json'
+          }
         }
       );
       return response.data;
@@ -492,14 +515,24 @@ class LegalDataService {
         searchParams.q = params.practiceArea;
       }
 
-      const searchResult = await this.searchOpinions(searchParams);
+      let searchResult;
+      try {
+        searchResult = await this.searchOpinions(searchParams);
+      } catch (error) {
+        console.warn('Failed to fetch live data, using fallback data', error);
+        // Use fallback data
+        searchResult = {
+          count: 0,
+          results: []
+        };
+      }
       
-      // Process results to generate analytics
+      // Process results to generate analytics with fallback data
       const analytics: LegalAnalytics = {
-        totalCases: searchResult.count,
-        recentTrends: await this.calculateTrends(searchParams),
-        topCourts: await this.getTopCourts(searchParams),
-        caseTypeDistribution: await this.getCaseTypeDistribution(searchParams),
+        totalCases: searchResult.count || 0,
+        recentTrends: await this.calculateTrends(searchParams).catch(() => []),
+        topCourts: await this.getTopCourts(searchParams).catch(() => []),
+        caseTypeDistribution: await this.getCaseTypeDistribution(searchParams).catch(() => []),
         citationNetwork: await this.getCitationNetwork(searchParams),
       };
 

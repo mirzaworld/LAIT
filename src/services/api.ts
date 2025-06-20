@@ -11,6 +11,8 @@ const getAuthHeaders = (): HeadersInit => {
   const token = getAuthToken();
   return {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'Origin': window.location.origin,
     ...(token && { 'Authorization': `Bearer ${token}` })
   };
 };
@@ -269,9 +271,14 @@ export const uploadInvoice = async (
     const response = await fetch(`${API_URL}/api/upload-invoice`, {
       method: 'POST',
       body: formData,
-      headers,
+      headers: {
+        ...headers,
+        'Access-Control-Allow-Origin': window.location.origin,
+        'Access-Control-Allow-Methods': 'POST',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+      },
       mode: 'cors',
-      credentials: 'omit'
+      credentials: 'include'
     });
     
     console.log('Upload response status:', response.status);

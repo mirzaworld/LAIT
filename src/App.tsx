@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import Layout from './components/Layout';
@@ -56,6 +56,144 @@ const AuthRoute: React.FC<{element: React.ReactNode}> = ({ element }) => {
   
   return <>{element}</>;
 };
+
+// Add future flags configuration
+const router = createBrowserRouter(
+  [
+    {/* Public landing page */}
+    { path: "/landing", element: <Landing /> },
+    { path: "/contact", element: <Contact /> },
+    
+    {/* Public auth routes */}
+    { path: "/login", element: <AuthRoute element={<Login />} /> },
+    { path: "/signup", element: <AuthRoute element={<SignUp />} /> },
+    
+    {/* Protected routes with layout */}
+    { path: "/", element: 
+      <ProtectedRoute element={
+        <Layout>
+          <Dashboard />
+        </Layout>
+      } />
+    },
+    { path: "/analytics", element: 
+      <ProtectedRoute element={
+        <Layout>
+          <Analytics />
+        </Layout>
+      } />
+    },
+    { path: "/analytics/advanced", element: 
+      <ProtectedRoute element={
+        <Layout>
+          <AdvancedAnalytics />
+        </Layout>
+      } />
+    },
+    { path: "/invoices", element: 
+      <ProtectedRoute element={
+        <Layout>
+          <Invoices />
+        </Layout>
+      } />
+    },
+    { path: "/invoices/:id", element: 
+      <ProtectedRoute element={
+        <Layout>
+          <Invoices />
+        </Layout>
+      } />
+    },
+    { path: "/invoices/upload", element: 
+      <ProtectedRoute element={
+        <Layout>
+          <UploadInvoice />
+        </Layout>
+      } />
+    },
+    { path: "/invoices/list", element: 
+      <ProtectedRoute element={
+        <Layout>
+          <InvoiceList />
+        </Layout>
+      } />
+    },
+    { path: "/reports", element: 
+      <ProtectedRoute element={
+        <Layout>
+          <Reports />
+        </Layout>
+      } />
+    },
+    { path: "/settings", element: 
+      <ProtectedRoute element={
+        <Layout>
+          <Settings />
+        </Layout>
+      } />
+    },
+    { path: "/vendors", element: 
+      <ProtectedRoute element={
+        <Layout>
+          <VendorPerformance />
+        </Layout>
+      } />
+    },
+    { path: "/recommendations-alerts", element: 
+      <ProtectedRoute element={
+        <Layout>
+          <RecommendationsAlerts />
+        </Layout>
+      } />
+    },
+    { path: "/settings-integrations", element: 
+      <ProtectedRoute element={
+        <Layout>
+          <SettingsIntegrations />
+        </Layout>
+      } />
+    },
+    { path: "/legal-intelligence", element: 
+      <ProtectedRoute element={
+        <Layout>
+          <LegalIntelligence />
+        </Layout>
+      } />
+    },
+    { path: "/vendor-analytics", element: 
+      <ProtectedRoute element={
+        <Layout>
+          <VendorAnalyticsPage />
+        </Layout>
+      } />
+    },
+    { path: "/vendor-analytics/:id", element: 
+      <ProtectedRoute element={
+        <Layout>
+          <VendorAnalyticsPage />
+        </Layout>
+      } />
+    },
+    { path: "/diagnostics", element: 
+      <ProtectedRoute element={
+        <Layout>
+          <DiagnosticsPage />
+        </Layout>
+      } />
+    },
+    
+    {/* Catch-all route - redirect to landing if not authenticated, dashboard if authenticated */}
+    { path: "*", element: 
+      <ProtectedRoute element={<Navigate to="/" replace />} />
+    }
+  ],
+  {
+    future: {
+      v7_startTransition: true,
+      v7_relativeSplatPath: true
+    }
+  }
+);
 
 function AppContent() {
   return (
