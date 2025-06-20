@@ -1,0 +1,11 @@
+# LAIT API Requirements
+Flask==2.3.3
+pandas==2.1.1
+scikit-learn==1.3.0
+flask-cors==4.0.0
+numpy==1.24.3
+python-dotenv==1.0.0
+
+# Optional dependencies
+redis==4.6.0
+celery==5.3.1

@@ -21,6 +21,7 @@ import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { useNotificationContext } from '../context/NotificationContext';
 import { NotificationItem } from './NotificationItem';
+import ApiHealthIndicator from './ApiHealthIndicator';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -173,6 +174,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     <Moon className="w-5 h-5" />
                   )}
                 </button>
+
+                {/* API Health Status */}
+                <ApiHealthIndicator />
 
                 {/* Notifications */}
                 <div className="relative">

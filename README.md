@@ -16,9 +16,10 @@ An enterprise-grade AI-powered legal intelligence platform that surpasses Thomso
 ### **Start the System**
 
 ```bash
-# Terminal 1 - Start Enhanced Backend
+# Terminal 1 - Start the Unified Backend
 cd /Users/mirza/Documents/GitHub/LAIT
-python backend/enhanced_app.py
+./run_api.sh
+# or directly with: python backend/enhanced_app.py
 
 # Terminal 2 - Start Frontend
 cd /Users/mirza/Documents/GitHub/LAIT
@@ -57,10 +58,38 @@ This document contains:
 - **Charts**: Recharts for interactive visualizations
 - **AI/ML**: scikit-learn, pandas, numpy
 
+## 📁 **Project Structure**
+
+After consolidation, the project structure has been simplified:
+
+```text
+/LAIT
+├── backend/                   # Unified backend codebase
+│   ├── enhanced_app.py        # Main production backend (all features)
+│   ├── celery_worker.py       # Background task processing
+│   ├── app.py                 # Flask factory pattern alternative
+│   ├── config.py              # Configuration settings
+│   ├── models.py              # Data models
+│   ├── logs/                  # Log files directory
+│   └── archive/               # Legacy app files (archived)
+│
+├── src/                       # Frontend React application
+│   ├── components/            # UI components
+│   ├── pages/                 # Application pages
+│   └── services/              # API services
+│
+├── data/                      # Data directory
+├── run_api.sh                 # Starter script for backend
+├── cleanup.sh                 # Maintenance utilities
+└── requirements.txt           # Python dependencies
+```
+
 ## 📞 **Support**
 
 For detailed technical documentation, deployment guides, API references, and development instructions, please refer to the [Comprehensive Project Documentation](./COMPREHENSIVE_PROJECT_DOCUMENTATION.md).
 
 ---
 
-*LAIT Enhanced Legal Intelligence System - Version 2.0 Production Ready*
+## Version Information
+
+LAIT Enhanced Legal Intelligence System - Version 2.1 Production Ready

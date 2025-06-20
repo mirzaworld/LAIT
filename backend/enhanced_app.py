@@ -27,8 +27,20 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Configure more robust logging with file output
+log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
+os.makedirs(log_dir, exist_ok=True)
+log_file = os.path.join(log_dir, 'lait_api.log')
+
+# Configure logging to both console and file
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    handlers=[
+        logging.FileHandler(log_file),
+        logging.StreamHandler()
+    ]
+)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
@@ -125,23 +137,40 @@ def calculate_dynamic_risk_score(invoice_data):
 # Health and Status Endpoints
 @app.route('/api/health')
 def health_check():
-    """Comprehensive health check"""
-    return jsonify({
-        "service": "LAIT Legal Intelligence API",
-        "status": "healthy",
-        "version": "2.0.0",
-        "timestamp": datetime.now().isoformat(),
-        "features": {
-            "comprehensive_data": True,
-            "legal_intelligence": True,
-            "ml_models": True,
-            "celery_worker": True,
-            "matter_management": True,
-            "document_management": True,
-            "external_apis": True,
-            "advanced_analytics": True
-        }
-    })
+    """Comprehensive health check with real system status"""
+    try:
+        # Check data availability
+        data_available = len(invoices) > 0 or len(legal_companies) > 0
+        
+        return jsonify({
+            "service": "LAIT Legal Intelligence API",
+            "status": "healthy",
+            "version": "2.1.0",
+            "timestamp": datetime.now().isoformat(),
+            "features": {
+                "comprehensive_data": data_available,
+                "legal_intelligence": True,
+                "ml_models": True,
+                "celery_worker": celery_available if 'celery_available' in globals() else False,
+                "matter_management": True,
+                "document_management": True,
+                "external_apis": True,
+                "advanced_analytics": True
+            },
+            "system_info": {
+                "invoices_loaded": len(invoices),
+                "companies_loaded": len(legal_companies),
+                "endpoints_available": len([rule.rule for rule in app.url_map.iter_rules() if rule.rule.startswith('/api/')])
+            }
+        })
+    except Exception as e:
+        logger.error(f"Health check error: {e}")
+        return jsonify({
+            "service": "LAIT Legal Intelligence API",
+            "status": "degraded",
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }), 500
 
 # Core Data Endpoints
 @app.route('/api/invoices')
@@ -1401,7 +1430,13 @@ def matter_onboarding():
 
 # Celery Integration
 try:
-    from backend.celery_worker import celery
+    # Try both import paths for flexibility
+    try:
+        from backend.celery_worker import celery
+    except ImportError:
+        from celery_worker import celery
+    
+    celery_available = True
     
     @app.route('/api/tasks/status')
     def celery_status():
@@ -1453,16 +1488,19 @@ try:
             
 except ImportError as e:
     logger.warning(f"Celery integration not available: {e}")
-    # Create fallback routes
+    celery_available = False
+    
     @app.route('/api/tasks/status')
-    def celery_status_fallback():
+    def celery_status():
+        """Return the status of the Celery worker and tasks (fallback)"""
         return jsonify({
             "celery_worker": "not_configured",
             "message": "Celery worker not integrated in this environment"
         })
         
     @app.route('/api/tasks/new', methods=['POST'])
-    def create_task_fallback():
+    def create_task():
+        """Create a new background task (fallback)"""
         return jsonify({
             "error": "Background task processing not available",
             "message": "Celery worker not integrated in this environment"
@@ -1491,9 +1529,45 @@ def root():
         }
     })
 
+# Create a .env file if it doesn't exist
+def ensure_env_file():
+    """Create a .env file with default settings if it doesn't exist"""
+    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../.env')
+    if not os.path.exists(env_path):
+        try:
+            with open(env_path, 'w') as f:
+                f.write("""# LAIT API Environment Configuration
+# API Settings
+API_HOST=0.0.0.0
+API_PORT=5003
+DEBUG=True
+FLASK_APP=backend/enhanced_app.py
+
+# Frontend Configuration
+VITE_API_URL=http://localhost:5003
+
+# Database Settings
+DATABASE_URL=postgresql://postgres:postgres@localhost/legalspend
+
+# Security
+SECRET_KEY=development-key-please-change-in-production
+JWT_SECRET_KEY=jwt-dev-key-please-change-in-production
+
+# Redis/Celery Settings
+REDIS_URL=redis://localhost:6379/0
+CELERY_BROKER_URL=redis://localhost:6379/0
+CELERY_RESULT_BACKEND=redis://localhost:6379/0
+""")
+            logger.info("✅ Created default .env file")
+        except Exception as e:
+            logger.warning(f"❌ Could not create .env file: {e}")
+
 if __name__ == '__main__':
     print("🚀 Starting LAIT Comprehensive Legal Intelligence API v2.1")
     print("🔧 Initializing Production-Ready Environment...")
+    
+    # Ensure .env file exists
+    ensure_env_file()
     
     # Load all data on startup
     load_comprehensive_data()
@@ -1503,10 +1577,14 @@ if __name__ == '__main__':
     company_count = len(legal_companies)
     endpoints_count = len([rule.rule for rule in app.url_map.iter_rules() if rule.rule.startswith('/api/')])
     
+    # Check if celery is available
+    celery_status = "Available" if 'celery_available' in globals() and celery_available else "Not configured"
+    
     print(f"✅ System Initialized:")
     print(f"   - Data: {invoice_count} invoices, {company_count} legal companies")
     print(f"   - API: {endpoints_count} active endpoints")
     print(f"   - Features: ML models, Matter Management, Document Processing, Advanced Analytics")
+    print(f"   - Background Tasks: {celery_status}")
     
     # Get port from environment or use default
     port = int(os.environ.get('API_PORT', 5003))
@@ -1517,7 +1595,10 @@ if __name__ == '__main__':
     print(f"📡 API documentation available at http://localhost:{port}/")
     
     try:
+        # Run the application
         app.run(host=host, port=port, debug=debug)
+    except KeyboardInterrupt:
+        print("\n🛑 Server shutdown requested. Exiting gracefully...")
     except Exception as e:
         logger.error(f"Failed to start server: {e}")
         print(f"❌ Error starting server: {e}")

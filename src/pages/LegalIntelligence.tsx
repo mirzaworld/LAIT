@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Search, Scale, Users, TrendingUp, AlertTriangle, FileText, Shield, BarChart3 } from 'lucide-react';
+import { Search, Scale, Users, TrendingUp, AlertTriangle, FileText, Shield, BarChart3, File } from 'lucide-react';
 import LegalDataService from '../services/legalDataService';
+import DocumentAnalyzer from '../components/DocumentAnalyzer';
 
 interface SearchResult {
   id: string;
@@ -19,7 +20,7 @@ interface RiskAssessment {
 }
 
 const LegalIntelligence: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'search' | 'analytics' | 'risk' | 'attorney'>('search');
+  const [activeTab, setActiveTab] = useState<'search' | 'analytics' | 'risk' | 'attorney' | 'documents'>('search');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -130,7 +131,8 @@ const LegalIntelligence: React.FC = () => {
     { id: 'search', label: 'Case Research', icon: Search },
     { id: 'analytics', label: 'Legal Analytics', icon: BarChart3 },
     { id: 'risk', label: 'Vendor Risk', icon: AlertTriangle },
-    { id: 'attorney', label: 'Attorney Verification', icon: Shield }
+    { id: 'attorney', label: 'Attorney Verification', icon: Shield },
+    { id: 'documents', label: 'Document Analysis', icon: File }
   ];
 
   return (
@@ -377,6 +379,15 @@ const LegalIntelligence: React.FC = () => {
                     </p>
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'documents' && (
+            <div className="space-y-6">
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Document Analysis</h3>
+                <DocumentAnalyzer />
               </div>
             </div>
           )}

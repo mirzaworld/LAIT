@@ -18,9 +18,10 @@ import InvoiceList from './pages/InvoiceList';
 import VendorPerformance from './pages/VendorPerformance';
 import RecommendationsAlerts from './pages/RecommendationsAlerts';
 import LegalIntelligence from './pages/LegalIntelligence';
-import { AppProvider, useApp } from './context/AppContext';
+import DiagnosticsPage from './pages/DiagnosticsPage';
 import SettingsIntegrations from './pages/SettingsIntegrations';
-import EnhancedDashboard from './pages/EnhancedDashboard';
+import VendorAnalyticsPage from './pages/VendorAnalyticsPage';
+import { AppProvider, useApp } from './context/AppContext';
 import 'react-toastify/dist/ReactToastify.css';
 
 // Set mock token for development and auto-authenticate
@@ -160,10 +161,24 @@ function AppContent() {
             </Layout>
           } />
         } />
-        <Route path="/enhanced-dashboard" element={
+        <Route path="/vendor-analytics" element={
           <ProtectedRoute element={
             <Layout>
-              <EnhancedDashboard />
+              <VendorAnalyticsPage />
+            </Layout>
+          } />
+        } />
+        <Route path="/vendor-analytics/:id" element={
+          <ProtectedRoute element={
+            <Layout>
+              <VendorAnalyticsPage />
+            </Layout>
+          } />
+        } />
+        <Route path="/diagnostics" element={
+          <ProtectedRoute element={
+            <Layout>
+              <DiagnosticsPage />
             </Layout>
           } />
         } />

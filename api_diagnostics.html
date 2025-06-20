@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAIT API Diagnostics</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.5;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 0;
+            color: #2563EB;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #2563EB;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        button:hover {
+            background-color: #1D4ED8;
+        }
+        button:disabled {
+            background-color: #93C5FD;
+            cursor: not-allowed;
+        }
+        .endpoint {
+            margin-bottom: 15px;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .endpoint-header {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 15px;
+            background-color: #f9f9f9;
+            border-bottom: 1px solid #eee;
+        }
+        .endpoint-name {
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+        }
+        .endpoint-method {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .method-get {
+            background-color: #DBEAFE;
+            color: #1E40AF;
+        }
+        .method-post {
+            background-color: #E0F2FE;
+            color: #0369A1;
+        }
+        .status {
+            display: flex;
+            align-items: center;
+        }
+        .success {
+            color: #16A34A;
+        }
+        .error {
+            color: #DC2626;
+        }
+        .loading {
+            color: #D97706;
+        }
+        .endpoint-body {
+            padding: 15px;
+        }
+        .response {
+            background-color: #f5f5f5;
+            padding: 10px;
+            overflow: auto;
+            max-height: 200px;
+            font-family: monospace;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+        .summary {
+            background-color: #F0F9FF;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 6px;
+            border-left: 4px solid #2563EB;
+        }
+        .progress-bar {
+            height: 8px;
+            background-color: #e5e7eb;
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        .progress {
+            height: 100%;
+            background-color: #2563EB;
+            transition: width 0.3s;
+        }
+        .endpoint-status-success {
+            color: #16A34A;
+            font-weight: 500;
+        }
+        .endpoint-status-error {
+            color: #DC2626;
+            font-weight: 500;
+        }
+        .error-message {
+            background-color: #FEF2F2;
+            color: #DC2626;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .recommend {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #FFFBEB;
+            border-left: 3px solid #F59E0B;
+            border-radius: 4px;
+        }
+        .recommend h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>LAIT API Diagnostics</h1>
+            <button id="runTests" onclick="runAllTests()">Run Diagnostics</button>
+        </div>
+
+        <div id="summary" style="display: none;" class="summary">
+            <div style="display: flex; justify-content: space-between;">
+                <h2 style="margin: 0;">Summary</h2>
+                <div>
+                    <span id="successCount">0</span> successful, 
+                    <span id="failedCount">0</span> failed
+                </div>
+            </div>
+            <div class="progress-bar">
+                <div id="progressBar" class="progress" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <div id="endpoints"></div>
+        
+        <div id="recommendations" style="display: none;" class="recommend">
+            <h3>Recommendations</h3>
+            <ul id="recommendationsList"></ul>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5003';
+        
+        // Define endpoints to test
+        const ENDPOINTS = [
+            { path: '/api/health', method: 'GET', name: 'Health Check' },
+            { path: '/api/dashboard/metrics', method: 'GET', name: 'Dashboard Metrics' },
+            { path: '/api/invoices', method: 'GET', name: 'Invoices' },
+            { path: '/api/vendors', method: 'GET', name: 'Vendors' },
+            { path: '/api/matters', method: 'GET', name: 'Matters' },
+            { path: '/api/ml/test', method: 'GET', name: 'ML Status' },
+            { 
+                path: '/api/ml/anomaly-detection', 
+                method: 'POST', 
+                name: 'Anomaly Detection',
+                body: {} 
+            },
+            { path: '/api/workflow/electronic-billing', method: 'GET', name: 'Workflow Status' },
+            { 
+                path: '/api/ml/budget-forecast', 
+                method: 'POST', 
+                name: 'Budget Forecast',
+                body: { matter_id: 'MAT-001', time_horizon: 6 } 
+            }
+        ];
+
+        // Create endpoint elements
+        function createEndpoints() {
+            const container = document.getElementById('endpoints');
+            
+            ENDPOINTS.forEach(endpoint => {
+                const endpointElement = document.createElement('div');
+                endpointElement.className = 'endpoint';
+                endpointElement.id = `endpoint-${endpoint.path.replace(/\//g, '-')}`;
+                
+                const methodClass = endpoint.method === 'GET' ? 'method-get' : 'method-post';
+                
+                endpointElement.innerHTML = `
+                    <div class="endpoint-header">
+                        <div class="endpoint-name">
+                            <span class="endpoint-method ${methodClass}">${endpoint.method}</span>
+                            <span>${endpoint.name}</span>
+                        </div>
+                        <div class="status loading">Testing...</div>
+                    </div>
+                    <div class="endpoint-body" style="display: none;"></div>
+                `;
+                
+                container.appendChild(endpointElement);
+            });
+        }
+
+        // Test a single endpoint
+        async function testEndpoint(endpoint) {
+            const endpointId = `endpoint-${endpoint.path.replace(/\//g, '-')}`;
+            const endpointElement = document.getElementById(endpointId);
+            const statusElement = endpointElement.querySelector('.status');
+            const bodyElement = endpointElement.querySelector('.endpoint-body');
+            
+            statusElement.className = 'status loading';
+            statusElement.textContent = 'Testing...';
+            
+            try {
+                const startTime = performance.now();
+                const response = await fetch(`${API_BASE}${endpoint.path}`, {
+                    method: endpoint.method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: endpoint.body ? JSON.stringify(endpoint.body) : undefined
+                });
+                const endTime = performance.now();
+                const responseTime = Math.round(endTime - startTime);
+                
+                const responseClone = response.clone();
+                let responseText;
+                
+                try {
+                    const responseData = await responseClone.json();
+                    responseText = JSON.stringify(responseData, null, 2);
+                } catch (e) {
+                    responseText = await response.text();
+                }
+                
+                if (response.ok) {
+                    statusElement.className = 'status success';
+                    statusElement.textContent = `✓ Success (${responseTime}ms)`;
+                    
+                    bodyElement.style.display = 'block';
+                    bodyElement.innerHTML = `
+                        <div>
+                            <div style="margin-bottom: 10px;">
+                                <strong>URL:</strong> ${API_BASE}${endpoint.path}
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <strong>Status:</strong> ${response.status} ${response.statusText}
+                            </div>
+                            <div>
+                                <strong>Response:</strong>
+                                <pre class="response">${responseText}</pre>
+                            </div>
+                        </div>
+                    `;
+                    
+                    return { success: true, responseTime };
+                } else {
+                    statusElement.className = 'status error';
+                    statusElement.textContent = `✗ Error: ${response.status} ${response.statusText}`;
+                    
+                    bodyElement.style.display = 'block';
+                    bodyElement.innerHTML = `
+                        <div>
+                            <div style="margin-bottom: 10px;">
+                                <strong>URL:</strong> ${API_BASE}${endpoint.path}
+                            </div>
+                            <div style="margin-bottom: 10px;">
+                                <strong>Status:</strong> ${response.status} ${response.statusText}
+                            </div>
+                            <div class="error-message">
+                                <strong>Error:</strong> ${responseText}
+                            </div>
+                        </div>
+                    `;
+                    
+                    return { success: false, error: `${response.status} ${response.statusText}`, responseTime };
+                }
+            } catch (error) {
+                statusElement.className = 'status error';
+                statusElement.textContent = `✗ Error: ${error.message}`;
+                
+                bodyElement.style.display = 'block';
+                bodyElement.innerHTML = `
+                    <div class="error-message">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+                
+                return { success: false, error: error.message, responseTime: 0 };
+            }
+        }
+
+        // Run all tests
+        async function runAllTests() {
+            // Reset UI
+            document.getElementById('runTests').disabled = true;
+            document.getElementById('runTests').textContent = 'Running...';
+            document.getElementById('summary').style.display = 'block';
+            document.getElementById('recommendations').style.display = 'none';
+            
+            let successCount = 0;
+            let failedCount = 0;
+            const results = [];
+            
+            // Run tests sequentially
+            for (const endpoint of ENDPOINTS) {
+                const result = await testEndpoint(endpoint);
+                results.push({ endpoint, ...result });
+                
+                if (result.success) {
+                    successCount++;
+                } else {
+                    failedCount++;
+                }
+                
+                // Update summary
+                document.getElementById('successCount').textContent = successCount;
+                document.getElementById('failedCount').textContent = failedCount;
+                
+                const percentage = Math.round((successCount / ENDPOINTS.length) * 100);
+                document.getElementById('progressBar').style.width = `${percentage}%`;
+            }
+            
+            // Generate recommendations if needed
+            if (failedCount > 0) {
+                generateRecommendations(results);
+                document.getElementById('recommendations').style.display = 'block';
+            }
+            
+            // Re-enable button
+            document.getElementById('runTests').disabled = false;
+            document.getElementById('runTests').textContent = 'Run Diagnostics';
+        }
+
+        // Generate recommendations based on test results
+        function generateRecommendations(results) {
+            const recommendations = [];
+            const failedEndpoints = results.filter(r => !r.success);
+            
+            if (failedEndpoints.length > 0) {
+                recommendations.push("Ensure the backend server is running on http://localhost:5003");
+                recommendations.push("Check if all required API endpoints are implemented in enhanced_app.py");
+                
+                if (failedEndpoints.some(r => r.endpoint.path === '/api/health')) {
+                    recommendations.push("The core API health check is failing - backend might not be running at all");
+                }
+                
+                if (failedEndpoints.some(r => r.endpoint.path.includes('/ml/'))) {
+                    recommendations.push("ML-related endpoints are failing - ensure ML services are properly configured");
+                }
+                
+                if (failedEndpoints.some(r => r.endpoint.path.includes('/workflow/'))) {
+                    recommendations.push("Workflow endpoints are failing - check workflow services configuration");
+                }
+            }
+            
+            const list = document.getElementById('recommendationsList');
+            list.innerHTML = '';
+            
+            recommendations.forEach(rec => {
+                const li = document.createElement('li');
+                li.textContent = rec;
+                list.appendChild(li);
+            });
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            createEndpoints();
+        });
+    </script>
+</body>
+</html>

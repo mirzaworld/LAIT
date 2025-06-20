@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 export interface AnalyticsData {
@@ -167,6 +167,151 @@ export const useAIInsights = (filters: AnalyticsFilters) => {
     loading,
     error
   };
+};
+
+// Vendor Analysis Hook
+export interface VendorAnalysis {
+  vendorId: string;
+  spendOverTime: Array<{
+    date: string;
+    amount: number;
+    benchmark?: number;
+  }>;
+  categories: Array<{
+    name: string;
+    value: number;
+  }>;
+  performanceMetrics: Array<{
+    name: string;
+    value: number;
+    benchmark?: number;
+  }>;
+  insights: string[];
+  recommendations: string[];
+}
+
+export const useVendorAnalysis = (vendorId?: string, timeframe: '1m' | '3m' | '6m' | '1y' | 'all' = '6m') => {
+  const [data, setData] = useState<VendorAnalysis | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      let url = `/api/analytics/vendors`;
+      
+      if (vendorId) {
+        url += `/${vendorId}`;
+      }
+      
+      url += `?timeframe=${timeframe}`;
+      
+      const response = await axios.get(url);
+      setData(response.data);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Failed to fetch vendor analysis');
+      console.error('Error fetching vendor analysis:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [vendorId, timeframe]);
+  
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+  
+  return { data, loading, error, refetch: fetchData };
+};
+
+// Document Analysis Hook
+export interface DocumentAnalysis {
+  documentId: string;
+  riskScore: number;
+  anomalies: Array<{
+    type: string;
+    message: string;
+    severity: 'low' | 'medium' | 'high';
+  }>;
+  entities: Array<{
+    name: string;
+    type: string;
+    confidence: number;
+  }>;
+  summary: string;
+  keywords: string[];
+}
+
+export const useDocumentAnalysis = (documentId: string) => {
+  const [data, setData] = useState<DocumentAnalysis | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await axios.get(`/api/documents/${documentId}/analyze`);
+      setData(response.data);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Failed to fetch document analysis');
+      console.error('Error fetching document analysis:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [documentId]);
+  
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+  
+  return { data, loading, error, refetch: fetchData };
+};
+
+// Workflow Status Hook
+export interface WorkflowStatus {
+  workflowId: string;
+  name: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'error';
+  progress: number;
+  steps: Array<{
+    name: string;
+    status: 'pending' | 'in_progress' | 'completed' | 'error';
+    startedAt?: string;
+    completedAt?: string;
+    message?: string;
+  }>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const useWorkflowStatus = (workflowId: string) => {
+  const [data, setData] = useState<WorkflowStatus | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await axios.get(`/api/workflows/${workflowId}`);
+      setData(response.data);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Failed to fetch workflow status');
+      console.error('Error fetching workflow status:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [workflowId]);
+  
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+  
+  return { data, loading, error, refetch: fetchData };
 };
 
 export default useAnalytics;
