@@ -868,6 +868,109 @@ def search_documents():
         logger.error(f"Document search error: {e}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/upload-invoice', methods=['POST'])
+def upload_invoice():
+    """API endpoint to handle invoice uploads and perform risk analysis"""
+    try:
+        logger.info("Invoice upload request received")
+        
+        # Check if file was provided
+        if 'file' not in request.files:
+            logger.warning("No file provided in upload request")
+            return jsonify({"error": "No file provided"}), 400
+        
+        # Get the file and other form data
+        file = request.files['file']
+        if file.filename == '':
+            logger.warning("Empty filename in upload request")
+            return jsonify({"error": "No file selected"}), 400
+        
+        # Extract metadata from form
+        vendor = request.form.get('vendor', 'Unknown Vendor')
+        amount = float(request.form.get('amount', 0)) or random.randint(5000, 50000)
+        date = request.form.get('date', datetime.now().strftime('%Y-%m-%d'))
+        category = request.form.get('category', 'Legal Services')
+        description = request.form.get('description', f'Uploaded invoice: {file.filename}')
+        
+        # Generate a unique invoice ID
+        invoice_id = f"INV-{int(time.time())[-6:]}"
+        
+        # Store file content (in a production system, this would save to disk/cloud storage)
+        file_content = file.read()
+        file_size = len(file_content)
+        logger.info(f"Received file: {file.filename}, size: {file_size} bytes")
+        
+        # Calculate risk score based on various factors
+        risk_score = calculate_dynamic_risk_score({
+            'total_amount': amount,
+            'vendor_name': vendor,
+            'category': category,
+            'date': date
+        })
+        
+        # Determine risk level based on score
+        risk_level = "high" if risk_score > 70 else "medium" if risk_score > 40 else "low"
+        
+        # Generate AI-powered recommendations
+        recommendations = []
+        if risk_score > 70:
+            recommendations.append("Manual review recommended due to high risk score")
+            recommendations.append("Verify vendor payment details before processing")
+        elif risk_score > 40:
+            recommendations.append("Validate invoice line items against matter records")
+        
+        if amount > 30000:
+            recommendations.append("Requires partner approval due to high amount")
+        
+        # Create a new invoice object
+        new_invoice = {
+            "id": invoice_id,
+            "vendor_name": vendor,
+            "total_amount": amount,
+            "date": date,
+            "category": category,
+            "description": description,
+            "status": "pending",
+            "riskScore": risk_score,
+            "uploaded_at": datetime.now().isoformat(),
+            "file_name": file.filename,
+            "file_size": file_size
+        }
+        
+        # Add to global uploaded invoices list
+        uploaded_invoices.append(new_invoice)
+        
+        # Return success with analysis
+        logger.info(f"Invoice {invoice_id} uploaded successfully with risk score {risk_score}")
+        
+        return jsonify({
+            "invoice_id": invoice_id,
+            "invoice_added": True,
+            "analysis": {
+                "risk_score": risk_score,
+                "risk_level": risk_level,
+                "recommendations": recommendations
+            },
+            "invoice_details": {
+                "vendor": vendor,
+                "amount": amount,
+                "date": date,
+                "category": category
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error processing invoice upload: {e}")
+        return jsonify({
+            "error": f"Failed to process invoice: {str(e)}",
+            "invoice_added": False,
+            "analysis": {
+                "risk_score": 100,
+                "risk_level": "high",
+                "recommendations": ["Contact administrator about upload error"]
+            }
+        }), 500
+
 # Real-time WebSocket simulation endpoint
 @app.route('/api/notifications/realtime')
 def get_realtime_notifications():

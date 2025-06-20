@@ -9,6 +9,7 @@ import {
   Tooltip,
   Legend,
   BarElement,
+  Filler,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { Loader2 } from 'lucide-react';
@@ -22,7 +23,8 @@ ChartJS.register(
   BarElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 );
 
 const SpendChart: React.FC = () => {

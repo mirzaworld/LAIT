@@ -90,11 +90,11 @@ const RecentInvoices: React.FC = () => {
           <div className="p-4 text-center text-danger-600 bg-danger-50 rounded-lg">
             <p>Error loading invoices. Please try again.</p>
           </div>
-        ) : (
+        )        : (
           <div className="space-y-4">
             {invoices.slice(0, 5).map((invoice, index) => (
               <div 
-                key={invoice.id}
+                key={`invoice-${invoice.id}`}
                 className="flex items-center justify-between p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors duration-200 animate-slide-up cursor-pointer"
                 style={{ animationDelay: `${index * 50}ms` }}
                 onClick={() => handleViewInvoice(invoice.id)}
