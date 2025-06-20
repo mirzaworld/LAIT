@@ -67,3 +67,6 @@ free_company_dataset.csv
 *.parquet
 data/
 datasets/
+
+# Documentation archive
+archive/old-documentation/

@@ -20,6 +20,7 @@ import RecommendationsAlerts from './pages/RecommendationsAlerts';
 import LegalIntelligence from './pages/LegalIntelligence';
 import { AppProvider, useApp } from './context/AppContext';
 import SettingsIntegrations from './pages/SettingsIntegrations';
+import EnhancedDashboard from './pages/EnhancedDashboard';
 import 'react-toastify/dist/ReactToastify.css';
 
 // Set mock token for development and auto-authenticate
@@ -156,6 +157,13 @@ function AppContent() {
           <ProtectedRoute element={
             <Layout>
               <LegalIntelligence />
+            </Layout>
+          } />
+        } />
+        <Route path="/enhanced-dashboard" element={
+          <ProtectedRoute element={
+            <Layout>
+              <EnhancedDashboard />
             </Layout>
           } />
         } />

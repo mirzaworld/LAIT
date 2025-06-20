@@ -13,7 +13,7 @@ import axios, { AxiosResponse } from 'axios';
 // API Configuration
 const COURTLISTENER_API_BASE = 'https://www.courtlistener.com/api/rest/v4';
 const COURTLISTENER_SEARCH_API = 'https://www.courtlistener.com/api/rest/v4/search';
-const LAIT_BACKEND_API = 'http://127.0.0.1:5002/api'; // Local backend API
+const LAIT_BACKEND_API = 'http://127.0.0.1:5003/api'; // Enhanced backend API
 
 // CourtListener API Configuration
 const COURTLISTENER_API = {
