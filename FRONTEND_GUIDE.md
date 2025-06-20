@@ -86,6 +86,37 @@ The frontend expects these main API endpoints:
 - `/api/workflow/*` - Workflow status endpoints
 - `/api/analytics/*` - Advanced analytics
 
+## API Configuration
+
+### API URL Configuration
+
+The frontend is configured to connect to the backend API at `http://localhost:5003`.
+
+1. **Environment Variables**
+   - `VITE_API_URL`: Set to `http://localhost:5003` in `.env` file
+   - This variable is used in `services/api.ts` as the base URL for API requests
+
+2. **Development Proxy**
+   - The Vite development server proxies API requests to `http://localhost:5003`
+   - Configuration is in `vite.config.ts`
+
+3. **Port Changes**
+   - If you need to change the API port, update:
+     - The `.env` file's `VITE_API_URL` value
+     - The proxy target in `vite.config.ts`
+
+### API Error Handling
+
+The frontend has a standardized approach to handling API errors:
+
+1. **Connection Errors**
+   - If the backend is unreachable, clear error messages indicate the connection issue
+   - Error messages dynamically reference the correct API URL
+
+2. **Response Errors**
+   - Non-2xx API responses are handled with custom error messages
+   - Console logging provides detailed error information for debugging
+
 ## Development Tools
 
 - **API Tester** - `/src/components/ApiTester.tsx` for testing API connections

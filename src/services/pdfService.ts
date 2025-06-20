@@ -79,7 +79,7 @@ class PDFService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5002';
+    this.baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5003';
   }
 
   async uploadAndAnalyze(file: File): Promise<PDFAnalysisResult> {

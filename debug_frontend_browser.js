@@ -3,7 +3,7 @@ console.log('Starting frontend API debug...');
 
 // Test the API endpoints from the browser
 async function testAPIEndpoints() {
-    const API_URL = 'http://localhost:5002/api';
+    const API_URL = 'http://localhost:5003/api';
     
     console.log('Testing API endpoints...');
     

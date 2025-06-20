@@ -1,5 +1,5 @@
 // Debug API calls from browser perspective
-const API_URL = 'http://localhost:5002/api';
+const API_URL = 'http://localhost:5003/api';
 
 async function debugFrontendAPI() {
     console.log('=== FRONTEND API DEBUG ===');

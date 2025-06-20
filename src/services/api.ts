@@ -192,7 +192,7 @@ export const getInvoices = async (status?: string, vendor?: string): Promise<Inv
   } catch (error) {
     console.error('Error fetching invoices:', error);
     if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error('Unable to connect to the API server. Please ensure the backend is running on http://localhost:5002');
+      throw new Error(`Unable to connect to the API server. Please ensure the backend is running on ${API_URL}`);
     }
     throw error;
   }
@@ -288,7 +288,7 @@ export const uploadInvoice = async (
   } catch (error) {
     console.error('Error uploading invoice:', error);
     if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error('Unable to connect to the API server. Please ensure the backend is running on http://localhost:5002');
+      throw new Error(`Unable to connect to the API server. Please ensure the backend is running on ${API_URL}`);
     }
     throw error;
   }
@@ -360,7 +360,7 @@ export const getDashboardMetrics = async (): Promise<DashboardMetrics> => {
   } catch (error) {
     console.error('Error fetching dashboard metrics:', error);
     if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error('Unable to connect to the API server. Please ensure the backend is running on http://localhost:5002');
+      throw new Error(`Unable to connect to the API server. Please ensure the backend is running on ${API_URL}`);
     }
     throw error;
   }

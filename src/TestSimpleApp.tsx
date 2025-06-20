@@ -12,7 +12,7 @@ const TestDashboard: React.FC = () => {
       <p>✅ Routing is working</p>
       <div style={{ background: '#f0f0f0', padding: '20px', marginTop: '20px' }}>
         <h2>Backend Status</h2>
-        <p>Backend: ✅ Connected to http://localhost:5002</p>
+        <p>Backend: ✅ Connected to http://localhost:5003</p>
         <p>Frontend: ✅ Running on http://localhost:5173</p>
       </div>
     </div>

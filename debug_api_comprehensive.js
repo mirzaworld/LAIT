@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // Comprehensive test to debug frontend issues
-const API_URL = 'http://localhost:5002/api';
+const API_URL = 'http://localhost:5003/api';
 
 async function testApiCall(url, description) {
     console.log(`\n🔍 Testing ${description}...`);

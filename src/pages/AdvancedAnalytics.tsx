@@ -12,7 +12,7 @@ const AdvancedAnalytics: React.FC = () => {
     const fetchAnalytics = async () => {
       try {
         setLoading(true);
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002/api';
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003/api';
         
         // Fetch all advanced analytics
         const [predictiveRes, vendorRes, budgetRes] = await Promise.all([
