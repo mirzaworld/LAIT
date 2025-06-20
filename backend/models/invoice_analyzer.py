@@ -503,6 +503,39 @@ class InvoiceAnalyzer:
             
         return results
 
+    def _process_line_items(self, line_items):
+        """Process and structure line items data"""
+        processed_items = []
+        for item in line_items:
+            processed_item = {
+                'description': str(item.get('description', '')),
+                'hours': float(item.get('hours', 0)),
+                'rate': float(item.get('rate', 0)),
+                'amount': float(item.get('amount', 0)),
+                'timekeeper': str(item.get('timekeeper', '')),
+                'timekeeper_title': str(item.get('timekeeper_title', ''))
+            }
+            processed_items.append(processed_item)
+        return processed_items
+    
+    def _extract_metadata(self, invoice_data):
+        """Extract metadata from invoice"""
+        return {
+            'invoice_id': invoice_data.get('id'),
+            'vendor_name': str(invoice_data.get('vendor_name', '')),
+            'description': str(invoice_data.get('description', ''))
+        }
+    
+    def _extract_text_features(self, invoice_data):
+        """Extract text features for NLP analysis"""
+        text_content = []
+        text_content.append(str(invoice_data.get('description', '')))
+        
+        for item in invoice_data.get('line_items', []):
+            text_content.append(str(item.get('description', '')))
+            
+        return ' '.join(text_content)
+
     def _extract_numeric_features(self, df):
         """Extract numeric features from line items"""
         features = []
