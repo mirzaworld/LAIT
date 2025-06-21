@@ -294,10 +294,7 @@ def create_app():
             }
         })
 
-    # Legal Intelligence API Routes
-    @app.route('/api/legal-intelligence/search', methods=['POST'])
-    @jwt_required()
-    def search_legal_cases():
+    # Advanced Analytics Endpoints
         """Enhanced legal case search with real-time data integration"""
         try:
             data = request.get_json()
@@ -406,148 +403,11 @@ def create_app():
             logger.error(f"Legal case search error: {str(e)}")
             return jsonify({'error': f'Search failed: {str(e)}'}), 500
 
-    @app.route('/api/legal-intelligence/case/<case_id>')
-    @jwt_required()
-    def get_case_details(case_id):
-        """Get detailed information about a specific legal case"""
-        try:
-            collector = app.data_collector
-            
-            # Parse case source from ID
-            source = 'unknown'
-            if case_id.startswith('justia_'):
-                source = 'justia'
-                actual_id = case_id.replace('justia_', '')
-            elif case_id.startswith('scholar_'):
-                source = 'scholar'
-                actual_id = case_id.replace('scholar_', '')
-            else:
-                source = 'courtlistener'
-                actual_id = case_id
-            
-            case_details = {
-                'id': case_id,
-                'source': source,
-                'loading': False,
-                'error': None
-            }
-            
-            # Fetch detailed case information based on source
-            if source == 'courtlistener':
-                try:
-                    # Use CourtListener API to get case details
-                    details = collector.get_case_details_courtlistener(actual_id)
-                    if details:
-                        case_details.update({
-                            'title': details.get('caseName', 'Unknown Case'),
-                            'court': details.get('court', {}).get('name', 'Unknown Court'),
-                            'date_filed': details.get('dateFiled'),
-                            'date_argued': details.get('dateArgued'),
-                            'judges': details.get('judges', []),
-                            'parties': details.get('parties', []),
-                            'docket_number': details.get('docketNumber'),
-                            'citations': details.get('citations', []),
-                            'summary': details.get('summary', ''),
-                            'opinion_text': details.get('text', ''),
-                            'procedural_history': details.get('procedural_history', []),
-                            'key_holdings': details.get('holdings', []),
-                            'legal_issues': details.get('legal_issues', []),
-                            'outcome': details.get('outcome', ''),
-                            'significance': details.get('significance', ''),
-                            'related_cases': details.get('related_cases', []),
-                            'url': details.get('absolute_url')
-                        })
-                except Exception as e:
-                    logger.error(f"CourtListener case details error: {e}")
-                    case_details['error'] = str(e)
-                    
-            elif source == 'justia':
-                try:
-                    details = collector.get_case_details_justia(actual_id)
-                    if details:
-                        case_details.update(details)
-                except Exception as e:
-                    logger.error(f"Justia case details error: {e}")
-                    case_details['error'] = str(e)
-                    
-            else:  # Google Scholar or unknown
-                case_details.update({
-                    'title': 'Case details not available',
-                    'summary': 'Full case details are not available for this source.',
-                    'error': 'Detailed view not supported for this source'
-                })
-            
-            return jsonify(case_details)
-            
-        except Exception as e:
-            logger.error(f"Case details error: {str(e)}")
-            return jsonify({'error': f'Failed to fetch case details: {str(e)}'}), 500
 
-    @app.route('/api/legal-intelligence/citations')
-    @jwt_required()
-    def search_citations():
-        """Search for legal citations and precedents"""
-        try:
-            query = request.args.get('query', '')
-            citation_type = request.args.get('type', 'all')  # case, statute, regulation
-            
-            if not query:
-                return jsonify({'error': 'Query is required'}), 400
-            
-            collector = app.data_collector
-            citations = []
-            
-            # Search for citations across multiple sources
-            try:
-                # Use CourtListener for legal citations
-                courtlistener_citations = collector.search_citations_courtlistener(query)
-                citations.extend(courtlistener_citations or [])
-                
-                # Add Justia citations
-                justia_citations = collector.search_justia_citations(query)
-                citations.extend(justia_citations or [])
-                
-            except Exception as e:
-                logger.error(f"Citation search error: {e}")
-            
-            # Filter by type if specified
-            if citation_type != 'all':
-                citations = [c for c in citations if c.get('type') == citation_type]
-            
-            return jsonify({
-                'citations': citations[:50],  # Limit results
-                'total': len(citations),
-                'query': query,
-                'type_filter': citation_type
-            })
-            
-        except Exception as e:
-            logger.error(f"Citation search error: {str(e)}")
-            return jsonify({'error': f'Citation search failed: {str(e)}'}), 500
 
-    @app.route('/api/legal-intelligence/analytics')
-    @jwt_required()
-    def legal_analytics():
-        """Get legal intelligence analytics and insights"""
-        try:
-            collector = app.data_collector
-            
-            # Collect analytics from multiple sources
-            analytics = {
-                'case_trends': collector.get_case_trends(),
-                'jurisdiction_stats': collector.get_jurisdiction_statistics(),
-                'practice_area_insights': collector.get_practice_area_insights(),
-                'citation_patterns': collector.get_citation_patterns(),
-                'court_performance': collector.get_court_performance_metrics(),
-                'recent_developments': collector.get_recent_legal_developments(),
-                'generated_at': datetime.utcnow().isoformat()
-            }
-            
-            return jsonify(analytics)
-            
-        except Exception as e:
-            logger.error(f"Legal analytics error: {str(e)}")
-            return jsonify({'error': f'Analytics generation failed: {str(e)}'}), 500
+
+
+
 
     # Advanced Analytics Endpoints
     @app.route('/api/analytics/predictive', methods=['GET'])
@@ -722,24 +582,7 @@ def create_app():
         finally:
             session.close()
 
-    # Development/testing route without JWT requirement
-    @app.route('/api/legal-intelligence/jurisdictions-test')
-    def get_jurisdictions_test():
-        """Get available jurisdictions for filtering (test endpoint)"""
-        jurisdictions = [
-            {'id': 'federal', 'name': 'Federal Courts', 'type': 'federal'},
-            {'id': 'supreme', 'name': 'U.S. Supreme Court', 'type': 'federal'},
-            {'id': 'circuit', 'name': 'Circuit Courts', 'type': 'federal'},
-            {'id': 'district', 'name': 'District Courts', 'type': 'federal'},
-            {'id': 'state', 'name': 'State Courts', 'type': 'state'},
-            {'id': 'california', 'name': 'California', 'type': 'state'},
-            {'id': 'new_york', 'name': 'New York', 'type': 'state'},
-            {'id': 'texas', 'name': 'Texas', 'type': 'state'},
-            {'id': 'florida', 'name': 'Florida', 'type': 'state'},
-            {'id': 'illinois', 'name': 'Illinois', 'type': 'state'}
-        ]
-        
-        return jsonify({'jurisdictions': jurisdictions})
+
 
     # Import and register routes
     with app.app_context():
