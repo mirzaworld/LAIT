@@ -108,7 +108,7 @@ class RiskPredictor:
     
     def retrain_model(self):
         """Retrain the risk model with all available data"""
-        from db.database import get_db_session
+        from backend.db.database import get_db_session
         from models.db_models import Invoice, LineItem, RiskFactor
         import pandas as pd
         

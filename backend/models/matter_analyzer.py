@@ -322,8 +322,8 @@ class MatterAnalyzer:
     
     def analyze_matter_risk(self, matter_id):
         """Analyze risk factors for a specific matter"""
-        from db.database import get_db_session
-        from models.db_models import Matter, Invoice, LineItem, RiskFactor
+        from backend.db.database import get_db_session
+        from backend.models.db_models import Matter, Invoice, LineItem, RiskFactor
         
         session = get_db_session()
         try:
