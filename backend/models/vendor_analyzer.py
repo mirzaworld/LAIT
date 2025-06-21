@@ -446,7 +446,7 @@ class VendorAnalyzer:
     
     def retrain_model(self):
         """Retrain the vendor clustering model with all available data"""
-        from db.database import get_db_session
+        from backend.db.database import get_db_session
         from models.db_models import Invoice, Vendor
         import pandas as pd
         from sqlalchemy import func
