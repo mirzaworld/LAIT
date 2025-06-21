@@ -699,3 +699,178 @@ def bulk_legal_research():
         
     except Exception as e:
         return jsonify({'error': f'Error in bulk research: {str(e)}'}), 500
+
+# Add the missing endpoints that the frontend expects
+
+@legal_intel_bp.route('/search-cases', methods=['POST'])
+@jwt_required()
+def search_cases():
+    """Search for legal cases using CourtListener API"""
+    try:
+        data = request.get_json()
+        query = data.get('query')
+        court = data.get('court')
+        date_range = data.get('date_range')
+        
+        if not query:
+            return jsonify({'error': 'Search query is required'}), 400
+        
+        # Use CourtListener service to search cases
+        search_results = legal_service.search_case_law(query, court=court, limit=20)
+        
+        # Format results for frontend
+        formatted_cases = []
+        for case in search_results.get('results', []):
+            formatted_cases.append({
+                'id': str(case.get('id', '')),
+                'title': case.get('caseName', case.get('case_name', 'Unknown Case')),
+                'court': case.get('court', 'Unknown Court'),
+                'date': case.get('dateFiled', case.get('date_filed', '')),
+                'relevance': case.get('score', 85),  # Default relevance score
+                'excerpt': case.get('snippet', case.get('text', ''))[:200] + '...',
+                'citation': case.get('citation', ''),
+                'url': case.get('absolute_url', ''),
+                'source': 'CourtListener'
+            })
+        
+        return jsonify({
+            'cases': formatted_cases,
+            'total': len(formatted_cases),
+            'query': query,
+            'court': court
+        })
+        
+    except Exception as e:
+        logger.error(f"Error searching cases: {str(e)}")
+        return jsonify({'error': f'Error searching cases: {str(e)}'}), 500
+
+@legal_intel_bp.route('/vendor-risk-assessment', methods=['POST'])
+@jwt_required()
+def vendor_risk_assessment():
+    """Assess vendor risk based on legal intelligence"""
+    try:
+        data = request.get_json()
+        vendor_name = data.get('vendor_name')
+        
+        if not vendor_name:
+            return jsonify({'error': 'Vendor name is required'}), 400
+        
+        # Get vendor from database
+        session = get_db_session()
+        try:
+            vendor = session.query(Vendor).filter(
+                Vendor.name.ilike(f'%{vendor_name}%')
+            ).first()
+            
+            if not vendor:
+                return jsonify({'error': 'Vendor not found'}), 404
+            
+            # Perform comprehensive risk assessment
+            risk_assessment = legal_service.assess_vendor_risk(vendor_name)
+            
+            # Calculate risk factors based on vendor data
+            risk_factors = []
+            risk_score = 0
+            
+            # Check for legal issues in vendor intelligence
+            if hasattr(vendor, 'legal_status') and vendor.legal_status:
+                if 'litigation' in vendor.legal_status.lower():
+                    risk_factors.append('Active litigation identified')
+                    risk_score += 30
+                if 'bankruptcy' in vendor.legal_status.lower():
+                    risk_factors.append('Bankruptcy history')
+                    risk_score += 40
+                if 'regulatory' in vendor.legal_status.lower():
+                    risk_factors.append('Regulatory violations')
+                    risk_score += 25
+            
+            # Check financial indicators
+            if hasattr(vendor, 'financial_rating') and vendor.financial_rating:
+                if vendor.financial_rating.lower() in ['poor', 'high risk']:
+                    risk_factors.append('Poor financial rating')
+                    risk_score += 20
+            
+            # Default to low risk if no issues found
+            if risk_score == 0:
+                risk_factors.append('Clean legal record')
+                risk_factors.append('No known litigation')
+                risk_score = 15
+            
+            # Determine risk level
+            if risk_score >= 60:
+                risk_level = 'high'
+            elif risk_score >= 30:
+                risk_level = 'medium'
+            else:
+                risk_level = 'low'
+            
+            assessment_result = {
+                'vendor': vendor_name,
+                'riskLevel': risk_level,
+                'score': risk_score,
+                'factors': risk_factors,
+                'details': risk_assessment,
+                'assessed_at': datetime.utcnow().isoformat()
+            }
+            
+            return jsonify({
+                'assessments': [assessment_result],
+                'total': 1,
+                'vendor_name': vendor_name
+            })
+            
+        finally:
+            session.close()
+        
+    except Exception as e:
+        logger.error(f"Error assessing vendor risk: {str(e)}")
+        return jsonify({'error': f'Error assessing vendor risk: {str(e)}'}), 500
+
+@legal_intel_bp.route('/case-details/<string:case_id>', methods=['GET'])
+@jwt_required()
+def get_case_details(case_id):
+    """Get detailed information about a specific legal case"""
+    try:
+        # Try to get opinion details from CourtListener
+        case_details = legal_service.client.get_opinion_detail(int(case_id))
+        
+        if not case_details:
+            return jsonify({'error': 'Case not found'}), 404
+        
+        # Format the detailed case information
+        formatted_details = {
+            'id': case_details.get('id', case_id),
+            'title': case_details.get('case_name', 'Unknown Case'),
+            'court': case_details.get('court', 'Unknown Court'),
+            'date_filed': case_details.get('date_filed', ''),
+            'date_created': case_details.get('date_created', ''),
+            'judges': case_details.get('judges', []),
+            'citation': case_details.get('citation', ''),
+            'full_text': case_details.get('plain_text', case_details.get('html_with_citations', '')),
+            'summary': case_details.get('summary', ''),
+            'type': case_details.get('type', ''),
+            'status': case_details.get('status', ''),
+            'precedential_status': case_details.get('precedential_status', ''),
+            'docket_number': case_details.get('docket_number', ''),
+            'source': 'CourtListener',
+            'url': case_details.get('absolute_url', ''),
+            'download_url': case_details.get('download_url', ''),
+            'local_path': case_details.get('local_path', ''),
+            # Additional metadata
+            'cluster': case_details.get('cluster', {}),
+            'extracted_by_ocr': case_details.get('extracted_by_ocr', False),
+            'page_count': case_details.get('page_count', 0),
+            'author': case_details.get('author', {}),
+            'joined_by': case_details.get('joined_by', []),
+            'per_curiam': case_details.get('per_curiam', False),
+            'opinions_cited': case_details.get('opinions_cited', []),
+        }
+        
+        return jsonify(formatted_details)
+        
+    except ValueError:
+        # Case ID is not a valid integer, return error
+        return jsonify({'error': 'Invalid case ID format'}), 400
+    except Exception as e:
+        logger.error(f"Error getting case details for case {case_id}: {str(e)}")
+        return jsonify({'error': f'Error retrieving case details: {str(e)}'}), 500

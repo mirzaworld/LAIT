@@ -8,6 +8,7 @@ import {
   Vendor,
   DashboardMetrics
 } from '../services/api';
+import { withRetry, fallbackDataManager } from '../utils/apiUtils';
 import { mockInvoices, mockVendors, mockDashboardMetrics, mockSpendTrends } from '../data/mockData';
 
 // Use this to toggle between API and mock data
@@ -16,7 +17,7 @@ const USE_MOCK_DATA = false; // Using real API data now that endpoints are worki
 export function useInvoices(status?: string, vendor?: string) {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Error | null>(null);
 
   const fetchInvoices = useCallback(async () => {
     try {
@@ -40,13 +41,24 @@ export function useInvoices(status?: string, vendor?: string) {
         // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 500));
       } else {
-        data = await getInvoices(status, vendor);
+        // Use retry logic for API call
+        data = await withRetry(() => getInvoices(status, vendor));
+        
+        // Store as fallback data
+        fallbackDataManager.set('invoices', data);
       }
       
       setInvoices(data);
       
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch invoices');
+      setError(err instanceof Error ? err : new Error('Failed to fetch invoices'));
+      
+      // Try to use fallback data
+      const fallbackData = fallbackDataManager.get<Invoice[]>('invoices');
+      if (fallbackData) {
+        console.log('Using fallback invoice data');
+        setInvoices(fallbackData);
+      }
     } finally {
       setLoading(false);
     }
@@ -96,7 +108,7 @@ export function useVendors() {
 export function useDashboardMetrics() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Error | null>(null);
 
   const fetchMetrics = useCallback(async () => {
     try {
@@ -106,15 +118,25 @@ export function useDashboardMetrics() {
       let data: DashboardMetrics;
       
       if (USE_MOCK_DATA) {
-        data = {...mockDashboardMetrics};
-        await new Promise(resolve => setTimeout(resolve, 500));
+        data = { ...mockDashboardMetrics };
       } else {
-        data = await getDashboardMetrics();
+        // Use retry logic for API call
+        data = await withRetry(() => getDashboardMetrics());
+        
+        // Store as fallback data
+        fallbackDataManager.set('dashboard_metrics', data);
       }
       
       setMetrics(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch dashboard metrics');
+      setError(err instanceof Error ? err : new Error('Failed to fetch dashboard metrics'));
+      
+      // Try to use fallback data
+      const fallbackData = fallbackDataManager.get<DashboardMetrics>('dashboard_metrics');
+      if (fallbackData) {
+        console.log('Using fallback dashboard metrics');
+        setMetrics(fallbackData);
+      }
     } finally {
       setLoading(false);
     }

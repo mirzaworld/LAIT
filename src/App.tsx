@@ -2,6 +2,8 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { setupAPIMonitoring } from './utils/apiUtils';
+import ErrorBoundaryWithRetry from './components/ErrorBoundaryWithRetry';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Analytics from './pages/Analytics';
@@ -60,15 +62,15 @@ const AuthRoute: React.FC<{element: React.ReactNode}> = ({ element }) => {
 // Add future flags configuration
 const router = createBrowserRouter(
   [
-    {/* Public landing page */}
+    // Public landing page
     { path: "/landing", element: <Landing /> },
     { path: "/contact", element: <Contact /> },
     
-    {/* Public auth routes */}
+    // Public auth routes
     { path: "/login", element: <AuthRoute element={<Login />} /> },
     { path: "/signup", element: <AuthRoute element={<SignUp />} /> },
     
-    {/* Protected routes with layout */}
+    // Protected routes with layout
     { path: "/", element: 
       <ProtectedRoute element={
         <Layout>
@@ -182,168 +184,95 @@ const router = createBrowserRouter(
       } />
     },
     
-    {/* Catch-all route - redirect to landing if not authenticated, dashboard if authenticated */}
+    // Catch-all route - redirect to landing if not authenticated, dashboard if authenticated
     { path: "*", element: 
       <ProtectedRoute element={<Navigate to="/" replace />} />
     }
   ],
   {
     future: {
-      v7_startTransition: true,
+      // v7_startTransition: true,
       v7_relativeSplatPath: true
     }
   }
 );
 
-function AppContent() {
-  return (
-    <Router>
-      <Routes>
-        {/* Public landing page */}
-        <Route path="/landing" element={<Landing />} />
-        <Route path="/contact" element={<Contact />} />
-        
-        {/* Public auth routes */}
-        <Route path="/login" element={<AuthRoute element={<Login />} />} />
-        <Route path="/signup" element={<AuthRoute element={<SignUp />} />} />
-        
-        {/* Protected routes with layout */}
-        <Route path="/" element={
-          <ProtectedRoute element={
-            <Layout>
-              <Dashboard />
-            </Layout>
-          } />
-        } />
-        <Route path="/analytics" element={
-          <ProtectedRoute element={
-            <Layout>
-              <Analytics />
-            </Layout>
-          } />
-        } />
-        <Route path="/analytics/advanced" element={
-          <ProtectedRoute element={
-            <Layout>
-              <AdvancedAnalytics />
-            </Layout>
-          } />
-        } />
-        <Route path="/invoices" element={
-          <ProtectedRoute element={
-            <Layout>
-              <Invoices />
-            </Layout>
-          } />
-        } />
-        <Route path="/invoices/:id" element={
-          <ProtectedRoute element={
-            <Layout>
-              <Invoices />
-            </Layout>
-          } />
-        } />
-        <Route path="/invoices/upload" element={
-          <ProtectedRoute element={
-            <Layout>
-              <UploadInvoice />
-            </Layout>
-          } />
-        } />
-        <Route path="/invoices/list" element={
-          <ProtectedRoute element={
-            <Layout>
-              <InvoiceList />
-            </Layout>
-          } />
-        } />
-        <Route path="/reports" element={
-          <ProtectedRoute element={
-            <Layout>
-              <Reports />
-            </Layout>
-          } />
-        } />
-        <Route path="/settings" element={
-          <ProtectedRoute element={
-            <Layout>
-              <Settings />
-            </Layout>
-          } />
-        } />
-        <Route path="/vendors" element={
-          <ProtectedRoute element={
-            <Layout>
-              <VendorPerformance />
-            </Layout>
-          } />
-        } />
-        <Route path="/recommendations-alerts" element={
-          <ProtectedRoute element={
-            <Layout>
-              <RecommendationsAlerts />
-            </Layout>
-          } />
-        } />
-        <Route path="/settings-integrations" element={
-          <ProtectedRoute element={
-            <Layout>
-              <SettingsIntegrations />
-            </Layout>
-          } />
-        } />
-        <Route path="/legal-intelligence" element={
-          <ProtectedRoute element={
-            <Layout>
-              <LegalIntelligence />
-            </Layout>
-          } />
-        } />
-        <Route path="/vendor-analytics" element={
-          <ProtectedRoute element={
-            <Layout>
-              <VendorAnalyticsPage />
-            </Layout>
-          } />
-        } />
-        <Route path="/vendor-analytics/:id" element={
-          <ProtectedRoute element={
-            <Layout>
-              <VendorAnalyticsPage />
-            </Layout>
-          } />
-        } />
-        <Route path="/diagnostics" element={
-          <ProtectedRoute element={
-            <Layout>
-              <DiagnosticsPage />
-            </Layout>
-          } />
-        } />
-        
-        {/* Catch-all route - redirect to landing if not authenticated, dashboard if authenticated */}
-        <Route path="*" element={
-          <ProtectedRoute element={<Navigate to="/" replace />} />
-        } />
-      </Routes>
-    </Router>
-  );
-}
+// Enhanced error logging
+const logError = (error: Error, errorInfo: React.ErrorInfo) => {
+  console.error('Application Error:', error);
+  console.error('Error Details:', errorInfo);
+  // You can add your error reporting service here
+};
 
-function App() {
+// Root App Component
+const AppContent = () => {
   useEffect(() => {
+    // Initialize API monitoring
+    setupAPIMonitoring();
+    
+    // Set development token if needed
     setDevelopmentToken();
+    
+    // Add error event listener for unhandled errors
+    const handleError = (event: ErrorEvent) => {
+      console.error('Unhandled error:', event.error);
+      event.preventDefault();
+    };
+    
+    window.addEventListener('error', handleError);
+    
+    // Add unhandled promise rejection handler
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('Unhandled promise rejection:', event.reason);
+      event.preventDefault();
+    };
+    
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
   }, []);
 
   return (
-    <AuthProvider>
+    <ErrorBoundaryWithRetry
+      maxRetries={3}
+      onError={logError}
+      fallback={({ error, retry }) => (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="max-w-md w-full space-y-8 p-8 bg-white shadow-lg rounded-lg">
+            <h2 className="text-2xl font-bold text-center text-gray-900">
+              Something went wrong
+            </h2>
+            <p className="text-gray-600 text-center">
+              {error?.message || 'An unexpected error occurred'}
+            </p>
+            <div className="flex justify-center">
+              <button
+                onClick={retry}
+                className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    >
       <NotificationProvider>
-        <AppProvider>
-          <AppContent />
-        </AppProvider>
+        <AuthProvider>
+          <AppProvider>
+            <RouterProvider router={router} />
+          </AppProvider>
+        </AuthProvider>
       </NotificationProvider>
-    </AuthProvider>
+    </ErrorBoundaryWithRetry>
   );
-}
+};
+
+const App = () => {
+  return <AppContent />;
+};
 
 export default App;

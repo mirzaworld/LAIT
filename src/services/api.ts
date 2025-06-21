@@ -7,6 +7,26 @@ const getAuthToken = (): string | null => {
   return localStorage.getItem('lait_token') || localStorage.getItem('token');
 };
 
+// Refresh token if needed
+const refreshTokenIfNeeded = async () => {
+  const token = getAuthToken();
+  if (!token) return;
+  
+  try {
+    const response = await fetch(`${API_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+    
+    if (response.ok) {
+      const { token: newToken } = await response.json();
+      localStorage.setItem('lait_token', newToken);
+    }
+  } catch (error) {
+    console.error('Token refresh failed:', error);
+  }
+};
+
 const getAuthHeaders = (): HeadersInit => {
   const token = getAuthToken();
   return {

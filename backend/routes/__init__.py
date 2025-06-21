@@ -1,13 +1,16 @@
-# Import all routes for easy importing
+"""Route registration and blueprints"""
+from flask import jsonify
+from datetime import datetime
 
-from routes.auth import auth_bp
-# from routes.invoice import invoice_bp
-from routes.invoices import invoices_bp
-from routes.analytics import analytics_bp
-from routes.admin import admin_bp
-from routes.notification import notification_bp
-from routes.vendors import vendors_bp
-from routes.legal_intelligence import legal_intel_bp
+# Import all routes for easy importing
+from .auth import auth_bp
+# from .invoice import invoice_bp
+from .invoices import invoices_bp
+from .analytics import analytics_bp
+from .admin import admin_bp
+from .notification import notification_bp
+from .vendors import vendors_bp
+from .legal_intelligence import legal_intel_bp
 
 # List of all blueprints
 blueprints = [
@@ -20,7 +23,49 @@ blueprints = [
     (legal_intel_bp, '/api/legal-intelligence')
 ]
 
-# We're removing this block to avoid duplicate blueprint registration
-# # Add invoices_bp if it exists and is different from invoice_bp
-# if invoices_bp and invoices_bp.name != invoice_bp.name:
-#     blueprints.append((invoices_bp, None))  # url_prefix is already included in blueprint definition
+def register_routes(app):
+    """Register all routes for the application"""
+
+    # Register all blueprints
+    for blueprint, url_prefix in blueprints:
+        try:
+            if url_prefix:
+                app.register_blueprint(blueprint, url_prefix=url_prefix)
+            else:
+                app.register_blueprint(blueprint)
+            app.logger.info(f"Registered blueprint: {blueprint.name}")
+        except Exception as e:
+            app.logger.error(f"Failed to register blueprint {blueprint.name}: {e}")
+
+    # Register additional route modules (if they exist) - commented out to avoid conflicts
+    # try:
+    #     from .invoice_routes import register_invoice_routes
+    #     register_invoice_routes(app)
+    # except ImportError:
+    #     pass
+
+    # try:
+    #     from .vendor_routes import register_vendor_routes
+    #     register_vendor_routes(app)
+    # except ImportError:
+    #     pass
+
+    # try:
+    #     from .ml_routes import register_ml_routes
+    #     register_ml_routes(app)
+    # except ImportError:
+    #     pass
+
+    # try:
+    #     from .document_routes import register_document_routes
+    #     register_document_routes(app)
+    # except ImportError:
+    #     pass
+
+    # try:
+    #     from .workflow_routes import register_workflow_routes
+    #     register_workflow_routes(app)
+    # except ImportError:
+    #     pass
+
+    return app  # Return the app for chaining

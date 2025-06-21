@@ -10,6 +10,7 @@ import ApiStatus from '../components/ApiStatus';
 import { useDashboardMetrics } from '../hooks/useApi';
 import { pdfService } from '../services/pdfService';
 import DatePicker from 'react-datepicker';
+import ErrorBoundaryWithRetry from '../components/ErrorBoundaryWithRetry';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Line } from 'react-chartjs-2';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
@@ -17,11 +18,42 @@ import 'react-circular-progressbar/dist/styles.css';
 import '../utils/chartConfig';
 
 const Dashboard: React.FC = () => {
+  return (
+    <ErrorBoundaryWithRetry
+      onError={(error, errorInfo) => {
+        console.error('Dashboard Error:', error, errorInfo);
+      }}
+      maxRetries={3}
+    >
+      <DashboardContent />
+    </ErrorBoundaryWithRetry>
+  );
+};
+
+const DashboardContent: React.FC = () => {
   const navigate = useNavigate();
   const { metrics: apiMetrics, loading, error } = useDashboardMetrics();
   const [generatingReport, setGeneratingReport] = useState(false);
   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
   const [startDate, endDate] = dateRange;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 text-primary-500 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 p-6 rounded-lg text-center">
+        <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-red-800 mb-2">Error Loading Dashboard</h3>
+        <p className="text-red-600">{error instanceof Error ? error.message : error}</p>
+      </div>
+    );
+  }
 
   const handleGenerateReport = async () => {
     if (!apiMetrics) return;

@@ -12,6 +12,20 @@ interface SearchResult {
   excerpt: string;
 }
 
+interface CaseDetails {
+  id: string;
+  title: string;
+  court: string;
+  date_filed: string;
+  full_text: string;
+  summary: string;
+  citation: string;
+  status: string;
+  judges: string[];
+  source: string;
+  url?: string;
+}
+
 interface RiskAssessment {
   vendor: string;
   riskLevel: 'low' | 'medium' | 'high';
@@ -27,6 +41,8 @@ const LegalIntelligence: React.FC = () => {
   const [riskAssessments, setRiskAssessments] = useState<RiskAssessment[]>([]);
   const [attorneyName, setAttorneyName] = useState('');
   const [attorneyVerification, setAttorneyVerification] = useState<any>(null);
+  const [selectedCase, setSelectedCase] = useState<CaseDetails | null>(null);
+  const [showCaseDetails, setShowCaseDetails] = useState(false);
 
   // Initialize legal data service
   const legalService = new LegalDataService();
@@ -107,6 +123,19 @@ const LegalIntelligence: React.FC = () => {
         verified: false,
         error: 'Verification service unavailable'
       });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCaseClick = async (caseId: string) => {
+    setLoading(true);
+    try {
+      const caseDetails = await legalService.getCaseDetails(caseId);
+      setSelectedCase(caseDetails);
+      setShowCaseDetails(true);
+    } catch (error) {
+      console.error('Failed to load case details:', error);
     } finally {
       setLoading(false);
     }
@@ -200,9 +229,10 @@ const LegalIntelligence: React.FC = () => {
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-gray-900">Search Results</h3>
                   {searchResults.map((result) => (
-                    <div key={result.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                    <div key={result.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer"
+                         onClick={() => handleCaseClick(result.id)}>
                       <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-semibold text-blue-600 hover:text-blue-800 cursor-pointer">
+                        <h4 className="font-semibold text-blue-600 hover:text-blue-800">
                           {result.title}
                         </h4>
                         <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
@@ -393,6 +423,94 @@ const LegalIntelligence: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Case Details Modal */}
+      {showCaseDetails && selectedCase && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900">Case Details</h2>
+              <button
+                onClick={() => setShowCaseDetails(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="p-4 overflow-y-auto max-h-full">
+              <div className="space-y-6">
+                {/* Case Header */}
+                <div className="border-b border-gray-200 pb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{selectedCase.title}</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-700">Court:</span>
+                      <span className="ml-2 text-gray-600">{selectedCase.court}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Date Filed:</span>
+                      <span className="ml-2 text-gray-600">{selectedCase.date_filed}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Citation:</span>
+                      <span className="ml-2 text-gray-600">{selectedCase.citation}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Status:</span>
+                      <span className="ml-2 text-gray-600">{selectedCase.status}</span>
+                    </div>
+                  </div>
+                  
+                  {selectedCase.judges && selectedCase.judges.length > 0 && (
+                    <div className="mt-2">
+                      <span className="font-medium text-gray-700">Judges:</span>
+                      <span className="ml-2 text-gray-600">{selectedCase.judges.join(', ')}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Case Summary */}
+                {selectedCase.summary && (
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Summary</h4>
+                    <p className="text-gray-700">{selectedCase.summary}</p>
+                  </div>
+                )}
+
+                {/* Full Text */}
+                {selectedCase.full_text && (
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">Full Text</h4>
+                    <div className="bg-gray-50 p-4 rounded-lg max-h-60 overflow-y-auto">
+                      <pre className="whitespace-pre-wrap text-sm text-gray-700">
+                        {selectedCase.full_text.substring(0, 2000)}
+                        {selectedCase.full_text.length > 2000 && '...'}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+
+                {/* External Link */}
+                {selectedCase.url && (
+                  <div className="flex justify-end">
+                    <a
+                      href={selectedCase.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    >
+                      View on CourtListener
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
