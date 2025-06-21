@@ -5,8 +5,8 @@ Uses real trained ML models for PDF analysis
 
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from services.enhanced_pdf_upload_service import EnhancedPDFUploadService
-from dev_auth import development_jwt_required
+from backend.services.enhanced_pdf_upload_service import EnhancedPDFUploadService
+from backend.dev_auth import development_jwt_required
 import logging
 
 logger = logging.getLogger(__name__)

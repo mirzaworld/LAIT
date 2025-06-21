@@ -9,8 +9,7 @@ import re
 import nltk
 import spacy
 from datetime import datetime
-from db.database import get_db_session
-from db.database import Invoice, LineItem, RiskFactor, Vendor
+from backend.db.database import get_db_session, Invoice, LineItem, RiskFactor, Vendor
 
 class InvoiceAnalyzer:
     def __init__(self):

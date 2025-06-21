@@ -3,8 +3,8 @@ from sqlalchemy import func, desc, asc, and_, extract, text
 from backend.db.database import get_db_session
 from backend.models.db_models import Invoice, LineItem, Vendor, Matter, RiskFactor
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from auth import role_required
-from dev_auth import development_jwt_required
+from backend.auth import role_required
+from backend.dev_auth import development_jwt_required
 from datetime import datetime, timedelta
 import calendar
 from backend.models.vendor_analyzer import VendorAnalyzer

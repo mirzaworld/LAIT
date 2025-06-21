@@ -12,7 +12,7 @@ import json
 from sqlalchemy import func, desc, and_, or_
 from backend.db.database import get_db_session
 from backend.models.db_models import Invoice, Vendor, Matter, LineItem, RiskFactor
-from services.report_service import ReportService
+from backend.services.report_service import ReportService
 from backend.models.enhanced_invoice_analyzer import EnhancedInvoiceAnalyzer
 from backend.models.vendor_analyzer import VendorAnalyzer
 from ml.models.outlier_detector import OutlierDetector
