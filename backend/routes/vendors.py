@@ -168,33 +168,6 @@ def generate_demo_vendors_from_trained_data() -> list:
         })
     
     return vendors
-        demo_vendors = [
-            {
-                'id': 'V001',
-                'name': 'Morrison & Foerster LLP',
-                'category': 'AmLaw 100',
-                'spend': 734000,
-                'matter_count': 15,
-                'avg_rate': 950,
-                'performance_score': 92,
-                'diversity_score': 78,
-                'on_time_rate': 94
-            },
-            {
-                'id': 'V002',
-                'name': 'Baker McKenzie',
-                'category': 'Global',
-                'spend': 589000,
-                'matter_count': 18,
-                'avg_rate': 850,
-                'performance_score': 88,
-                'diversity_score': 82,
-                'on_time_rate': 97
-            }
-        ]
-        return jsonify({'vendors': demo_vendors})
-    finally:
-        session.close()
 
 @vendors_bp.route('/search', methods=['GET'])
 @development_jwt_required
