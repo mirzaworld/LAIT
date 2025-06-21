@@ -13,7 +13,12 @@ import axios, { AxiosResponse } from 'axios';
 // API Configuration
 const COURTLISTENER_API_BASE = 'https://www.courtlistener.com/api/rest/v4';
 const COURTLISTENER_SEARCH_API = 'https://www.courtlistener.com/api/rest/v4/search';
-const LAIT_BACKEND_API = 'http://127.0.0.1:5003/api'; // Enhanced backend API
+const LAIT_BACKEND_API = import.meta.env.VITE_API_URL || ''; // Enhanced backend API
+
+// Helper function to construct API URLs
+const apiUrl = (path: string) => {
+  return LAIT_BACKEND_API ? `${LAIT_BACKEND_API}${path}` : path;
+};
 
 // CourtListener API Configuration
 const COURTLISTENER_API = {

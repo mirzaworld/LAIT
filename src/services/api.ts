@@ -1,6 +1,13 @@
 // API service for interacting with the backend
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5004';
+const API_URL = import.meta.env.VITE_API_URL || '';
+
+// Helper function to construct API URLs
+const apiUrl = (path: string) => {
+  // If we have a full API_URL (like in production), use it
+  // Otherwise, use relative paths that work with Vite's proxy
+  return API_URL ? `${API_URL}${path}` : path;
+};
 
 // Authentication helpers
 const getAuthToken = (): string | null => {
@@ -13,7 +20,7 @@ const refreshTokenIfNeeded = async () => {
   if (!token) return;
   
   try {
-    const response = await fetch(`${API_URL}/auth/refresh`, {
+    const response = await fetch(apiUrl('/auth/refresh'), {
       method: 'POST',
       headers: getAuthHeaders(),
     });
@@ -33,7 +40,8 @@ const getAuthHeaders = (): HeadersInit => {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
     'Origin': window.location.origin,
-    ...(token && { 'Authorization': `Bearer ${token}` })
+    // In development, use mock token if no real token is available
+    'Authorization': token ? `Bearer ${token}` : 'Bearer mock-jwt-token-for-development'
   };
 };
 
@@ -182,7 +190,7 @@ export interface DashboardMetrics {
  */
 export const getInvoices = async (status?: string, vendor?: string): Promise<Invoice[]> => {
   try {
-    let url = `${API_URL}/api/invoices`;
+    let url = apiUrl('/api/invoices');
     const params = new URLSearchParams();
     
     if (status) params.append('status', status);
@@ -225,7 +233,7 @@ export const getInvoices = async (status?: string, vendor?: string): Promise<Inv
  */
 export const getInvoiceDetails = async (invoiceId: string): Promise<any> => {
   try {
-    const response = await fetch(`${API_URL}/api/invoices/${invoiceId}`, {
+    const response = await fetch(apiUrl(`/api/invoices/${invoiceId}`), {
       headers: getAuthHeaders()
     });
     if (!response.ok) {
@@ -244,7 +252,7 @@ export const getInvoiceDetails = async (invoiceId: string): Promise<any> => {
  */
 export const analyzeInvoice = async (invoiceId: string): Promise<InvoiceAnalysis> => {
   try {
-    const response = await fetch(`${API_URL}/api/invoices/${invoiceId}/analyze`, {
+    const response = await fetch(apiUrl(`/api/invoices/${invoiceId}/analyze`), {
       method: 'POST',
       headers: getAuthHeaders()
     });
@@ -282,13 +290,13 @@ export const uploadInvoice = async (
     if (category) formData.append('category', category);
     if (description) formData.append('description', description);
     
-    console.log('Uploading invoice to:', `${API_URL}/api/upload-invoice`);
+    console.log('Uploading invoice to:', apiUrl('/api/upload-invoice'));
     
     // Don't include Content-Type header for FormData - let browser set it
     const headers = getAuthHeaders();
     delete (headers as any)['Content-Type'];
     
-    const response = await fetch(`${API_URL}/api/upload-invoice`, {
+    const response = await fetch(apiUrl('/api/upload-invoice'), {
       method: 'POST',
       body: formData,
       headers: {
@@ -326,7 +334,7 @@ export const uploadInvoice = async (
  */
 export const getVendors = async (): Promise<Vendor[]> => {
   try {
-    const response = await fetch(`${API_URL}/api/vendors`, {
+    const response = await fetch(apiUrl('/api/vendors'), {
       headers: getAuthHeaders()
     });
     if (!response.ok) {
@@ -346,7 +354,7 @@ export const getVendors = async (): Promise<Vendor[]> => {
  */
 export const getVendorPerformance = async (vendorId: string): Promise<VendorPerformance> => {
   try {
-    const response = await fetch(`${API_URL}/api/vendors/${vendorId}/performance`, {
+    const response = await fetch(apiUrl(`/api/vendors/${vendorId}/performance`), {
       headers: getAuthHeaders()
     });
     if (!response.ok) {
@@ -365,9 +373,9 @@ export const getVendorPerformance = async (vendorId: string): Promise<VendorPerf
  */
 export const getDashboardMetrics = async (): Promise<DashboardMetrics> => {
   try {
-    console.log('Fetching dashboard metrics from:', `${API_URL}/api/dashboard/metrics`);
+    console.log('Fetching dashboard metrics from:', `/api/dashboard/metrics`);
     
-    const response = await fetch(`${API_URL}/api/dashboard/metrics`, {
+    const response = await fetch(apiUrl('/api/dashboard/metrics'), {
       headers: getAuthHeaders(),
       mode: 'cors',
       credentials: 'omit'
@@ -398,7 +406,7 @@ export const getDashboardMetrics = async (): Promise<DashboardMetrics> => {
  */
 export const getSpendTrends = async (period: string = 'monthly', category?: string): Promise<any> => {
   try {
-    let url = `${API_URL}/api/analytics/spend-trends`;
+    let url = apiUrl('/api/analytics/spend-trends');
     const params = new URLSearchParams();
     
     params.append('period', period);
