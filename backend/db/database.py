@@ -3,7 +3,9 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker, scoped_session
 import os
 from datetime import datetime
-from config import Config
+from dotenv import load_dotenv
+
+load_dotenv()
 
 Base = declarative_base()
 

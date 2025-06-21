@@ -29,16 +29,16 @@ from flask_limiter.util import get_remote_address
 from dotenv import load_dotenv
 from werkzeug.security import check_password_hash
 from sqlalchemy import func, desc
-from db.database import User, Invoice, Vendor, SessionLocal, init_db
-from models.db_models import AuditLog
+from backend.db.database import User, Invoice, Vendor, SessionLocal, init_db
+from backend.models.db_models import AuditLog
 
 # Import ML models and analyzers
 try:
-    from models.invoice_analyzer import InvoiceAnalyzer
-    from models.vendor_analyzer import VendorAnalyzer
-    from models.risk_predictor import RiskPredictor
-    from models.matter_analyzer import MatterAnalyzer
-    from models.enhanced_invoice_analyzer import EnhancedInvoiceAnalyzer
+    from backend.models.invoice_analyzer import InvoiceAnalyzer
+    from backend.models.vendor_analyzer import VendorAnalyzer
+    from backend.models.risk_predictor import RiskPredictor
+    from backend.models.matter_analyzer import MatterAnalyzer
+    from backend.models.enhanced_invoice_analyzer import EnhancedInvoiceAnalyzer
 except ImportError as e:
     print(f"Warning: Model imports failed ({e}). ML features may be limited.")
     
@@ -142,7 +142,7 @@ def create_app():
         app.enhanced_invoice_analyzer = None
 
     # Import real-time data collector
-    from services.real_time_data_collector import RealTimeLegalDataCollector
+    from backend.services.real_time_data_collector import RealTimeLegalDataCollector
     
     # Initialize data collector instance
     data_collector = RealTimeLegalDataCollector()
@@ -160,8 +160,8 @@ def create_app():
     def dashboard_metrics():
         """Dashboard metrics endpoint"""
         try:
-            from db.database import get_db_session
-            from models.db_models import Invoice, Vendor
+            from backend.db.database import get_db_session
+            from backend.models.db_models import Invoice, Vendor
             
             session = get_db_session()
             
@@ -589,7 +589,7 @@ def create_app():
 
     # Import and register routes
     with app.app_context():
-        from routes import register_routes
+        from backend.routes import register_routes
         register_routes(app)
         logger.info("✅ Routes registered successfully")
     

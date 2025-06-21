@@ -6,9 +6,9 @@ Provides endpoints for legal research and competitive intelligence using CourtLi
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from dev_auth import development_jwt_required
-from services.courtlistener_service import LegalIntelligenceService
-from db.database import get_db_session
-from models.db_models import Vendor, Invoice, Matter
+from backend.services.courtlistener_service import LegalIntelligenceService
+from backend.db.database import get_db_session
+from backend.models.db_models import Vendor, Invoice, Matter
 from datetime import datetime
 import os
 import logging

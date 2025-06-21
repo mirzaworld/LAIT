@@ -10,11 +10,11 @@ import tempfile
 import os
 import json
 from sqlalchemy import func, desc, and_, or_
-from db.database import get_db_session
-from models.db_models import Invoice, Vendor, Matter, LineItem, RiskFactor
+from backend.db.database import get_db_session
+from backend.models.db_models import Invoice, Vendor, Matter, LineItem, RiskFactor
 from services.report_service import ReportService
-from models.enhanced_invoice_analyzer import EnhancedInvoiceAnalyzer
-from models.vendor_analyzer import VendorAnalyzer
+from backend.models.enhanced_invoice_analyzer import EnhancedInvoiceAnalyzer
+from backend.models.vendor_analyzer import VendorAnalyzer
 from ml.models.outlier_detector import OutlierDetector
 from ml.models.risk_predictor import RiskPredictor
 import logging

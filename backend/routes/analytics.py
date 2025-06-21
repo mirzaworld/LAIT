@@ -1,15 +1,15 @@
 from flask import Blueprint, request, jsonify
 from sqlalchemy import func, desc, asc, and_, extract, text
-from db.database import get_db_session
-from models.db_models import Invoice, LineItem, Vendor, Matter, RiskFactor
+from backend.db.database import get_db_session
+from backend.models.db_models import Invoice, LineItem, Vendor, Matter, RiskFactor
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from auth import role_required
 from dev_auth import development_jwt_required
 from datetime import datetime, timedelta
 import calendar
-from models.vendor_analyzer import VendorAnalyzer
-from models.matter_analyzer import MatterAnalyzer
-from models.enhanced_invoice_analyzer import analyze_invoice_enhanced
+from backend.models.vendor_analyzer import VendorAnalyzer
+from backend.models.matter_analyzer import MatterAnalyzer
+from backend.models.enhanced_invoice_analyzer import analyze_invoice_enhanced
 
 analytics_bp = Blueprint('analytics', __name__)
 
