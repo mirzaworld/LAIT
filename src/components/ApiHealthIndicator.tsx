@@ -22,7 +22,7 @@ const ApiHealthIndicator: React.FC<ApiHealthIndicatorProps> = ({
     setStatus('checking');
     try {
       const startTime = performance.now();
-      const response = await fetch(`${apiUrl}/api/health`, { 
+      const response = await fetch(`${apiUrl}/health`, { 
         method: 'GET',
         cache: 'no-cache',
         headers: { 'Content-Type': 'application/json' }
@@ -148,7 +148,7 @@ const ApiHealthIndicator: React.FC<ApiHealthIndicatorProps> = ({
               )}
               
               <div className="mt-2 text-xs text-gray-500">
-                URL: {apiUrl}/api/health
+                URL: {apiUrl}/health
               </div>
             </div>
           </div>

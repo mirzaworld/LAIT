@@ -22,11 +22,23 @@ const AdvancedAnalytics: React.FC = () => {
           } else {
             console.log('Using fallback predictive data');
             setPredictiveData({
-              predictions: [
-                { category: 'Legal Spend', current: 100000, predicted: 120000 },
-                { category: 'Case Load', current: 50, predicted: 65 }
-              ],
-              confidence: 0.85
+              predictions: {
+                next_month_spend: {
+                  amount: 120000,
+                  trend: 'increasing',
+                  confidence: 0.85
+                },
+                budget_risk: {
+                  level: 'medium',
+                  probability: 0.65
+                },
+                cost_savings: {
+                  potential: 25000,
+                  opportunities: ['Rate optimization', 'Vendor consolidation']
+                }
+              },
+              confidence: 0.85,
+              generated_at: new Date().toISOString()
             });
           }
         } catch (error) {
@@ -136,17 +148,20 @@ const AdvancedAnalytics: React.FC = () => {
               <div>
                 <p className="text-sm text-gray-600">Next Month Prediction</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {formatCurrency(predictiveData.predictions.next_month_spend.amount)}
+                  {predictiveData?.predictions?.next_month_spend?.amount ? 
+                    formatCurrency(predictiveData.predictions.next_month_spend.amount) : 
+                    'N/A'
+                  }
                 </p>
                 <div className="flex items-center mt-1">
                   <span className={`text-sm px-2 py-1 rounded-full ${
-                    predictiveData.predictions.next_month_spend.trend === 'increasing' 
+                    predictiveData?.predictions?.next_month_spend?.trend === 'increasing' 
                       ? 'bg-danger-100 text-danger-700' 
-                      : predictiveData.predictions.next_month_spend.trend === 'decreasing'
+                      : predictiveData?.predictions?.next_month_spend?.trend === 'decreasing'
                       ? 'bg-success-100 text-success-700'
                       : 'bg-gray-100 text-gray-700'
                   }`}>
-                    {predictiveData.predictions.next_month_spend.trend}
+                    {predictiveData?.predictions?.next_month_spend?.trend || 'stable'}
                   </span>
                   <span className="text-sm text-gray-500 ml-2">
                     {Math.round(predictiveData.predictions.next_month_spend.confidence * 100)}% confidence

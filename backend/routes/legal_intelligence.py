@@ -22,6 +22,26 @@ legal_intel_bp = Blueprint('legal_intelligence', __name__)
 COURTLISTENER_API_TOKEN = os.getenv('COURTLISTENER_API_TOKEN')
 legal_service = LegalIntelligenceService(COURTLISTENER_API_TOKEN)
 
+@legal_intel_bp.route('/test', methods=['GET'])
+def test_legal_intelligence():
+    """Test endpoint to verify legal intelligence blueprint is working"""
+    return jsonify({
+        'status': 'success',
+        'message': 'Legal Intelligence API is working',
+        'service_initialized': bool(legal_service),
+        'available_endpoints': [
+            '/verify-attorney',
+            '/analyze-opposing-counsel', 
+            '/estimate-case-complexity',
+            '/judge-insights',
+            '/vendor-verification',
+            '/competitive-landscape',
+            '/case-details/{case_id}',
+            '/search-cases',
+            '/court-analytics'
+        ]
+    })
+
 @legal_intel_bp.route('/verify-attorney', methods=['POST'])
 @development_jwt_required
 def verify_attorney():
@@ -1102,52 +1122,7 @@ def get_case_details(case_id):
         logger.error(f"Error getting case details for case {case_id}: {str(e)}")
         return jsonify({'error': f'Error retrieving case details: {str(e)}'}), 500
 
-@legal_intel_bp.route('/case-details/<case_id>', methods=['GET'])
-@development_jwt_required
-def get_case_details(case_id):
-    """Get detailed information about a specific case"""
-    try:
-        # First try to get from local database
-        case_details = get_case_from_local_database(case_id)
-        
-        if case_details:
-            return jsonify(case_details)
-        
-        # If not found locally, try CourtListener API
-        try:
-            api_case = legal_service.get_case_details(case_id)
-            if api_case:
-                return jsonify({
-                    'id': case_id,
-                    'title': api_case.get('caseName', 'Unknown Case'),
-                    'court': api_case.get('court', 'Unknown Court'),
-                    'date': api_case.get('dateFiled', ''),
-                    'status': api_case.get('status', 'Unknown'),
-                    'description': api_case.get('summary', api_case.get('text', 'No description available')),
-                    'citation': api_case.get('citation', ''),
-                    'judges': api_case.get('judges', []),
-                    'attorneys': api_case.get('attorneys', []),
-                    'source': 'CourtListener API',
-                    'url': api_case.get('absolute_url', '')
-                })
-        except Exception as e:
-            logger.warning(f"CourtListener API error: {str(e)}")
-        
-        # If not found anywhere, return a structured response
-        return jsonify({
-            'id': case_id,
-            'title': f"Case {case_id}",
-            'court': 'Court information not available',
-            'date': 'Date not available',
-            'status': 'Status unknown',
-            'description': 'Case details are not available in the current database. This case may require additional research or may not exist in our current data sources.',
-            'source': 'Not found',
-            'error': 'Case not found in available databases'
-        }), 404
-        
-    except Exception as e:
-        logger.error(f"Error getting case details: {str(e)}")
-        return jsonify({'error': f'Error retrieving case details: {str(e)}'}), 500
+
 
 def get_case_from_local_database(case_id: str) -> dict:
     """Get case details from local database"""

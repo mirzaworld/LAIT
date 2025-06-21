@@ -4,7 +4,7 @@ Invoice routes: upload, list, get, file download
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from backend.db.database import get_db_session
-from backend.models.db_models import Invoice as DbInvoice
+from backend.models.db_models import Invoice as DbInvoice, Vendor
 from backend.services.s3_service import S3Service
 from backend.services.pdf_parser_service import PDFParserService
 from backend.dev_auth import development_jwt_required
@@ -106,10 +106,10 @@ def list_invoices():
         for inv in invoices:
             result.append({
                 'id': inv.id,
-                'vendor_name': inv.vendor_name,
+                'vendor_name': inv.vendor.name if inv.vendor else 'Unknown Vendor',
                 'invoice_number': inv.invoice_number,
                 'date': inv.date.isoformat() if inv.date else None,
-                'total_amount': inv.total_amount,
+                'total_amount': inv.amount,
                 'overspend_risk': inv.overspend_risk,
                 'processed': inv.processed,
                 'pdf_s3_key': inv.pdf_s3_key
@@ -145,10 +145,10 @@ def get_invoice(invoice_id):
         ]
         return jsonify({
             'id': inv.id,
-            'vendor_name': inv.vendor_name,
+            'vendor_name': inv.vendor.name if inv.vendor else 'Unknown Vendor',
             'invoice_number': inv.invoice_number,
             'date': inv.date.isoformat() if inv.date else None,
-            'total_amount': inv.total_amount,
+            'total_amount': inv.amount,
             'overspend_risk': inv.overspend_risk,
             'processed': inv.processed,
             'pdf_url': file_url,
@@ -184,14 +184,21 @@ def upload_invoice():
     # Save to database
     session = get_db_session()
     try:
+        # Find or create vendor
+        vendor = session.query(Vendor).filter_by(name=parsed_data.get('vendor_name')).first()
+        if not vendor:
+            vendor = Vendor(name=parsed_data.get('vendor_name', 'Unknown Vendor'))
+            session.add(vendor)
+            session.flush()  # Get the vendor ID
+        
         invoice = DbInvoice(
-            vendor_name=parsed_data['vendor_name'],
+            vendor_id=vendor.id,
             invoice_number=parsed_data['invoice_number'],
             date=parsed_data['date'],
-            total_amount=parsed_data['total_amount'],
-            overspend_risk=parsed_data['overspend_risk'],
+            amount=parsed_data.get('total_amount', 0),
+            overspend_risk=parsed_data.get('overspend_risk', 0),
             processed=True,
-            pdf_s3_key=parsed_data['pdf_s3_key']
+            pdf_s3_key=parsed_data.get('pdf_s3_key')
         )
         session.add(invoice)
         session.commit()
