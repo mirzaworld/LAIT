@@ -693,13 +693,13 @@ class LegalDataService {
    */
   async searchCasesBackend(query: string, options?: any): Promise<any> {
     try {
-      const response = await axios.post(`${LAIT_BACKEND_API}/legal-intelligence/search-cases`, {
+      const response = await axios.post(`${LAIT_BACKEND_API}/legal-intelligence/search`, {
         query,
-        court: options?.court,
-        date_range: options?.date_range
+        jurisdiction: options?.court || 'all',
+        dateRange: options?.date_range || {}
       }, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('lait_token') || localStorage.getItem('token')}`
         }
       });
       return response.data;
@@ -831,9 +831,9 @@ class LegalDataService {
    */
   async getCaseDetails(caseId: string): Promise<any> {
     try {
-      const response = await axios.get(`${LAIT_BACKEND_API}/legal-intelligence/case-details/${caseId}`, {
+      const response = await axios.get(`${LAIT_BACKEND_API}/legal-intelligence/case/${caseId}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('lait_token') || localStorage.getItem('token')}`
         }
       });
       return response.data;
