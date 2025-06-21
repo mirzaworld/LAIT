@@ -4,9 +4,15 @@ const API_URL = import.meta.env.VITE_API_URL || '';
 
 // Helper function to construct API URLs
 const apiUrl = (path: string) => {
-  // If we have a full API_URL (like in production), use it
+  // If we have a full API_URL (like in production), use it directly with the path
+  // The path should start with /api, so we don't need to add it again
+  if (API_URL) {
+    // Remove /api from API_URL if it exists to avoid duplication
+    const baseUrl = API_URL.replace(/\/api$/, '');
+    return `${baseUrl}${path}`;
+  }
   // Otherwise, use relative paths that work with Vite's proxy
-  return API_URL ? `${API_URL}${path}` : path;
+  return path;
 };
 
 // Authentication helpers

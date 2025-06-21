@@ -20,7 +20,7 @@ import math
 import io
 import base64
 from datetime import datetime, timedelta
-from flask import Flask, request, jsonify, send_file, current_app
+from flask import Flask, request, jsonify, send_file, current_app, make_response
 from flask_cors import CORS
 from flask_socketio import SocketIO
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required
@@ -83,13 +83,25 @@ def create_app():
                 "http://localhost:5173",  # Vite dev server
                 "http://localhost:4173",  # Vite preview
                 "http://127.0.0.1:5173",
+                "http://127.0.0.1:4173",
                 os.getenv("FRONTEND_URL", "http://localhost:5173")
             ],
-            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization"],
-            "supports_credentials": True
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],
+            "allow_headers": ["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
+            "supports_credentials": True,
+            "expose_headers": ["Content-Type", "Authorization"]
         }
     })
+    
+    # Add an OPTIONS handler for preflight requests
+    @app.before_request
+    def handle_preflight():
+        if request.method == "OPTIONS":
+            response = make_response()
+            response.headers.add("Access-Control-Allow-Origin", "*")
+            response.headers.add('Access-Control-Allow-Headers', "*")
+            response.headers.add('Access-Control-Allow-Methods', "*")
+            return response
     
     # Configure JWT
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'dev-secret-key')
