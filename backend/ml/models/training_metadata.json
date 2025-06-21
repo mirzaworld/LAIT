@@ -1,0 +1,31 @@
+{
+  "training_date": "2025-06-21T13:37:14.256470",
+  "data_sources": {
+    "law_firms": 10,
+    "legal_rates": 4800,
+    "attorney_data": 2000,
+    "case_data": 1500,
+    "billing_patterns": 7
+  },
+  "models_trained": [
+    "enhanced_outlier_model",
+    "enhanced_spend_model",
+    "rate_prediction_model",
+    "vendor_analysis_model",
+    "risk_assessment_model"
+  ],
+  "data_quality": {
+    "total_records": 8327,
+    "coverage_period": "2020-2024",
+    "geographic_coverage": "US Legal Markets",
+    "practice_areas_covered": 12,
+    "sources_used": "50+ Online Sources"
+  },
+  "model_versions": {
+    "outlier_detection": "2.0",
+    "spend_prediction": "2.0",
+    "rate_prediction": "2.0",
+    "vendor_analysis": "2.0",
+    "risk_assessment": "2.0"
+  }
+}

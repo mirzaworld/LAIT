@@ -14,8 +14,8 @@ from datetime import datetime
 sys.path.append('/app/backend')
 sys.path.append('/app')
 
-from backend.models.db_models import Base, Vendor
-from backend.db.database import get_db_session
+from models.db_models import Base, Vendor
+from db.database import get_db_session
 
 def categorize_practice_area(industry: str, name: str = '') -> str:
     """Categorize companies into primary practice areas"""

@@ -1,0 +1,28 @@
+Johnson & Associates LLP
+123 Legal Street, Suite 500
+San Francisco, CA 94105
+
+INVOICE
+
+Bill To:                          Invoice Date: January 15, 2025
+ABC Corporation                   Invoice #: INV-2025-001
+456 Business Ave                  Matter: Contract Review - Vendor Agreement
+Corporate City, CA 94107          
+
+Attorney: John Smith, Esq.
+Bar Number: CA123456
+Rate: $450/hour
+
+Services Rendered:
+January 10, 2025    Contract review and analysis            3.5 hours    $1,575.00
+January 11, 2025    Client consultation and strategy        2.0 hours    $900.00
+January 12, 2025    Draft contract amendments              4.5 hours    $2,025.00
+January 13, 2025    Negotiate terms with opposing counsel   3.0 hours    $1,350.00
+January 14, 2025    Final review and client meeting        2.5 hours    $1,125.00
+
+Total Hours: 15.5
+Total Amount: $6,975.00
+
+Practice Area: Corporate Law
+Matter Type: Contract Review
+Risk Level: Medium

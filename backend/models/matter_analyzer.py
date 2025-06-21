@@ -164,7 +164,8 @@ class MatterAnalyzer:
     
     def forecast_expenses(self, matter_id):
         """Forecast final expenses for a matter based on current data"""
-        from db.database import get_db_session, Matter, Invoice
+        from db.database import get_db_session
+        from models.db_models import Matter, Invoice
         
         session = get_db_session()
         try:
@@ -321,7 +322,8 @@ class MatterAnalyzer:
     
     def analyze_matter_risk(self, matter_id):
         """Analyze risk factors for a specific matter"""
-        from db.database import get_db_session, Matter, Invoice, LineItem, RiskFactor
+        from db.database import get_db_session
+        from models.db_models import Matter, Invoice, LineItem, RiskFactor
         
         session = get_db_session()
         try:

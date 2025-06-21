@@ -1,182 +1,472 @@
 {
-  "Estate Planning": {
-    "Attorney": {
-      "mean": 350.0,
-      "std": NaN,
-      "min": 350.0,
-      "max": 350.0
-    }
-  },
-  "General": {
-    "Associate": {
-      "mean": 275.0,
-      "std": NaN,
-      "min": 275.0,
-      "max": 275.0
+  "Corporate/M&A": {
+    "partner": {
+      "mean": 1860.0778333333335,
+      "median": 1811.0900000000001,
+      "std": 443.14333107393776,
+      "percentile_25": 1539.165,
+      "percentile_75": 2193.3050000000003,
+      "min": 1030.06,
+      "max": 2992.45,
+      "count": 120
     },
-    "Partner": {
-      "mean": 400.0,
-      "std": NaN,
-      "min": 400.0,
-      "max": 400.0
-    }
-  },
-  "All": {
-    "Blended": {
-      "mean": 961.0,
-      "std": NaN,
-      "min": 961.0,
-      "max": 961.0
+    "senior": {
+      "mean": 1241.9379999999999,
+      "median": 1225.975,
+      "std": 294.11913109770103,
+      "percentile_25": 1012.47,
+      "percentile_75": 1476.2050000000002,
+      "min": 709.95,
+      "max": 1909.45,
+      "count": 120
     },
-    "Partner": {
-      "mean": 1081.0,
-      "std": 497.80317395532944,
-      "min": 729.0,
-      "max": 1433.0
+    "mid": {
+      "mean": 924.49075,
+      "median": 918.13,
+      "std": 212.68121457619188,
+      "percentile_25": 745.2325000000001,
+      "percentile_75": 1082.17,
+      "min": 514.49,
+      "max": 1376.96,
+      "count": 120
     },
-    "Associate": {
-      "mean": 784.0,
-      "std": 236.17366491630688,
-      "min": 617.0,
-      "max": 951.0
-    },
-    "Attorney (avg)": {
-      "mean": 300.0,
-      "std": NaN,
-      "min": 300.0,
-      "max": 300.0
-    },
-    "Firm Avg": {
-      "mean": 413.0675,
-      "std": 112.36629576968355,
-      "min": 313.69,
-      "max": 570.23
-    }
-  },
-  "Investigations": {
-    "Attorney": {
-      "mean": 288.85,
-      "std": 100.1970308941338,
-      "min": 218.00000000000003,
-      "max": 359.70000000000005
-    }
-  },
-  "Corporate": {
-    "Partner": {
-      "mean": 436.00000000000006,
-      "std": NaN,
-      "min": 436.00000000000006,
-      "max": 436.00000000000006
-    },
-    "Associate": {
-      "mean": 239.8,
-      "std": NaN,
-      "min": 239.8,
-      "max": 239.8
-    },
-    "Senior Partner": {
-      "mean": 1500.0,
-      "std": NaN,
-      "min": 1500.0,
-      "max": 1500.0
-    },
-    "Junior Partner": {
-      "mean": 1200.0,
-      "std": NaN,
-      "min": 1200.0,
-      "max": 1200.0
-    },
-    "Senior Associate": {
-      "mean": 800.0,
-      "std": NaN,
-      "min": 800.0,
-      "max": 800.0
-    },
-    "Junior Associate": {
-      "mean": 600.0,
-      "std": NaN,
-      "min": 600.0,
-      "max": 600.0
+    "junior": {
+      "mean": 608.3406666666667,
+      "median": 590.53,
+      "std": 144.6901606752243,
+      "percentile_25": 502.5,
+      "percentile_75": 703.74,
+      "min": 355.02,
+      "max": 935.51,
+      "count": 120
     }
   },
   "Litigation": {
-    "Associate": {
-      "mean": 168.0,
-      "std": 186.67619023324855,
-      "min": 36.0,
-      "max": 300.0
+    "partner": {
+      "mean": 1647.3939166666669,
+      "median": 1576.19,
+      "std": 435.3154206134058,
+      "percentile_25": 1293.8725,
+      "percentile_75": 2001.405,
+      "min": 866.24,
+      "max": 2639.82,
+      "count": 120
     },
-    "Partner": {
-      "mean": 315.0,
-      "std": 190.91883092036784,
-      "min": 180.0,
-      "max": 450.0
+    "senior": {
+      "mean": 1094.4595833333333,
+      "median": 1124.7649999999999,
+      "std": 251.54664990612193,
+      "percentile_25": 865.7275,
+      "percentile_75": 1257.5425,
+      "min": 631.07,
+      "max": 1657.99,
+      "count": 120
+    },
+    "mid": {
+      "mean": 789.0005,
+      "median": 768.18,
+      "std": 180.66450399312902,
+      "percentile_25": 646.3375,
+      "percentile_75": 902.37,
+      "min": 441.35,
+      "max": 1199.99,
+      "count": 120
+    },
+    "junior": {
+      "mean": 545.1518333333335,
+      "median": 533.675,
+      "std": 120.89983099645848,
+      "percentile_25": 460.075,
+      "percentile_75": 623.835,
+      "min": 297.69,
+      "max": 798.33,
+      "count": 120
     }
   },
-  "IP": {
-    "Partner": {
-      "mean": 650.0,
-      "std": NaN,
-      "min": 650.0,
-      "max": 650.0
+  "IP/Patent": {
+    "partner": {
+      "mean": 1746.5348333333334,
+      "median": 1736.3400000000001,
+      "std": 381.67450137515374,
+      "percentile_25": 1463.9050000000002,
+      "percentile_75": 1998.7,
+      "min": 943.44,
+      "max": 2692.37,
+      "count": 120
     },
-    "Associate": {
-      "mean": 450.0,
-      "std": NaN,
-      "min": 450.0,
-      "max": 450.0
+    "senior": {
+      "mean": 1163.0384999999999,
+      "median": 1158.46,
+      "std": 260.095487592698,
+      "percentile_25": 981.295,
+      "percentile_75": 1309.3425,
+      "min": 656.65,
+      "max": 1796.88,
+      "count": 120
+    },
+    "mid": {
+      "mean": 874.8159166666667,
+      "median": 869.56,
+      "std": 201.87023438129683,
+      "percentile_25": 736.4275,
+      "percentile_75": 969.5075,
+      "min": 483.86,
+      "max": 1315.52,
+      "count": 120
+    },
+    "junior": {
+      "mean": 602.5449166666668,
+      "median": 587.5899999999999,
+      "std": 131.89863436869385,
+      "percentile_25": 491.74,
+      "percentile_75": 706.4825000000001,
+      "min": 373.08,
+      "max": 893.58,
+      "count": 120
     }
   },
   "Employment": {
-    "Partner": {
-      "mean": 500.0,
-      "std": NaN,
-      "min": 500.0,
-      "max": 500.0
+    "partner": {
+      "mean": 1316.7678333333336,
+      "median": 1292.275,
+      "std": 351.87491265169626,
+      "percentile_25": 1017.0474999999999,
+      "percentile_75": 1586.6175,
+      "min": 681.61,
+      "max": 2086.97,
+      "count": 120
     },
-    "Associate": {
-      "mean": 350.0,
-      "std": NaN,
-      "min": 350.0,
-      "max": 350.0
+    "senior": {
+      "mean": 912.6640000000001,
+      "median": 890.725,
+      "std": 210.51671631725588,
+      "percentile_25": 759.8775,
+      "percentile_75": 1066.215,
+      "min": 520.24,
+      "max": 1359.57,
+      "count": 120
+    },
+    "mid": {
+      "mean": 691.0331666666665,
+      "median": 683.675,
+      "std": 155.41604195933428,
+      "percentile_25": 580.9525,
+      "percentile_75": 770.7875,
+      "min": 396.99,
+      "max": 1033.39,
+      "count": 120
+    },
+    "junior": {
+      "mean": 463.19266666666675,
+      "median": 452.745,
+      "std": 104.67824011172947,
+      "percentile_25": 380.3375,
+      "percentile_75": 546.9525000000001,
+      "min": 255.88,
+      "max": 718.54,
+      "count": 120
     }
   },
   "Real Estate": {
-    "Partner": {
-      "mean": 400.0,
-      "std": NaN,
-      "min": 400.0,
-      "max": 400.0
+    "partner": {
+      "mean": 1185.3714166666666,
+      "median": 1169.645,
+      "std": 296.19763232594056,
+      "percentile_25": 926.0475,
+      "percentile_75": 1399.7024999999999,
+      "min": 640.45,
+      "max": 1878.23,
+      "count": 120
     },
-    "Associate": {
-      "mean": 275.0,
-      "std": NaN,
-      "min": 275.0,
-      "max": 275.0
+    "senior": {
+      "mean": 813.0930833333332,
+      "median": 817.5699999999999,
+      "std": 192.00384994749382,
+      "percentile_25": 662.7225000000001,
+      "percentile_75": 934.99,
+      "min": 455.95,
+      "max": 1307.25,
+      "count": 120
+    },
+    "mid": {
+      "mean": 637.9357500000001,
+      "median": 625.23,
+      "std": 149.31182048352423,
+      "percentile_25": 523.0825,
+      "percentile_75": 736.315,
+      "min": 341.37,
+      "max": 951.02,
+      "count": 120
+    },
+    "junior": {
+      "mean": 383.38933333333335,
+      "median": 378.47,
+      "std": 91.80512791354425,
+      "percentile_25": 315.55,
+      "percentile_75": 454.92499999999995,
+      "min": 227.78,
+      "max": 597.46,
+      "count": 120
     }
   },
-  "Family Law": {
-    "Attorney": {
-      "mean": 350.0,
-      "std": NaN,
-      "min": 350.0,
-      "max": 350.0
+  "Tax": {
+    "partner": {
+      "mean": 1591.7036666666668,
+      "median": 1570.6999999999998,
+      "std": 380.388974068942,
+      "percentile_25": 1358.2125,
+      "percentile_75": 1820.415,
+      "min": 850.26,
+      "max": 2375.67,
+      "count": 120
+    },
+    "senior": {
+      "mean": 1078.0692500000002,
+      "median": 1044.29,
+      "std": 252.02246701158248,
+      "percentile_25": 898.975,
+      "percentile_75": 1225.705,
+      "min": 639.68,
+      "max": 1677.84,
+      "count": 120
+    },
+    "mid": {
+      "mean": 778.8669166666666,
+      "median": 760.46,
+      "std": 173.2115899692042,
+      "percentile_25": 659.5375,
+      "percentile_75": 889.3325,
+      "min": 455.86,
+      "max": 1189.1,
+      "count": 120
+    },
+    "junior": {
+      "mean": 535.6006666666667,
+      "median": 524.39,
+      "std": 124.09320034241289,
+      "percentile_25": 433.97249999999997,
+      "percentile_75": 620.7775,
+      "min": 298.62,
+      "max": 805.03,
+      "count": 120
     }
   },
-  "Personal Injury": {
-    "Partner": {
-      "mean": 600.0,
-      "std": NaN,
-      "min": 600.0,
-      "max": 600.0
+  "Regulatory": {
+    "partner": {
+      "mean": 1417.50675,
+      "median": 1374.01,
+      "std": 344.327992387981,
+      "percentile_25": 1148.705,
+      "percentile_75": 1647.4750000000001,
+      "min": 775.37,
+      "max": 2261.09,
+      "count": 120
+    },
+    "senior": {
+      "mean": 1010.7764166666667,
+      "median": 1014.545,
+      "std": 241.86466333742592,
+      "percentile_25": 798.0425,
+      "percentile_75": 1186.4,
+      "min": 589.12,
+      "max": 1498.68,
+      "count": 120
+    },
+    "mid": {
+      "mean": 736.8653333333333,
+      "median": 697.0699999999999,
+      "std": 178.8645568203929,
+      "percentile_25": 602.4325,
+      "percentile_75": 876.825,
+      "min": 420.86,
+      "max": 1123.32,
+      "count": 120
+    },
+    "junior": {
+      "mean": 509.10091666666665,
+      "median": 503.83500000000004,
+      "std": 111.0021618858227,
+      "percentile_25": 424.6025,
+      "percentile_75": 579.6975,
+      "min": 275.72,
+      "max": 764.75,
+      "count": 120
     }
   },
-  "Criminal": {
-    "Attorney": {
-      "mean": 450.0,
-      "std": NaN,
-      "min": 450.0,
-      "max": 450.0
+  "Bankruptcy": {
+    "partner": {
+      "mean": 1338.1295833333331,
+      "median": 1338.35,
+      "std": 302.7275742131745,
+      "percentile_25": 1095.4650000000001,
+      "percentile_75": 1565.18,
+      "min": 727.93,
+      "max": 2032.83,
+      "count": 120
+    },
+    "senior": {
+      "mean": 909.0162499999999,
+      "median": 895.03,
+      "std": 212.02525828724,
+      "percentile_25": 732.2025,
+      "percentile_75": 1033.5124999999998,
+      "min": 528.8,
+      "max": 1405.99,
+      "count": 120
+    },
+    "mid": {
+      "mean": 701.6236666666666,
+      "median": 703.7149999999999,
+      "std": 170.67405569746745,
+      "percentile_25": 575.9975,
+      "percentile_75": 846.1725,
+      "min": 389.26,
+      "max": 1031.9,
+      "count": 120
+    },
+    "junior": {
+      "mean": 464.6588333333333,
+      "median": 468.625,
+      "std": 107.29955987159913,
+      "percentile_25": 378.9425,
+      "percentile_75": 543.2874999999999,
+      "min": 265.36,
+      "max": 710.46,
+      "count": 120
+    }
+  },
+  "Healthcare": {
+    "partner": {
+      "mean": 1371.4169166666666,
+      "median": 1310.1100000000001,
+      "std": 328.0004702074776,
+      "percentile_25": 1132.345,
+      "percentile_75": 1551.125,
+      "min": 822.23,
+      "max": 2122.88,
+      "count": 120
+    },
+    "senior": {
+      "mean": 985.0055833333334,
+      "median": 992.495,
+      "std": 200.79454021792122,
+      "percentile_25": 819.8050000000001,
+      "percentile_75": 1123.4375,
+      "min": 619.96,
+      "max": 1493.29,
+      "count": 120
+    },
+    "mid": {
+      "mean": 726.87325,
+      "median": 709.9200000000001,
+      "std": 178.78699056960912,
+      "percentile_25": 582.6700000000001,
+      "percentile_75": 835.8775,
+      "min": 411.16,
+      "max": 1134.04,
+      "count": 120
+    },
+    "junior": {
+      "mean": 500.2135833333333,
+      "median": 498.70000000000005,
+      "std": 118.9955496142316,
+      "percentile_25": 410.805,
+      "percentile_75": 589.3299999999999,
+      "min": 286.71,
+      "max": 776.94,
+      "count": 120
+    }
+  },
+  "Energy": {
+    "partner": {
+      "mean": 1749.7902500000002,
+      "median": 1783.9850000000001,
+      "std": 384.54888981866907,
+      "percentile_25": 1476.6425,
+      "percentile_75": 1959.4175,
+      "min": 985.41,
+      "max": 2619.64,
+      "count": 120
+    },
+    "senior": {
+      "mean": 1137.4125833333335,
+      "median": 1168.0749999999998,
+      "std": 266.7392647308598,
+      "percentile_25": 915.455,
+      "percentile_75": 1308.9499999999998,
+      "min": 641.77,
+      "max": 1799.11,
+      "count": 120
+    },
+    "mid": {
+      "mean": 852.4476666666668,
+      "median": 827.6800000000001,
+      "std": 210.2713631902568,
+      "percentile_25": 675.3499999999999,
+      "percentile_75": 1009.84,
+      "min": 487.04,
+      "max": 1315.37,
+      "count": 120
+    },
+    "junior": {
+      "mean": 608.3070833333334,
+      "median": 611.21,
+      "std": 113.89942110912177,
+      "percentile_25": 538.27,
+      "percentile_75": 688.0525,
+      "min": 360.77,
+      "max": 880.39,
+      "count": 120
+    }
+  },
+  "market_analysis": {
+    "total_legal_spending_2024": 437000000000,
+    "growth_rate": 0.034,
+    "avg_hourly_rates": {
+      "partners": 1086,
+      "counsel": 743,
+      "associates": 568,
+      "paralegals": 187
+    },
+    "practice_area_distribution": {
+      "Corporate": 0.25,
+      "Litigation": 0.3,
+      "IP": 0.12,
+      "Employment": 0.08,
+      "Real Estate": 0.07,
+      "Tax": 0.06,
+      "Regulatory": 0.05,
+      "Other": 0.07
+    },
+    "firm_size_distribution": {
+      "AmLaw_100": 0.15,
+      "AmLaw_200": 0.12,
+      "Large_Regional": 0.18,
+      "Mid_Size": 0.25,
+      "Small": 0.3
+    }
+  },
+  "industry_trends": {
+    "2024_trends": {
+      "ai_adoption": 0.45,
+      "remote_work": 0.78,
+      "alternative_fees": 0.32,
+      "client_demand_efficiency": 0.89,
+      "technology_investment": 0.67
+    },
+    "billing_trends": {
+      "hourly_rate_increase": 0.054,
+      "alternative_fee_growth": 0.23,
+      "efficiency_pressure": 0.91,
+      "price_transparency_demand": 0.73
+    },
+    "practice_area_growth": {
+      "Cybersecurity": 0.28,
+      "Data Privacy": 0.25,
+      "ESG": 0.31,
+      "AI/Tech Law": 0.45,
+      "Healthcare": 0.12,
+      "Traditional_Litigation": -0.03
     }
   }
 }

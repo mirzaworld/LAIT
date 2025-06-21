@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker, scoped_session
 import os
 from datetime import datetime
-import config
+from config import Config
 
 Base = declarative_base()
 
@@ -40,13 +40,35 @@ class Vendor(Base):
     __tablename__ = 'vendors'
     
     id = Column(Integer, primary_key=True)
+    external_id = Column(String(100))  # Added missing column
     name = Column(String(255), nullable=False)
-    category = Column(String(100))
-    hourly_rate_avg = Column(Float)
-    diversity_score = Column(Float)
-    performance_score = Column(Float)
+    vendor_type = Column(String(100))
+    industry_category = Column(String(100))
+    practice_area = Column(String(200))
+    firm_size_category = Column(String(50))
+    employee_count = Column(Integer)
+    founded_year = Column(Integer)
+    country = Column(String(100))
+    state_province = Column(String(100))
+    city = Column(String(100))
+    address = Column(Text)
+    website = Column(String(255))
+    linkedin_url = Column(String(255))
+    phone = Column(String(50))
+    email = Column(String(255))
+    status = Column(String(50), default='active')
     risk_profile = Column(Float)
+    performance_score = Column(Float)
+    diversity_score = Column(Float)
+    total_spend = Column(Float)
+    invoice_count = Column(Integer)
+    avg_rate = Column(Float)
+    on_time_rate = Column(Float)
+    success_rate = Column(Float)
+    data_source = Column(String(100))
     historical_performance = Column(JSON)
+    additional_info = Column(JSON)
+    notes = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     invoices = relationship('Invoice', back_populates='vendor')
@@ -76,6 +98,9 @@ class Invoice(Base):
     date = Column(DateTime, default=datetime.utcnow)
     status = Column(String(20))
     description = Column(String(1000))
+    practice_area = Column(String(200))  # Added
+    attorney_name = Column(String(200))  # Added
+    total_hours = Column(Float)  # Added
     hours = Column(Float)
     rate = Column(Float)
     risk_score = Column(Float)

@@ -5,8 +5,8 @@ Incorporates company dataset insights for better vendor analytics and management
 
 from flask import Blueprint, request, jsonify
 from sqlalchemy import func, desc, asc, and_, or_, text
-from backend.db.database import get_db_session
-from backend.models.db_models import Vendor, VendorMarketInsight, VendorBenchmark, Invoice, LineItem
+from db.database import get_db_session
+from models.db_models import Vendor, VendorMarketInsight, VendorBenchmark, Invoice, LineItem
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime, timedelta
 import pandas as pd

@@ -11,6 +11,7 @@ from .admin import admin_bp
 from .notification import notification_bp
 from .vendors import vendors_bp
 from .legal_intelligence import legal_intel_bp
+from .enhanced_upload import upload_bp
 
 # List of all blueprints
 blueprints = [
@@ -20,7 +21,8 @@ blueprints = [
     (admin_bp, '/api/admin'),
     (notification_bp, '/api/notifications'),
     (vendors_bp, None),  # url_prefix already included in blueprint
-    (legal_intel_bp, '/api/legal-intelligence')
+    (legal_intel_bp, '/api/legal-intelligence'),
+    (upload_bp, None)  # url_prefix already included in blueprint
 ]
 
 def register_routes(app):

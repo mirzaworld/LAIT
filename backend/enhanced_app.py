@@ -28,17 +28,17 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from dotenv import load_dotenv
 from werkzeug.security import check_password_hash
-from sqlalchemy import func
-from backend.db.database import User, Invoice, Vendor, SessionLocal, init_db
-from backend.models.db_models import AuditLog
+from sqlalchemy import func, desc
+from db.database import User, Invoice, Vendor, SessionLocal, init_db
+from models.db_models import AuditLog
 
 # Import ML models and analyzers
 try:
-    from backend.models.invoice_analyzer import InvoiceAnalyzer
-    from backend.models.vendor_analyzer import VendorAnalyzer
-    from backend.models.risk_predictor import RiskPredictor
-    from backend.models.matter_analyzer import MatterAnalyzer
-    from backend.models.enhanced_invoice_analyzer import EnhancedInvoiceAnalyzer
+    from models.invoice_analyzer import InvoiceAnalyzer
+    from models.vendor_analyzer import VendorAnalyzer
+    from models.risk_predictor import RiskPredictor
+    from models.matter_analyzer import MatterAnalyzer
+    from models.enhanced_invoice_analyzer import EnhancedInvoiceAnalyzer
 except ImportError as e:
     print(f"Warning: Model imports failed ({e}). ML features may be limited.")
     
@@ -141,10 +141,102 @@ def create_app():
         app.matter_analyzer = None
         app.enhanced_invoice_analyzer = None
 
+    # Import real-time data collector
+    from services.real_time_data_collector import RealTimeLegalDataCollector
+    
+    # Initialize data collector instance
+    data_collector = RealTimeLegalDataCollector()
+    
+    # Store collector in app context for access in endpoints
+    app.data_collector = data_collector
+
     # API Routes
     @app.route('/api/health')
     def health_check():
         return jsonify({"status": "healthy", "timestamp": datetime.utcnow()})
+    
+    # Dashboard metrics endpoint
+    @app.route('/api/dashboard/metrics')
+    def dashboard_metrics():
+        """Dashboard metrics endpoint"""
+        try:
+            from db.database import get_db_session
+            from models.db_models import Invoice, Vendor
+            
+            session = get_db_session()
+            
+            # Get basic metrics
+            total_spend = session.query(func.sum(Invoice.amount)).scalar() or 0
+            invoice_count = session.query(func.count(Invoice.id)).scalar() or 0
+            vendor_count = session.query(func.count(func.distinct(Invoice.vendor_id))).scalar() or 0
+            avg_risk_score = session.query(func.avg(Invoice.risk_score)).scalar() or 0
+            
+            # Get recent invoices
+            recent_invoices = session.query(Invoice)\
+                .order_by(desc(Invoice.created_at))\
+                .limit(5)\
+                .all()
+            
+            # Get top vendors
+            top_vendors = session.query(
+                Vendor.name,
+                func.sum(Invoice.amount).label('total_spend')
+            ).join(Invoice)\
+             .group_by(Vendor.name)\
+             .order_by(desc('total_spend'))\
+             .limit(5)\
+             .all()
+            
+            # Calculate trends
+            current_month = datetime.now().replace(day=1)
+            prev_month = (current_month - timedelta(days=1)).replace(day=1)
+            
+            current_month_spend = session.query(func.sum(Invoice.amount))\
+                .filter(Invoice.date >= current_month)\
+                .scalar() or 0
+                
+            prev_month_spend = session.query(func.sum(Invoice.amount))\
+                .filter(
+                    Invoice.date >= prev_month,
+                    Invoice.date < current_month
+                )\
+                .scalar() or 0
+            
+            spend_change = 0
+            if prev_month_spend > 0:
+                spend_change = ((current_month_spend - prev_month_spend) / prev_month_spend) * 100
+            
+            session.close()
+            
+            return jsonify({
+                'totalSpend': float(total_spend),
+                'invoiceCount': int(invoice_count),
+                'vendorCount': int(vendor_count),
+                'averageRiskScore': float(avg_risk_score),
+                'spendChange': float(spend_change),
+                'recentInvoices': [
+                    {
+                        'id': invoice.id,
+                        'vendor': invoice.vendor.name if invoice.vendor else 'Unknown',
+                        'amount': float(invoice.amount),
+                        'date': invoice.date.isoformat() if invoice.date else None,
+                        'status': invoice.status,
+                        'riskScore': float(invoice.risk_score) if invoice.risk_score else 0
+                    }
+                    for invoice in recent_invoices
+                ],
+                'topVendors': [
+                    {
+                        'name': vendor.name,
+                        'totalSpend': float(vendor.total_spend)
+                    }
+                    for vendor in top_vendors
+                ]
+            })
+            
+        except Exception as e:
+            logger.error(f"Dashboard metrics error: {str(e)}")
+            return jsonify({'error': str(e)}), 500
 
     # Root endpoint
     @app.route('/')
@@ -171,7 +263,7 @@ def create_app():
 
     # Import and register routes
     with app.app_context():
-        from backend.routes import register_routes
+        from routes import register_routes
         register_routes(app)
         logger.info("✅ Routes registered successfully")
     

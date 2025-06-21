@@ -29,7 +29,7 @@ def create_app():
     
     # Import config
     try:
-        from backend.config import Config
+        from config import Config
         flask_app.config.from_object(Config)
     except ImportError as e:
         logger.info(f"First import attempt failed: {e}")
@@ -47,7 +47,7 @@ def create_app():
     
     # Initialize extensions
     try:
-        from backend.models import db
+        from models import db
         db.init_app(flask_app)
         migrate = Migrate(flask_app, db)
     except ImportError:
@@ -111,7 +111,7 @@ def create_app():
     except ImportError as e:
         try:
             # Fallback to direct imports from backend.routes
-            from backend.routes import blueprints
+            from routes import blueprints
             
             for blueprint, url_prefix in blueprints:
                 flask_app.register_blueprint(blueprint, url_prefix=url_prefix)

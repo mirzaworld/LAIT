@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 import os
 import psycopg2
-from backend.db.database import Base
+from db.database import Base
 
 # Get database connection details from environment variables
 DB_HOST = os.environ.get('DB_HOST', 'db')

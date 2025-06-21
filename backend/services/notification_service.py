@@ -1,7 +1,8 @@
 from datetime import datetime
 import json
 from flask_socketio import SocketIO
-from db.database import get_db_session, Invoice, RiskFactor, Vendor
+from db.database import get_db_session
+from models.db_models import Invoice, RiskFactor, Vendor
 
 class NotificationService:
     def __init__(self, socketio: SocketIO):

@@ -34,7 +34,7 @@ celery = make_celery()
 def init_flask():
     """Initialize Flask app for Celery tasks when needed"""
     try:
-        from backend.app import create_app
+        from app import create_app
         flask_app = create_app()
         
         # Update Celery with Flask config

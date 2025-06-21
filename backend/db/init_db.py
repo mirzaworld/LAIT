@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 import os
-from backend.db.database import Base, engine, init_db
+from database import Base, engine, init_db
 
 def create_all_tables():
     """Create all database tables"""

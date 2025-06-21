@@ -1,17 +1,98 @@
 from flask import Blueprint, request, jsonify
 from sqlalchemy import func, desc, asc, and_, extract, text
-from backend.db.database import get_db_session
-from backend.models.db_models import Invoice, LineItem, Vendor, Matter, RiskFactor
+from db.database import get_db_session
+from models.db_models import Invoice, LineItem, Vendor, Matter, RiskFactor
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from backend.auth import role_required
-from backend.dev_auth import development_jwt_required
+from auth import role_required
+from dev_auth import development_jwt_required
 from datetime import datetime, timedelta
 import calendar
-from backend.models.vendor_analyzer import VendorAnalyzer
-from backend.models.matter_analyzer import MatterAnalyzer
-from backend.models.enhanced_invoice_analyzer import analyze_invoice_enhanced
+from models.vendor_analyzer import VendorAnalyzer
+from models.matter_analyzer import MatterAnalyzer
+from models.enhanced_invoice_analyzer import analyze_invoice_enhanced
 
 analytics_bp = Blueprint('analytics', __name__)
+
+@analytics_bp.route('/dashboard/metrics', methods=['GET'])
+@development_jwt_required
+def dashboard_metrics():
+    """Get dashboard metrics for main dashboard"""
+    session = get_db_session()
+    try:
+        # Get total spend, invoice count, vendor count, risk score
+        total_spend = session.query(func.sum(Invoice.amount)).scalar() or 0
+        invoice_count = session.query(func.count(Invoice.id)).scalar() or 0
+        vendor_count = session.query(func.count(func.distinct(Invoice.vendor_id))).scalar() or 0
+        
+        # Calculate average risk score
+        avg_risk_score = session.query(func.avg(Invoice.risk_score)).scalar() or 0
+        
+        # Get recent activity
+        recent_invoices = session.query(Invoice)\
+            .order_by(desc(Invoice.created_at))\
+            .limit(5)\
+            .all()
+        
+        # Get top vendors by spend
+        top_vendors = session.query(
+            Vendor.name,
+            func.sum(Invoice.amount).label('total_spend')
+        ).join(Invoice)\
+         .group_by(Vendor.name)\
+         .order_by(desc('total_spend'))\
+         .limit(5)\
+         .all()
+        
+        # Calculate month-over-month trends
+        current_month = datetime.now().replace(day=1)
+        prev_month = (current_month - timedelta(days=1)).replace(day=1)
+        
+        current_month_spend = session.query(func.sum(Invoice.amount))\
+            .filter(Invoice.date >= current_month)\
+            .scalar() or 0
+            
+        prev_month_spend = session.query(func.sum(Invoice.amount))\
+            .filter(
+                Invoice.date >= prev_month,
+                Invoice.date < current_month
+            )\
+            .scalar() or 0
+        
+        # Calculate spend change percentage
+        spend_change = 0
+        if prev_month_spend > 0:
+            spend_change = ((current_month_spend - prev_month_spend) / prev_month_spend) * 100
+        
+        return jsonify({
+            'totalSpend': float(total_spend),
+            'invoiceCount': int(invoice_count),
+            'vendorCount': int(vendor_count),
+            'averageRiskScore': float(avg_risk_score),
+            'spendChange': float(spend_change),
+            'recentInvoices': [
+                {
+                    'id': invoice.id,
+                    'vendor': invoice.vendor.name if invoice.vendor else 'Unknown',
+                    'amount': float(invoice.amount),
+                    'date': invoice.date.isoformat() if invoice.date else None,
+                    'status': invoice.status,
+                    'riskScore': float(invoice.risk_score) if invoice.risk_score else 0
+                }
+                for invoice in recent_invoices
+            ],
+            'topVendors': [
+                {
+                    'name': vendor.name,
+                    'totalSpend': float(vendor.total_spend)
+                }
+                for vendor in top_vendors
+            ]
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
 
 @analytics_bp.route('/summary', methods=['GET'])
 @development_jwt_required
@@ -585,100 +666,22 @@ def vendor_analytics():
 
         result = [{'vendor_name': v[0], 'total_spend': v[1]} for v in top_vendors]
         return jsonify(result)
+    
     except Exception as e:
-        return jsonify({'message': str(e)}), 500
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
 
-@analytics_bp.route('/spend-forecast', methods=['GET'])
-@jwt_required()
-def general_spend_forecast():
-    """Get spend forecast for the next period"""
-    current_user = get_jwt_identity()
-    session = get_db_session()
-    try:
-        # Fetch historical spend data
-        historical_data = session.query(Invoice.date, func.sum(Invoice.amount).label('total_spend'))\
-            .group_by(Invoice.date)\
-            .order_by(Invoice.date).all()
-
-        # Use forecasting model (mocked for now)
-        forecast_model = MatterAnalyzer()
-        forecast = forecast_model.forecast_spend(historical_data)
-
-        return jsonify({'forecast': forecast})
-    except Exception as e:
-        return jsonify({'message': str(e)}), 500
-
-@analytics_bp.route('/enhanced-analysis', methods=['POST'])
-@jwt_required()
-def enhanced_analysis():
-    """Get enhanced ML analysis using real-world legal billing data"""
-    try:
-        # Get invoice data from request
-        invoice_data = request.get_json()
-        
-        if not invoice_data:
-            return jsonify({'error': 'No invoice data provided'}), 400
-        
-        # Perform enhanced analysis
-        analysis_result = analyze_invoice_enhanced(invoice_data)
-        
-        return jsonify({
-            'status': 'success',
-            'analysis': analysis_result
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'error': f'Enhanced analysis failed: {str(e)}'
-        }), 500
-
-@analytics_bp.route('/ml-models/status', methods=['GET'])
-@jwt_required()
-def ml_models_status():
-    """Get status of ML models"""
-    try:
-        import os
-        models_dir = '/app/backend/ml/models'
-        
-        # Check what model files exist
-        model_files = []
-        if os.path.exists(models_dir):
-            model_files = [f for f in os.listdir(models_dir) if f.endswith('.joblib')]
-        
-        # Check for benchmark file
-        benchmark_file = os.path.join(models_dir, 'rate_benchmarks.json')
-        has_benchmarks = os.path.exists(benchmark_file)
-        
-        models_status = {
-            'models_directory': models_dir,
-            'model_files': model_files,
-            'has_benchmarks': has_benchmarks,
-            'total_files': len(model_files)
-        }
-        
-        return jsonify({
-            'status': 'success',
-            'models': models_status
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'error': f'Failed to check model status: {str(e)}'
-        }), 500
-
-@analytics_bp.route('/spend-trends', methods=['GET'])
+@analytics_bp.route('/reports/generate', methods=['POST'])
 @development_jwt_required
-def spend_trends():
-    """Get spend trends data for charts"""
+def generate_report():
+    """Generate comprehensive reports using real data"""
     session = get_db_session()
     try:
-        # Get parameters
-        period = request.args.get('period', 'monthly')
-        category = request.args.get('category')
-        date_from = request.args.get('date_from')
-        date_to = request.args.get('date_to')
+        data = request.get_json()
+        report_type = data.get('type', 'comprehensive')
+        date_from = data.get('date_from')
+        date_to = data.get('date_to')
         
         # Default to last 12 months if not specified
         if not date_from:
@@ -689,128 +692,251 @@ def spend_trends():
         date_from_obj = datetime.strptime(date_from, '%Y-%m-%d')
         date_to_obj = datetime.strptime(date_to, '%Y-%m-%d')
         
-        # Build base query
-        query = session.query(Invoice).filter(
-            Invoice.date >= date_from_obj,
-            Invoice.date <= date_to_obj
-        )
+        # Get all invoices in the date range
+        invoices = session.query(Invoice)\
+            .filter(Invoice.date >= date_from_obj, Invoice.date <= date_to_obj)\
+            .all()
         
-        # Filter by category if provided
-        if category and category != 'all':
-            query = query.join(Matter).filter(Matter.category == category)
+        # Calculate summary metrics
+        total_spend = sum(invoice.amount for invoice in invoices)
+        invoice_count = len(invoices)
         
-        labels = []
-        datasets = []
+        # Vendor analysis
+        vendor_spend = {}
+        for invoice in invoices:
+            vendor_name = invoice.vendor.name if invoice.vendor else 'Unknown'
+            vendor_spend[vendor_name] = vendor_spend.get(vendor_name, 0) + invoice.amount
         
-        if period == 'monthly':
-            # Group by month
-            current_date = date_from_obj.replace(day=1)
-            monthly_data = {}
-            
-            while current_date <= date_to_obj:
-                # Find the last day of the current month
-                _, last_day = calendar.monthrange(current_date.year, current_date.month)
-                end_of_month = current_date.replace(day=last_day)
-                
-                if end_of_month > date_to_obj:
-                    end_of_month = date_to_obj
-                
-                label = current_date.strftime('%b %Y')
-                labels.append(label)
-                
-                # Get spend for this month
-                month_spend = session.query(func.sum(Invoice.amount)).filter(
-                    Invoice.date >= current_date,
-                    Invoice.date <= end_of_month
-                ).scalar() or 0
-                
-                monthly_data[label] = month_spend
-                
-                # Move to next month
-                if current_date.month == 12:
-                    current_date = current_date.replace(year=current_date.year+1, month=1)
-                else:
-                    current_date = current_date.replace(month=current_date.month+1)
-            
-            # Create dataset
-            datasets.append({
-                'label': 'Total Spend',
-                'data': [monthly_data[label] for label in labels]
-            })
-            
-            # If no category filter, add breakdown by practice area
-            if not category:
-                practice_areas = ['Corporate', 'Litigation', 'IP', 'Regulatory', 'Employment']
-                colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
-                
-                for i, area in enumerate(practice_areas):
-                    area_data = {}
-                    current_date = date_from_obj.replace(day=1)
-                    
-                    while current_date <= date_to_obj:
-                        _, last_day = calendar.monthrange(current_date.year, current_date.month)
-                        end_of_month = current_date.replace(day=last_day)
-                        
-                        if end_of_month > date_to_obj:
-                            end_of_month = date_to_obj
-                        
-                        label = current_date.strftime('%b %Y')
-                        
-                        # Get spend for this practice area and month
-                        area_spend = session.query(func.sum(Invoice.amount)).join(Matter).filter(
-                            Invoice.date >= current_date,
-                            Invoice.date <= end_of_month,
-                            Matter.category == area
-                        ).scalar() or 0
-                        
-                        area_data[label] = area_spend
-                        
-                        # Move to next month
-                        if current_date.month == 12:
-                            current_date = current_date.replace(year=current_date.year+1, month=1)
-                        else:
-                            current_date = current_date.replace(month=current_date.month+1)
-                    
-                    datasets.append({
-                        'label': area,
-                        'data': [area_data[label] for label in labels]
-                    })
+        top_vendors = sorted(vendor_spend.items(), key=lambda x: x[1], reverse=True)[:10]
         
-        # If no real data, return demo data for testing
-        if not any(dataset['data'] for dataset in datasets if any(dataset['data'])):
-            # Demo data for chart testing
-            labels = ['Jun 2024', 'Jul 2024', 'Aug 2024', 'Sep 2024', 'Oct 2024', 'Nov 2024', 
-                     'Dec 2024', 'Jan 2025', 'Feb 2025', 'Mar 2025', 'Apr 2025', 'May 2025', 'Jun 2025']
-            
-            datasets = [
-                {
-                    'label': 'Total Spend',
-                    'data': [245000, 189000, 298000, 167000, 223000, 334000, 278000, 192000, 265000, 301000, 256000, 312000, 289000]
-                },
-                {
-                    'label': 'Corporate',
-                    'data': [98000, 75600, 119200, 66800, 89200, 133600, 111200, 76800, 106000, 120400, 102400, 124800, 115600]
-                },
-                {
-                    'label': 'Litigation', 
-                    'data': [73500, 56700, 89400, 50100, 66900, 100200, 83400, 57600, 79500, 90300, 76800, 93600, 86700]
-                },
-                {
-                    'label': 'IP',
-                    'data': [49000, 37800, 59600, 33400, 44600, 66800, 55600, 38400, 53000, 60200, 51200, 62400, 57800]
-                },
-                {
-                    'label': 'Regulatory',
-                    'data': [24500, 18900, 29800, 16700, 22300, 33400, 27800, 19200, 26500, 30100, 25600, 31200, 28900]
+        # Practice area analysis
+        practice_area_spend = {}
+        for invoice in invoices:
+            line_items = session.query(LineItem).filter(LineItem.invoice_id == invoice.id).all()
+            for item in line_items:
+                # Infer practice area from description
+                practice_area = _infer_practice_area(item.description)
+                practice_area_spend[practice_area] = practice_area_spend.get(practice_area, 0) + item.amount
+        
+        # Risk analysis
+        high_risk_invoices = [inv for inv in invoices if inv.risk_score and inv.risk_score > 70]
+        medium_risk_invoices = [inv for inv in invoices if inv.risk_score and 40 <= inv.risk_score <= 70]
+        low_risk_invoices = [inv for inv in invoices if inv.risk_score and inv.risk_score < 40]
+        
+        # Rate analysis using enhanced ML model
+        rate_analysis = _analyze_rates_comprehensive(invoices, session)
+        
+        # Monthly trends
+        monthly_trends = _calculate_monthly_trends(invoices)
+        
+        # ML-driven insights
+        ml_insights = []
+        if invoices:
+            # Analyze a sample of invoices for patterns
+            sample_invoices = invoices[:10]  # Analyze first 10 invoices
+            for invoice in sample_invoices:
+                invoice_data = {
+                    'id': invoice.id,
+                    'amount': invoice.amount,
+                    'vendor': invoice.vendor.name if invoice.vendor else 'Unknown',
+                    'date': invoice.date.isoformat() if invoice.date else None,
+                    'line_items': [
+                        {
+                            'description': item.description,
+                            'amount': item.amount,
+                            'hours': item.hours or 0,
+                            'rate': item.rate or 0,
+                            'attorney': item.timekeeper or 'Unknown'
+                        }
+                        for item in session.query(LineItem).filter(LineItem.invoice_id == invoice.id).all()
+                    ]
                 }
-            ]
-            
-        return jsonify({
-            'labels': labels,
-            'datasets': datasets
-        })
+                
+                # Run ML analysis
+                analysis = analyze_invoice_enhanced(invoice_data)
+                if analysis.get('insights'):
+                    ml_insights.extend(analysis['insights'])
+        
+        # Generate comprehensive report
+        report = {
+            'report_id': f"RPT-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            'generated_at': datetime.now().isoformat(),
+            'date_range': {
+                'from': date_from,
+                'to': date_to
+            },
+            'summary': {
+                'total_spend': float(total_spend),
+                'invoice_count': invoice_count,
+                'average_invoice_amount': float(total_spend / invoice_count) if invoice_count > 0 else 0,
+                'unique_vendors': len(vendor_spend),
+                'report_type': report_type
+            },
+            'vendor_analysis': {
+                'top_vendors': [
+                    {'name': vendor, 'spend': float(spend), 'percentage': float(spend / total_spend * 100) if total_spend > 0 else 0}
+                    for vendor, spend in top_vendors
+                ],
+                'vendor_diversity': len(vendor_spend),
+                'concentration_risk': float(top_vendors[0][1] / total_spend * 100) if top_vendors and total_spend > 0 else 0
+            },
+            'practice_area_analysis': {
+                'breakdown': [
+                    {'practice_area': area, 'spend': float(spend), 'percentage': float(spend / total_spend * 100) if total_spend > 0 else 0}
+                    for area, spend in sorted(practice_area_spend.items(), key=lambda x: x[1], reverse=True)
+                ]
+            },
+            'risk_analysis': {
+                'high_risk_count': len(high_risk_invoices),
+                'medium_risk_count': len(medium_risk_invoices),
+                'low_risk_count': len(low_risk_invoices),
+                'high_risk_spend': float(sum(inv.amount for inv in high_risk_invoices)),
+                'average_risk_score': float(sum(inv.risk_score for inv in invoices if inv.risk_score) / len([inv for inv in invoices if inv.risk_score])) if invoices else 0
+            },
+            'rate_analysis': rate_analysis,
+            'monthly_trends': monthly_trends,
+            'ml_insights': list(set(ml_insights))[:20],  # Unique insights, max 20
+            'recommendations': _generate_report_recommendations(invoices, vendor_spend, practice_area_spend, high_risk_invoices)
+        }
+        
+        return jsonify(report)
         
     except Exception as e:
-        return jsonify({'error': f'Error generating spend trends: {str(e)}'}), 500
+        return jsonify({'error': f'Report generation failed: {str(e)}'}), 500
     finally:
         session.close()
+
+def _infer_practice_area(description):
+    """Infer practice area from line item description"""
+    if not description:
+        return 'General'
+    
+    description_lower = description.lower()
+    
+    if any(word in description_lower for word in ['litigation', 'trial', 'court', 'dispute', 'lawsuit']):
+        return 'Litigation'
+    elif any(word in description_lower for word in ['corporate', 'merger', 'acquisition', 'due diligence', 'm&a']):
+        return 'Corporate'
+    elif any(word in description_lower for word in ['contract', 'agreement', 'negotiation', 'commercial']):
+        return 'Commercial'
+    elif any(word in description_lower for word in ['employment', 'labor', 'hr', 'workplace']):
+        return 'Employment'
+    elif any(word in description_lower for word in ['ip', 'patent', 'trademark', 'copyright', 'intellectual property']):
+        return 'Intellectual Property'
+    elif any(word in description_lower for word in ['real estate', 'property', 'lease', 'zoning']):
+        return 'Real Estate'
+    elif any(word in description_lower for word in ['tax', 'taxation', 'irs', 'compliance']):
+        return 'Tax'
+    elif any(word in description_lower for word in ['regulatory', 'compliance', 'government', 'administrative']):
+        return 'Regulatory'
+    else:
+        return 'General'
+
+def _analyze_rates_comprehensive(invoices, session):
+    """Comprehensive rate analysis using ML models"""
+    all_rates = []
+    attorney_rates = {}
+    
+    for invoice in invoices:
+        line_items = session.query(LineItem).filter(LineItem.invoice_id == invoice.id).all()
+        for item in line_items:
+            if item.rate and item.rate > 0:
+                all_rates.append(item.rate)
+                attorney = item.timekeeper or 'Unknown'
+                if attorney not in attorney_rates:
+                    attorney_rates[attorney] = []
+                attorney_rates[attorney].append(item.rate)
+    
+    if not all_rates:
+        return {'average_rate': 0, 'rate_range': [0, 0], 'attorney_analysis': []}
+    
+    avg_rate = sum(all_rates) / len(all_rates)
+    min_rate = min(all_rates)
+    max_rate = max(all_rates)
+    
+    # Attorney rate analysis
+    attorney_analysis = []
+    for attorney, rates in attorney_rates.items():
+        attorney_avg = sum(rates) / len(rates)
+        attorney_analysis.append({
+            'attorney': attorney,
+            'average_rate': float(attorney_avg),
+            'rate_count': len(rates),
+            'rate_range': [float(min(rates)), float(max(rates))]
+        })
+    
+    attorney_analysis.sort(key=lambda x: x['average_rate'], reverse=True)
+    
+    return {
+        'average_rate': float(avg_rate),
+        'rate_range': [float(min_rate), float(max_rate)],
+        'total_rate_entries': len(all_rates),
+        'attorney_analysis': attorney_analysis[:10]  # Top 10 attorneys by rate
+    }
+
+def _calculate_monthly_trends(invoices):
+    """Calculate monthly spending trends"""
+    monthly_spend = {}
+    
+    for invoice in invoices:
+        if invoice.date:
+            month_key = invoice.date.strftime('%Y-%m')
+            monthly_spend[month_key] = monthly_spend.get(month_key, 0) + invoice.amount
+    
+    # Sort by month
+    return [
+        {'month': month, 'spend': float(spend)}
+        for month, spend in sorted(monthly_spend.items())
+    ]
+
+def _generate_report_recommendations(invoices, vendor_spend, practice_area_spend, high_risk_invoices):
+    """Generate actionable recommendations based on analysis"""
+    recommendations = []
+    
+    total_spend = sum(invoice.amount for invoice in invoices)
+    
+    # Vendor concentration risk
+    if vendor_spend and total_spend > 0:
+        top_vendor_percentage = max(vendor_spend.values()) / total_spend * 100
+        if top_vendor_percentage > 50:
+            recommendations.append({
+                'category': 'Vendor Risk',
+                'priority': 'High',
+                'recommendation': f'Consider diversifying legal vendors. Top vendor represents {top_vendor_percentage:.1f}% of total spend.',
+                'impact': 'Risk Management'
+            })
+    
+    # High-risk invoice management
+    if high_risk_invoices:
+        high_risk_percentage = len(high_risk_invoices) / len(invoices) * 100
+        if high_risk_percentage > 20:
+            recommendations.append({
+                'category': 'Risk Management',
+                'priority': 'High',
+                'recommendation': f'{high_risk_percentage:.1f}% of invoices are high-risk. Implement enhanced review processes.',
+                'impact': 'Cost Control'
+            })
+    
+    # Practice area optimization
+    if practice_area_spend and len(practice_area_spend) > 1:
+        top_practice_area = max(practice_area_spend, key=practice_area_spend.get)
+        top_practice_percentage = practice_area_spend[top_practice_area] / total_spend * 100
+        if top_practice_percentage > 60:
+            recommendations.append({
+                'category': 'Practice Area',
+                'priority': 'Medium',
+                'recommendation': f'{top_practice_area} represents {top_practice_percentage:.1f}% of spend. Consider specialized vendor partnerships.',
+                'impact': 'Cost Optimization'
+            })
+    
+    # Budget management
+    avg_invoice_amount = total_spend / len(invoices) if invoices else 0
+    if avg_invoice_amount > 10000:
+        recommendations.append({
+            'category': 'Budget Control',
+            'priority': 'Medium',
+            'recommendation': f'Average invoice amount is ${avg_invoice_amount:,.2f}. Consider implementing approval thresholds.',
+            'impact': 'Process Improvement'
+        })
+    
+    return recommendations

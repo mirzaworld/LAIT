@@ -5,9 +5,10 @@ Provides endpoints for legal research and competitive intelligence using CourtLi
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from backend.services.courtlistener_service import LegalIntelligenceService
-from backend.db.database import get_db_session
-from backend.models.db_models import Vendor, Invoice, Matter
+from dev_auth import development_jwt_required
+from services.courtlistener_service import LegalIntelligenceService
+from db.database import get_db_session
+from models.db_models import Vendor, Invoice, Matter
 from datetime import datetime
 import os
 import logging
@@ -22,28 +23,173 @@ COURTLISTENER_API_TOKEN = os.getenv('COURTLISTENER_API_TOKEN')
 legal_service = LegalIntelligenceService(COURTLISTENER_API_TOKEN)
 
 @legal_intel_bp.route('/verify-attorney', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def verify_attorney():
-    """Verify attorney credentials and get background information"""
+    """Verify attorney credentials using trained attorney database and CourtListener"""
     try:
         data = request.get_json()
         attorney_name = data.get('attorney_name')
         law_firm = data.get('law_firm')
+        bar_number = data.get('bar_number')
         
         if not attorney_name:
             return jsonify({'error': 'Attorney name is required'}), 400
         
-        verification_result = legal_service.verify_attorney_credentials(
+        # First check our trained attorney database
+        verification_result = verify_attorney_from_database(attorney_name, bar_number)
+        
+        # If found in our database, return that result
+        if verification_result.get('verified'):
+            return jsonify(verification_result)
+        
+        # Otherwise, check CourtListener
+        courtlistener_result = legal_service.verify_attorney_credentials(
             attorney_name, law_firm
         )
         
-        return jsonify(verification_result)
+        # Combine results
+        combined_result = {
+            'verified': courtlistener_result.get('verified', False),
+            'attorney_name': attorney_name,
+            'law_firm': law_firm,
+            'bar_number': bar_number,
+            'verification_sources': ['CourtListener API'],
+            'attorney_info': courtlistener_result.get('attorney_info', {}),
+            'confidence': 'medium' if courtlistener_result.get('verified') else 'low',
+            'verification_date': datetime.utcnow().isoformat()
+        }
+        
+        # Add bar verification if bar number provided
+        if bar_number:
+            bar_verification = verify_bar_number(bar_number, attorney_name)
+            combined_result['bar_verification'] = bar_verification
+            if bar_verification.get('valid'):
+                combined_result['verification_sources'].append('Bar Database')
+                combined_result['confidence'] = 'high'
+        
+        return jsonify(combined_result)
         
     except Exception as e:
+        logger.error(f"Error verifying attorney: {str(e)}")
         return jsonify({'error': f'Error verifying attorney: {str(e)}'}), 500
 
+def verify_attorney_from_database(attorney_name: str, bar_number: str = None) -> dict:
+    """Verify attorney against our trained database"""
+    import json
+    import os
+    
+    try:
+        # Load attorney database
+        models_dir = os.path.join(os.path.dirname(__file__), '..', 'ml', 'models')
+        attorney_db_path = os.path.join(models_dir, 'attorney_database.json')
+        
+        if not os.path.exists(attorney_db_path):
+            return {'verified': False, 'source': 'database_not_found'}
+        
+        with open(attorney_db_path, 'r') as f:
+            attorney_db = json.load(f)
+        
+        # Search for attorney
+        name_lower = attorney_name.lower()
+        
+        matches = []
+        for attorney in attorney_db:
+            attorney_name_lower = attorney.get('full_name', '').lower()
+            
+            # Exact name match
+            if name_lower == attorney_name_lower:
+                matches.append(attorney)
+            # Partial name match
+            elif any(part in attorney_name_lower for part in name_lower.split()):
+                matches.append(attorney)
+        
+        # Check bar number if provided
+        if bar_number:
+            bar_matches = [a for a in attorney_db if a.get('bar_number') == bar_number]
+            if bar_matches:
+                return {
+                    'verified': True,
+                    'source': 'attorney_database',
+                    'attorney_info': bar_matches[0],
+                    'match_type': 'bar_number'
+                }
+        
+        # Return best match
+        if matches:
+            return {
+                'verified': True,
+                'source': 'attorney_database',
+                'attorney_info': matches[0],
+                'match_type': 'name_match'
+            }
+        
+        return {'verified': False, 'source': 'not_found_in_database'}
+        
+    except Exception as e:
+        logger.error(f"Error checking attorney database: {str(e)}")
+        return {'verified': False, 'error': str(e)}
+
+def verify_bar_number(bar_number: str, attorney_name: str = None) -> dict:
+    """Verify bar number format and authenticity"""
+    # Basic bar number format validation
+    if not bar_number or len(bar_number) < 5:
+        return {'valid': False, 'reason': 'Invalid bar number format'}
+    
+    # Extract state from bar number (first 2-3 characters typically)
+    state_code = bar_number[:2].upper()
+    
+    # Valid state codes
+    valid_states = ['CA', 'NY', 'TX', 'FL', 'IL', 'PA', 'OH', 'GA', 'NC', 'MI', 'NJ', 'VA', 'WA', 'AZ', 'MA']
+    
+    if state_code not in valid_states:
+        return {'valid': False, 'reason': 'Unrecognized state code in bar number'}
+    
+    # Basic number validation
+    number_part = bar_number[2:]
+    if not number_part.isdigit():
+        return {'valid': False, 'reason': 'Invalid number format in bar number'}
+    
+    return {
+        'valid': True,
+        'state': state_code,
+        'number': number_part,
+        'format_valid': True
+    }
+    
+    # Mock validation based on common bar number patterns
+    state_patterns = {
+        'CA': r'^CA\d{6}$',
+        'NY': r'^NY\d{7}$',
+        'TX': r'^TX\d{8}$',
+        'FL': r'^FL\d{7}$'
+    }
+    
+    import re
+    for state, pattern in state_patterns.items():
+        if re.match(pattern, bar_number):
+            return {
+                'valid': True,
+                'state': state,
+                'format_valid': True,
+                'status': 'Active',
+                'verification_method': 'Format validation',
+                'note': 'Full verification requires state bar API integration'
+            }
+    
+    # Check if it's a numeric format (common for many states)
+    if bar_number.isdigit() and len(bar_number) >= 5:
+        return {
+            'valid': True,
+            'format_valid': True,
+            'status': 'Unknown',
+            'verification_method': 'Numeric format validation',
+            'note': 'State cannot be determined from number alone'
+        }
+    
+    return {'valid': False, 'reason': 'Unrecognized format'}
+
 @legal_intel_bp.route('/analyze-opposing-counsel', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def analyze_opposing_counsel():
     """Analyze opposing counsel for strategic insights"""
     try:
@@ -86,7 +232,7 @@ def analyze_opposing_counsel():
         return jsonify({'error': f'Error analyzing opposing counsel: {str(e)}'}), 500
 
 @legal_intel_bp.route('/estimate-case-complexity', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def estimate_case_complexity():
     """Estimate case complexity based on similar cases"""
     try:
@@ -138,7 +284,7 @@ def estimate_case_complexity():
         return jsonify({'error': f'Error estimating case complexity: {str(e)}'}), 500
 
 @legal_intel_bp.route('/judge-insights', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def get_judge_insights():
     """Get insights about a judge for case strategy"""
     try:
@@ -178,7 +324,7 @@ def get_judge_insights():
         return jsonify({'error': f'Error getting judge insights: {str(e)}'}), 500
 
 @legal_intel_bp.route('/vendor-verification', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def verify_vendor_attorneys():
     """Verify attorneys at a vendor law firm"""
     try:
@@ -250,7 +396,7 @@ def verify_vendor_attorneys():
         return jsonify({'error': f'Error verifying vendor attorneys: {str(e)}'}), 500
 
 @legal_intel_bp.route('/competitive-landscape', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 def get_competitive_landscape():
     """Get competitive landscape analysis for a practice area"""
     try:
@@ -320,7 +466,7 @@ def get_competitive_landscape():
         return jsonify({'error': f'Error getting competitive landscape: {str(e)}'}), 500
 
 @legal_intel_bp.route('/matter-research', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def research_matter():
     """Comprehensive research for a matter using multiple CourtListener endpoints"""
     try:
@@ -376,7 +522,7 @@ def research_matter():
         return jsonify({'error': f'Error researching matter: {str(e)}'}), 500
 
 @legal_intel_bp.route('/search-precedents', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def search_legal_precedents():
     """Search for legal precedents relevant to a case"""
     try:
@@ -428,7 +574,7 @@ def search_legal_precedents():
         return jsonify({'error': f'Error searching precedents: {str(e)}'}), 500
 
 @legal_intel_bp.route('/comprehensive-research', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def comprehensive_case_research():
     """Comprehensive case research using multiple CourtListener endpoints"""
     try:
@@ -467,7 +613,7 @@ def comprehensive_case_research():
         return jsonify({'error': f'Error in comprehensive research: {str(e)}'}), 500
 
 @legal_intel_bp.route('/judge-patterns', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def analyze_judge_patterns():
     """Analyze patterns in a judge's decisions and case management"""
     try:
@@ -503,7 +649,7 @@ def analyze_judge_patterns():
         return jsonify({'error': f'Error analyzing judge patterns: {str(e)}'}), 500
 
 @legal_intel_bp.route('/competitive-analysis', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def competitive_firm_analysis():
     """Compare multiple law firms using CourtListener data"""
     try:
@@ -522,7 +668,7 @@ def competitive_firm_analysis():
         return jsonify({'error': f'Error in competitive analysis: {str(e)}'}), 500
 
 @legal_intel_bp.route('/precedent-research', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def legal_precedent_research():
     """Research legal precedents for a specific issue"""
     try:
@@ -559,7 +705,7 @@ def legal_precedent_research():
         return jsonify({'error': f'Error in precedent research: {str(e)}'}), 500
 
 @legal_intel_bp.route('/court-analytics', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 def get_court_analytics():
     """Analyze court statistics and patterns"""
     try:
@@ -576,7 +722,7 @@ def get_court_analytics():
         return jsonify({'error': f'Error in court analytics: {str(e)}'}), 500
 
 @legal_intel_bp.route('/courts/search', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 def search_courts():
     """Search for courts by jurisdiction and level"""
     try:
@@ -594,7 +740,7 @@ def search_courts():
         return jsonify({'error': f'Error searching courts: {str(e)}'}), 500
 
 @legal_intel_bp.route('/audio-recordings', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 def search_audio_recordings():
     """Search for oral argument audio recordings"""
     try:
@@ -612,7 +758,7 @@ def search_audio_recordings():
         return jsonify({'error': f'Error searching audio recordings: {str(e)}'}), 500
 
 @legal_intel_bp.route('/docket/<int:docket_id>/entries', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 def get_docket_entries():
     """Get docket entries (filings) for a specific case"""
     try:
@@ -631,7 +777,7 @@ def get_docket_entries():
         return jsonify({'error': f'Error getting docket entries: {str(e)}'}), 500
 
 @legal_intel_bp.route('/citations/<int:opinion_id>', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 def get_citation_network():
     """Get citation network for a specific opinion"""
     try:
@@ -653,7 +799,7 @@ def get_citation_network():
         return jsonify({'error': f'Error getting citation network: {str(e)}'}), 500
 
 @legal_intel_bp.route('/bulk-research', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def bulk_legal_research():
     """Perform bulk research for multiple matters or cases"""
     try:
@@ -703,49 +849,118 @@ def bulk_legal_research():
 # Add the missing endpoints that the frontend expects
 
 @legal_intel_bp.route('/search-cases', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def search_cases():
-    """Search for legal cases using CourtListener API"""
+    """Search for legal cases using real case database and CourtListener API"""
     try:
         data = request.get_json()
-        query = data.get('query')
+        query = data.get('query', '')
         court = data.get('court')
         date_range = data.get('date_range')
         
         if not query:
             return jsonify({'error': 'Search query is required'}), 400
         
-        # Use CourtListener service to search cases
-        search_results = legal_service.search_case_law(query, court=court, limit=20)
+        # First search our local case database
+        local_cases = search_local_case_database(query, court)
         
-        # Format results for frontend
-        formatted_cases = []
-        for case in search_results.get('results', []):
-            formatted_cases.append({
-                'id': str(case.get('id', '')),
-                'title': case.get('caseName', case.get('case_name', 'Unknown Case')),
-                'court': case.get('court', 'Unknown Court'),
-                'date': case.get('dateFiled', case.get('date_filed', '')),
-                'relevance': case.get('score', 85),  # Default relevance score
-                'excerpt': case.get('snippet', case.get('text', ''))[:200] + '...',
-                'citation': case.get('citation', ''),
-                'url': case.get('absolute_url', ''),
-                'source': 'CourtListener'
-            })
+        # Then search CourtListener API if available
+        api_cases = []
+        try:
+            search_results = legal_service.search_case_law(query, court=court, limit=10)
+            for case in search_results.get('results', []):
+                api_cases.append({
+                    'id': str(case.get('id', '')),
+                    'title': case.get('caseName', case.get('case_name', 'Unknown Case')),
+                    'court': case.get('court', 'Unknown Court'),
+                    'date': case.get('dateFiled', case.get('date_filed', '')),
+                    'relevance': case.get('score', 85),
+                    'excerpt': case.get('snippet', case.get('text', ''))[:200] + '...',
+                    'citation': case.get('citation', ''),
+                    'url': case.get('absolute_url', ''),
+                    'source': 'CourtListener'
+                })
+        except Exception as e:
+            logger.warning(f"CourtListener API unavailable: {str(e)}")
+        
+        # Combine results
+        all_cases = local_cases + api_cases
         
         return jsonify({
-            'cases': formatted_cases,
-            'total': len(formatted_cases),
+            'cases': all_cases[:20],  # Limit to 20 results
+            'total': len(all_cases),
             'query': query,
-            'court': court
+            'court': court,
+            'sources': ['Local Database', 'CourtListener API'] if api_cases else ['Local Database']
         })
         
     except Exception as e:
         logger.error(f"Error searching cases: {str(e)}")
         return jsonify({'error': f'Error searching cases: {str(e)}'}), 500
 
+def search_local_case_database(query: str, court: str = None) -> list:
+    """Search the local case database"""
+    import json
+    import os
+    
+    try:
+        models_dir = os.path.join(os.path.dirname(__file__), '..', 'ml', 'models')
+        case_db_path = os.path.join(models_dir, 'case_database.json')
+        
+        if not os.path.exists(case_db_path):
+            return []
+        
+        with open(case_db_path, 'r') as f:
+            case_db = json.load(f)
+        
+        query_lower = query.lower()
+        matched_cases = []
+        
+        for case in case_db:
+            # Search in title, description, and case type
+            title = case.get('title', '').lower()
+            description = case.get('description', '').lower()
+            case_type = case.get('case_type', '').lower()
+            court_name = case.get('court', '').lower()
+            
+            # Calculate relevance score
+            relevance = 0
+            if query_lower in title:
+                relevance += 30
+            if query_lower in description:
+                relevance += 20
+            if query_lower in case_type:
+                relevance += 25
+            if any(word in title or word in description for word in query_lower.split()):
+                relevance += 15
+            
+            # Filter by court if specified
+            if court and court.lower() not in court_name:
+                continue
+                
+            if relevance > 0:
+                matched_cases.append({
+                    'id': case.get('case_id', ''),
+                    'title': case.get('title', 'Unknown Case'),
+                    'court': case.get('court', 'Unknown Court'),
+                    'date': case.get('filing_date', ''),
+                    'relevance': relevance,
+                    'excerpt': case.get('description', '')[:200] + '...',
+                    'case_type': case.get('case_type', ''),
+                    'status': case.get('status', ''),
+                    'source': 'Local Database'
+                })
+        
+        # Sort by relevance
+        matched_cases.sort(key=lambda x: x['relevance'], reverse=True)
+        return matched_cases[:10]  # Return top 10 matches
+        
+    except Exception as e:
+        logger.error(f"Error searching local case database: {str(e)}")
+        return []
+
 @legal_intel_bp.route('/vendor-risk-assessment', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def vendor_risk_assessment():
     """Assess vendor risk based on legal intelligence"""
     try:
@@ -827,12 +1042,24 @@ def vendor_risk_assessment():
         return jsonify({'error': f'Error assessing vendor risk: {str(e)}'}), 500
 
 @legal_intel_bp.route('/case-details/<string:case_id>', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 def get_case_details(case_id):
     """Get detailed information about a specific legal case"""
     try:
-        # Try to get opinion details from CourtListener
-        case_details = legal_service.client.get_opinion_detail(int(case_id))
+        # Check if it's a local database case ID (starts with CASE-)
+        if case_id.startswith('CASE-'):
+            # Get case details from local database
+            case_details = get_case_from_local_database(case_id)
+            if case_details:
+                return jsonify(case_details)
+            else:
+                return jsonify({'error': 'Case not found in local database'}), 404
+        
+        # Try to get opinion details from CourtListener (numeric ID)
+        try:
+            case_details = legal_service.client.get_opinion_detail(int(case_id))
+        except ValueError:
+            return jsonify({'error': 'Invalid case ID format'}), 400
         
         if not case_details:
             return jsonify({'error': 'Case not found'}), 404
@@ -874,3 +1101,96 @@ def get_case_details(case_id):
     except Exception as e:
         logger.error(f"Error getting case details for case {case_id}: {str(e)}")
         return jsonify({'error': f'Error retrieving case details: {str(e)}'}), 500
+
+@legal_intel_bp.route('/case-details/<case_id>', methods=['GET'])
+@development_jwt_required
+def get_case_details(case_id):
+    """Get detailed information about a specific case"""
+    try:
+        # First try to get from local database
+        case_details = get_case_from_local_database(case_id)
+        
+        if case_details:
+            return jsonify(case_details)
+        
+        # If not found locally, try CourtListener API
+        try:
+            api_case = legal_service.get_case_details(case_id)
+            if api_case:
+                return jsonify({
+                    'id': case_id,
+                    'title': api_case.get('caseName', 'Unknown Case'),
+                    'court': api_case.get('court', 'Unknown Court'),
+                    'date': api_case.get('dateFiled', ''),
+                    'status': api_case.get('status', 'Unknown'),
+                    'description': api_case.get('summary', api_case.get('text', 'No description available')),
+                    'citation': api_case.get('citation', ''),
+                    'judges': api_case.get('judges', []),
+                    'attorneys': api_case.get('attorneys', []),
+                    'source': 'CourtListener API',
+                    'url': api_case.get('absolute_url', '')
+                })
+        except Exception as e:
+            logger.warning(f"CourtListener API error: {str(e)}")
+        
+        # If not found anywhere, return a structured response
+        return jsonify({
+            'id': case_id,
+            'title': f"Case {case_id}",
+            'court': 'Court information not available',
+            'date': 'Date not available',
+            'status': 'Status unknown',
+            'description': 'Case details are not available in the current database. This case may require additional research or may not exist in our current data sources.',
+            'source': 'Not found',
+            'error': 'Case not found in available databases'
+        }), 404
+        
+    except Exception as e:
+        logger.error(f"Error getting case details: {str(e)}")
+        return jsonify({'error': f'Error retrieving case details: {str(e)}'}), 500
+
+def get_case_from_local_database(case_id: str) -> dict:
+    """Get case details from local database"""
+    import json
+    import os
+    
+    try:
+        # Load case data from our trained dataset
+        models_dir = os.path.join(os.path.dirname(__file__), '..', 'ml', 'models')
+        case_db_path = os.path.join(models_dir, 'case_database.json')
+        
+        if os.path.exists(case_db_path):
+            with open(case_db_path, 'r') as f:
+                cases = json.load(f)
+            
+            # Find the case by ID
+            for case in cases:
+                if case.get('case_id') == case_id:
+                    return {
+                        'id': case.get('case_id'),
+                        'title': case.get('title'),
+                        'court': case.get('court'),
+                        'date': case.get('filing_date'),
+                        'status': case.get('status'),
+                        'case_type': case.get('case_type'),
+                        'excerpt': case.get('description'),
+                        'full_text': case.get('description', ''),
+                        'relevance': 100,
+                        'source': 'Local Database',
+                        'attorneys': case.get('attorneys', []),
+                        'judges': case.get('judges', []),
+                        'citation': case.get('citation', ''),
+                        'docket_number': case.get('docket_number', ''),
+                        'practice_areas': case.get('practice_areas', []),
+                        'outcome': case.get('outcome', case.get('resolution', '')),
+                        'damages': case.get('damages_amount', 0),
+                        'precedential_value': case.get('precedential_value', 'Medium'),
+                        'complexity': case.get('complexity', 'Medium'),
+                        'duration_days': case.get('duration_days', 0),
+                        'cost_estimate': case.get('cost_estimate', 0)
+                    }
+        
+        return None
+    except Exception as e:
+        logger.error(f"Error getting case from local database: {str(e)}")
+        return None

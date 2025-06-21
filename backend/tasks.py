@@ -1,10 +1,10 @@
 # Import celery app directly
-from backend.celery_worker import celery
-from backend.models.invoice_analyzer import InvoiceAnalyzer
-from backend.ml.models.risk_predictor import RiskPredictor
-from backend.ml.models.vendor_analyzer import VendorAnalyzer
-from backend.db.database import get_db_session, Invoice, Vendor, RiskFactor
-from backend.services.notification_service import NotificationService
+from celery_worker import celery
+from models.invoice_analyzer import InvoiceAnalyzer
+from ml.models.risk_predictor import RiskPredictor
+from ml.models.vendor_analyzer import VendorAnalyzer
+from db.database import get_db_session, Invoice, Vendor, RiskFactor
+from services.notification_service import NotificationService
 import time
 import os
 import logging
@@ -31,8 +31,8 @@ def get_notification_service():
     """Get or initialize the notification service with socketio"""
     global notification_service
     if notification_service is None:
-        from backend.app import socketio
-        from backend.services.notification_service import NotificationService
+        from app import socketio
+        from services.notification_service import NotificationService
         notification_service = NotificationService(socketio)
     return notification_service
 

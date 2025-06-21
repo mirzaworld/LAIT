@@ -1,0 +1,148 @@
+{
+  "Corporate_MA": {
+    "avg_deal_size": 250000000,
+    "avg_legal_spend_percentage": 0.008,
+    "typical_duration_months": 4,
+    "key_players": [
+      "Investment Banks",
+      "PE Firms",
+      "Public Companies"
+    ],
+    "billing_patterns": "Front-loaded with due diligence spike"
+  },
+  "Litigation": {
+    "avg_case_duration_months": 18,
+    "settlement_rate": 0.92,
+    "trial_rate": 0.08,
+    "avg_legal_spend": 350000,
+    "cost_factors": [
+      "Discovery scope",
+      "Expert witnesses",
+      "Document review"
+    ]
+  },
+  "IP_Patent": {
+    "avg_prosecution_cost": 12000,
+    "avg_litigation_cost": 2500000,
+    "success_rate_prosecution": 0.67,
+    "success_rate_litigation": 0.52,
+    "typical_timeline_months": 24
+  },
+  "Employment_Law": {
+    "avg_settlement": 125000,
+    "litigation_rate": 0.15,
+    "preventive_vs_reactive": {
+      "preventive": 0.6,
+      "reactive": 0.4
+    },
+    "compliance_spend_ratio": 0.25
+  },
+  "Tax Law": {
+    "avg_duration_days": 513.0695652173913,
+    "avg_case_value": 387626.74782608694,
+    "complexity_distribution": {
+      "Medium": 0.6173913043478261,
+      "High": 0.19130434782608696,
+      "Low": 0.19130434782608696
+    }
+  },
+  "Immigration Law": {
+    "avg_duration_days": 484.1007194244604,
+    "avg_case_value": 350364.654676259,
+    "complexity_distribution": {
+      "Medium": 0.4316546762589928,
+      "Low": 0.3597122302158273,
+      "High": 0.20863309352517986
+    }
+  },
+  "Environmental Law": {
+    "avg_duration_days": 459.3636363636364,
+    "avg_case_value": 345427.2809917355,
+    "complexity_distribution": {
+      "Low": 0.3305785123966942,
+      "High": 0.1652892561983471,
+      "Medium": 0.5041322314049587
+    }
+  },
+  "Contract Disputes": {
+    "avg_duration_days": 576.272,
+    "avg_case_value": 800583.448,
+    "complexity_distribution": {
+      "High": 0.24,
+      "Low": 0.208,
+      "Medium": 0.552
+    }
+  },
+  "Healthcare Law": {
+    "avg_duration_days": 484.8993288590604,
+    "avg_case_value": 337988.58389261743,
+    "complexity_distribution": {
+      "Medium": 0.5100671140939598,
+      "Low": 0.3288590604026846,
+      "High": 0.1610738255033557
+    }
+  },
+  "Corporate Law": {
+    "avg_duration_days": 494.568,
+    "avg_case_value": 7096515.016,
+    "complexity_distribution": {
+      "Low": 0.352,
+      "Medium": 0.44,
+      "High": 0.208
+    }
+  },
+  "IP Litigation": {
+    "avg_duration_days": 443.83620689655174,
+    "avg_case_value": 2772685.370689655,
+    "complexity_distribution": {
+      "Medium": 0.5,
+      "Low": 0.3448275862068966,
+      "High": 0.15517241379310345
+    }
+  },
+  "Bankruptcy": {
+    "avg_duration_days": 447.2647058823529,
+    "avg_case_value": 330908.9411764706,
+    "complexity_distribution": {
+      "High": 0.12745098039215685,
+      "Medium": 0.5784313725490197,
+      "Low": 0.29411764705882354
+    }
+  },
+  "Employment Law": {
+    "avg_duration_days": 493.51006711409394,
+    "avg_case_value": 199501.1744966443,
+    "complexity_distribution": {
+      "Medium": 0.5234899328859061,
+      "Low": 0.3087248322147651,
+      "High": 0.16778523489932887
+    }
+  },
+  "Real Estate Law": {
+    "avg_duration_days": 485.43801652892563,
+    "avg_case_value": 387676.4380165289,
+    "complexity_distribution": {
+      "Low": 0.2975206611570248,
+      "Medium": 0.4793388429752066,
+      "High": 0.2231404958677686
+    }
+  },
+  "Securities Litigation": {
+    "avg_duration_days": 497.18897637795277,
+    "avg_case_value": 13949444.921259843,
+    "complexity_distribution": {
+      "Medium": 0.5433070866141733,
+      "High": 0.1889763779527559,
+      "Low": 0.2677165354330709
+    }
+  },
+  "Antitrust": {
+    "avg_duration_days": 503.72972972972974,
+    "avg_case_value": 357346.9459459459,
+    "complexity_distribution": {
+      "Medium": 0.5495495495495496,
+      "Low": 0.26126126126126126,
+      "High": 0.1891891891891892
+    }
+  }
+}

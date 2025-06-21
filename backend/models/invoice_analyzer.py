@@ -280,7 +280,8 @@ class InvoiceAnalyzer:
     
     def retrain_model(self):
         """Retrain models with all available data"""
-        from db.database import get_db_session, Invoice, LineItem
+        from db.database import get_db_session
+        from models.db_models import Invoice, LineItem
         from utils.ml_preprocessing import extract_invoice_features, preprocess_text, scale_features
         import pandas as pd
         
@@ -366,7 +367,8 @@ class InvoiceAnalyzer:
 
     def _train_initial_models(self):
         """Train the initial models with historical data if available"""
-        from db.database import get_db_session, Invoice, LineItem
+        from db.database import get_db_session
+        from models.db_models import Invoice, LineItem
         from utils.ml_preprocessing import extract_invoice_features, preprocess_text
         import pandas as pd
         
