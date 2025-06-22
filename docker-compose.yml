@@ -1,90 +1,54 @@
 version: '3.8'
 
 services:
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
+  lait-app:
+    build: .
     ports:
-      - "5173:5173"
-    volumes:
-      - ./:/app
-      - /app/node_modules
+      - "5003:5003"
     environment:
-      - VITE_API_URL=http://localhost:8000/api
-    depends_on:
-      - backend
-
-  backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
-    ports:
-      - "8000:5000"
-    volumes:
-      - ./backend:/app/backend
-    environment:
-      - FLASK_APP=backend/wsgi.py
+      - FLASK_APP=backend/enhanced_app.py
       - FLASK_ENV=development
-      - DEBUG=True
-      - API_HOST=0.0.0.0
-      - API_PORT=5000
-      - DB_USER=${DB_USER:-postgres}
-      - DB_PASSWORD=${DB_PASSWORD:-securepassword}
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_NAME=${DB_NAME:-legalspend}
-      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-securepassword}@db:5432/${DB_NAME:-legalspend}
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/legalspend
       - REDIS_URL=redis://redis:6379/0
-      - PYTHONPATH=/app
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
-
-  db:
-    image: postgres:14
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_USER=${DB_USER:-postgres}
-      - POSTGRES_PASSWORD=${DB_PASSWORD:-securepassword}
-      - POSTGRES_DB=${DB_NAME:-legalspend}
+      - SECRET_KEY=development-key-change-in-production
+      - JWT_SECRET_KEY=jwt-dev-key-change-in-production
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis:7
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-
-  celery_worker:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
-    command: celery -A backend.celery_worker worker --loglevel=info
-    environment:
-      - DB_HOST=db
-      - DB_USER=${DB_USER:-postgres}
-      - DB_PASSWORD=${DB_PASSWORD:-securepassword}
-      - DB_NAME=${DB_NAME:-legalspend}
-      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-securepassword}@db:5432/${DB_NAME:-legalspend}
-      - REDIS_URL=redis://redis:6379/0
-      - PYTHONPATH=/app
-      - FLASK_APP=backend/wsgi.py
+      - ./backend/logs:/app/backend/logs
+      - ./backend/uploads:/app/backend/uploads
     depends_on:
       - db
       - redis
-      - backend
+    restart: unless-stopped
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=legalspend
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  celery-worker:
+    build: .
+    command: celery -A backend.celery_worker.celery worker --loglevel=info
+    environment:
+      - FLASK_APP=backend/enhanced_app.py
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/legalspend
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
 
 volumes:
   postgres_data:
-  redis_data:
