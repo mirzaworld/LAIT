@@ -115,12 +115,23 @@ class InvoiceAnalyzer:
         
         # Detect anomalies
         if self.isolation_forest and self.scaler:
-            scaled_features = self.scaler.transform([features])
-            anomaly_score = self.isolation_forest.score_samples(scaled_features)[0]
-            risk_score = self._calculate_risk_score(anomaly_score, processed_data)
-            
-            # Identify specific risk factors
-            risk_factors = self._identify_risk_factors(features, anomaly_score)
+            try:
+                # Check if model is fitted by trying to use it
+                scaled_features = self.scaler.transform([features])
+                anomaly_score = self.isolation_forest.score_samples(scaled_features)[0]
+                risk_score = self._calculate_risk_score(anomaly_score, processed_data)
+                
+                # Identify specific risk factors
+                risk_factors = self._identify_risk_factors(features, anomaly_score)
+            except Exception as e:
+                # If model is not fitted, use basic scoring
+                print(f"Model not fitted, using basic scoring: {e}")
+                risk_score = self._calculate_basic_risk_score(processed_data)
+                risk_factors = self._identify_basic_risk_factors(processed_data)
+        else:
+            # Fallback to basic scoring
+            risk_score = self._calculate_basic_risk_score(processed_data)
+            risk_factors = self._identify_basic_risk_factors(processed_data)
         
         return {
             'risk_score': risk_score,
