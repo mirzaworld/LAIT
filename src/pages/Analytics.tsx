@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart3, PieChart, TrendingUp, Filter, Download, Calendar, AlertTriangle, ChevronLeft, Brain } from 'lucide-react';
+import { BarChart3, PieChart, TrendingUp, Filter, Download, Calendar, AlertTriangle, ChevronLeft } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { Doughnut, Bar, Line } from 'react-chartjs-2';
 import { pdfService } from '../services/pdfService';
 import LegalAnalytics from '../components/LegalAnalytics';
-import MLPoweredAnalytics from '../components/MLPoweredAnalytics';
 import ErrorBoundary from '../components/ErrorBoundary';
-import SmartButton from '../components/SmartButton';
 import '../utils/chartConfig';
 
 const Analytics: React.FC = () => {
@@ -16,7 +15,6 @@ const Analytics: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [aiInsights, setAiInsights] = useState<string[]>([]);
-  const [activeView, setActiveView] = useState<'traditional' | 'ml'>('ml'); // Default to ML view
 
   const { type = '', dateRange } = location.state || {};
 
@@ -50,18 +48,111 @@ const Analytics: React.FC = () => {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Error exporting analytics:', err);
+      alert('Failed to export analytics report');
     } finally {
       setGenerating(false);
     }
   };
 
+  const spendByCategory = {
+    labels: ['Litigation', 'Corporate', 'IP', 'Employment', 'Regulatory', 'M&A'],
+    datasets: [
+      {
+        data: [1200000, 850000, 650000, 420000, 380000, 320000],
+        backgroundColor: [
+          '#3B82F6',
+          '#10B981',
+          '#F59E0B',
+          '#EF4444',
+          '#8B5CF6',
+          '#06B6D4',
+        ],
+        borderWidth: 0,
+      },
+    ],
+  };
+
+  const monthlyTrends = {
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    datasets: [
+      {
+        label: 'External Counsel',
+        data: [320000, 290000, 350000, 420000, 380000, 450000, 520000, 480000, 540000, 590000, 620000, 580000],
+        backgroundColor: '#3B82F6',
+      },
+      {
+        label: 'Internal Resources',
+        data: [100000, 90000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000],
+        backgroundColor: '#10B981',
+      },
+    ],
+  };
+
+  const doughnutOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom' as const,
+        labels: {
+          padding: 20,
+          usePointStyle: true,
+        },
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+            const percentage = ((context.raw / total) * 100).toFixed(1);
+            return `${context.label}: $${context.raw.toLocaleString()} (${percentage}%)`;
+          }
+        }
+      }
+    },
+  };
+
+  const barOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            return `${context.dataset.label}: $${context.raw.toLocaleString()}`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        stacked: true,
+      },
+      y: {
+        stacked: true,
+        ticks: {
+          callback: function(value: any) {
+            return '$' + (value / 1000) + 'K';
+          }
+        }
+      },
+    },
+  };
+
   const getTypeLabel = () => {
-    switch(type) {
-      case 'spend': return 'Spend Analytics';
-      case 'invoices': return 'Invoice Analytics';
-      case 'outliers': return 'Outlier Analysis';
-      case 'processing': return 'Processing Analytics';
-      default: return 'Legal Analytics Dashboard';
+    switch (type) {
+      case 'spend':
+        return 'Spend Analytics';
+      case 'invoices':
+        return 'Invoice Processing Analytics';
+      case 'outliers':
+        return 'Risk Analysis';
+      case 'processing':
+        return 'Processing Performance';
+      default:
+        return 'Legal Spend Analytics';
     }
   };
 
@@ -71,19 +162,17 @@ const Analytics: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           {type && (
-            <SmartButton
+            <button
               onClick={() => navigate(-1)}
-              variant="secondary"
-              size="sm"
-              className="mb-2"
+              className="flex items-center text-gray-600 hover:text-gray-900 mb-2"
             >
               <ChevronLeft className="w-4 h-4 mr-1" />
               Back to Dashboard
-            </SmartButton>
+            </button>
           )}
           <h1 className="text-2xl font-bold text-gray-900">{getTypeLabel()}</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Deep dive into {type || 'spending'} patterns and trends with AI-powered insights
+            Deep dive into {type || 'spending'} patterns and trends
           </p>
         </div>
         <div className="mt-4 sm:mt-0 flex items-center space-x-3">
@@ -99,127 +188,210 @@ const Analytics: React.FC = () => {
               <option value="12M">Last 12 Months</option>
             </select>
           </div>
-          <SmartButton 
+          <button 
             onClick={handleExport}
             disabled={generating}
-            loading={generating}
-            variant="primary"
-            size="sm"
+            className="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors duration-200 disabled:opacity-50"
           >
-            <Download className="w-4 h-4 mr-2" />
-            Export Analytics
-          </SmartButton>
+            {generating ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                Generating...
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4 mr-2" />
+                Export Analytics
+              </>
+            )}
+          </button>
         </div>
       </div>
 
-      {/* View Switcher */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-        <div className="flex items-center justify-between">
-          <div className="flex space-x-1">
-            <button
-              onClick={() => setActiveView('ml')}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center space-x-2 ${
-                activeView === 'ml'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-              }`}
-            >
-              <Brain className="w-4 h-4" />
-              <span>ML-Powered Analytics</span>
-            </button>
-            <button
-              onClick={() => setActiveView('traditional')}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center space-x-2 ${
-                activeView === 'traditional'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-              }`}
-            >
-              <BarChart3 className="w-4 h-4" />
-              <span>Traditional Analytics</span>
-            </button>
-          </div>
-          <div className="text-sm text-gray-500">
-            {activeView === 'ml' ? 'Advanced AI-powered insights and predictions' : 'Standard charts and metrics'}
-          </div>
-        </div>
-      </div>
-
-      {/* ML-Powered Analytics View */}
-      {activeView === 'ml' && (
-        <ErrorBoundary fallback={({ error }) => (
-          <div className="bg-white p-12 rounded-xl shadow-sm border border-gray-200 text-center">
-            <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">ML Analytics Unavailable</h3>
-            <p className="text-gray-600 mb-4">
-              {error?.message || 'ML-powered analytics temporarily unavailable'}
-            </p>
-            <SmartButton 
-              onClick={() => {
-                window.location.hash = `#retry-ml-${Date.now()}`;
-                setTimeout(() => window.location.hash = '', 100);
-              }}
-              variant="primary"
-            >
-              Try Again
-            </SmartButton>
-          </div>
-        )}>
-          <MLPoweredAnalytics />
-        </ErrorBoundary>
-      )}
-
-      {/* Traditional Analytics View */}
-      {activeView === 'traditional' && (
-        <ErrorBoundary fallback={({ error }) => (
-          <div className="bg-white p-12 rounded-xl shadow-sm border border-gray-200 text-center">
-            <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Traditional Analytics Unavailable</h3>
-            <p className="text-gray-600 mb-4">
-              {error?.message || 'Traditional analytics temporarily unavailable'}
-            </p>
-            <SmartButton 
-              onClick={() => {
-                window.location.hash = `#retry-traditional-${Date.now()}`;
-                setTimeout(() => window.location.hash = '', 100);
-              }}
-              variant="primary"
-            >
-              Try Again
-            </SmartButton>
-          </div>
-        )}>
-          <div className="space-y-6">
-            {/* AI Insights */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">AI-Generated Insights</h2>
-                {loading && (
-                  <div className="flex items-center space-x-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600"></div>
-                    <span className="text-sm text-gray-500">Analyzing data...</span>
-                  </div>
-                )}
-              </div>
-              <div className="space-y-3">
-                {aiInsights.map((insight, index) => (
-                  <div 
-                    key={index} 
-                    className="flex items-start p-3 bg-primary-50 rounded-lg"
-                    style={{ animationDelay: `${index * 100}ms` }}
-                  >
-                    <AlertTriangle className="w-5 h-5 text-primary-600 mt-0.5 mr-3 flex-shrink-0" />
-                    <p className="text-sm text-gray-800">{insight}</p>
-                  </div>
-                ))}
-              </div>
+      {/* AI Insights */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">AI-Generated Insights</h2>
+          {loading && (
+            <div className="flex items-center space-x-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600"></div>
+              <span className="text-sm text-gray-500">Analyzing data...</span>
             </div>
-
-            {/* Legal Analytics Component */}
-            <LegalAnalytics />
+          )}
+        </div>
+        <div className="space-y-3">
+          {aiInsights.map((insight, index) => (
+            <div 
+              key={index} 
+              className="flex items-start p-3 bg-primary-50 rounded-lg"
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              <AlertTriangle className="w-5 h-5 text-primary-600 mt-0.5 mr-3 flex-shrink-0" />
+              <p className="text-sm text-gray-800">{insight}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Avg Monthly Spend</p>
+              <p className="text-2xl font-bold text-gray-900">$542K</p>
+            </div>
+            <div className="p-3 bg-primary-100 rounded-lg">
+              <Calendar className="w-6 h-6 text-primary-600" />
+            </div>
           </div>
-        </ErrorBoundary>
+          <div className="mt-4">
+            <span className="text-sm text-success-600 font-medium">↑ 8.2%</span>
+            <span className="text-sm text-gray-500 ml-2">vs last period</span>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Cost per Matter</p>
+              <p className="text-2xl font-bold text-gray-900">$34.2K</p>
+            </div>
+            <div className="p-3 bg-success-100 rounded-lg">
+              <BarChart3 className="w-6 h-6 text-success-600" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <span className="text-sm text-danger-600 font-medium">↓ 12.5%</span>
+            <span className="text-sm text-gray-500 ml-2">vs last period</span>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Resource Utilization</p>
+              <p className="text-2xl font-bold text-gray-900">87%</p>
+            </div>
+            <div className="p-3 bg-warning-100 rounded-lg">
+              <TrendingUp className="w-6 h-6 text-warning-600" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <span className="text-sm text-success-600 font-medium">↑ 5.3%</span>
+            <span className="text-sm text-gray-500 ml-2">vs target</span>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Matter Volume</p>
+              <p className="text-2xl font-bold text-gray-900">156</p>
+            </div>
+            <div className="p-3 bg-info-100 rounded-lg">
+              <PieChart className="w-6 h-6 text-info-600" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <span className="text-sm text-success-600 font-medium">↑ 3.8%</span>
+            <span className="text-sm text-gray-500 ml-2">vs last period</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Category Breakdown */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-6">Spend by Category</h3>
+          <div className="h-80">
+            <ErrorBoundary fallback={({ error }) => (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
+                  <p className="text-gray-600">Chart temporarily unavailable</p>
+                  <button 
+                    onClick={() => window.location.reload()} 
+                    className="mt-2 text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Try again
+                  </button>
+                </div>
+              </div>
+            )}>
+              <Doughnut data={spendByCategory} options={doughnutOptions} />
+            </ErrorBoundary>
+          </div>
+        </div>
+
+        {/* Monthly Trends */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-6">Monthly Trends</h3>
+          <div className="h-80">
+            <ErrorBoundary fallback={({ error }) => (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
+                  <p className="text-gray-600">Chart temporarily unavailable</p>
+                  <button 
+                    onClick={() => window.location.reload()} 
+                    className="mt-2 text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Try again
+                  </button>
+                </div>
+              </div>
+            )}>
+              <Bar data={monthlyTrends} options={barOptions} />
+            </ErrorBoundary>
+          </div>
+        </div>
+      </div>
+
+      {/* Type-specific Analytics */}
+      {type === 'invoices' && (
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Invoice Processing Performance</h3>
+          {/* Add invoice-specific analytics */}
+        </div>
       )}
+
+      {type === 'outliers' && (
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Risk Analysis Details</h3>
+          {/* Add risk analysis details */}
+        </div>
+      )}
+
+      {type === 'processing' && (
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Processing Efficiency Metrics</h3>
+          {/* Add processing performance metrics */}
+        </div>
+      )}
+
+      {/* Legal Analytics Component */}
+      {/* Legal Analytics Component */}
+      <ErrorBoundary fallback={({ error }) => (
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <div className="text-center">
+            <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Legal Analytics Unavailable</h3>
+            <p className="text-gray-600 mb-4">
+              Unable to load legal analytics data. This may be due to external service connectivity.
+            </p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}>
+        <LegalAnalytics />
+      </ErrorBoundary>
     </div>
   );
 };

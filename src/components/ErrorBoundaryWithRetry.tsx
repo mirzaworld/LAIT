@@ -95,19 +95,10 @@ const DefaultErrorFallback: React.FC<DefaultErrorFallbackProps> = ({ error, retr
       </button>
     ) : (
       <button
-        onClick={() => {
-          // Try to recover gracefully without page reload
-          window.location.hash = `#retry-boundary-${Date.now()}`;
-          setTimeout(() => {
-            window.location.hash = '';
-            // Force component re-render by dispatching custom event
-            const event = new CustomEvent('boundary-retry', { detail: { timestamp: Date.now() } });
-            window.dispatchEvent(event);
-          }, 100);
-        }}
+        onClick={() => window.location.reload()}
         className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
       >
-        Recover
+        Reload Page
       </button>
     )}
   </div>

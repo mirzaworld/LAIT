@@ -115,23 +115,12 @@ class InvoiceAnalyzer:
         
         # Detect anomalies
         if self.isolation_forest and self.scaler:
-            try:
-                # Check if model is fitted by trying to use it
-                scaled_features = self.scaler.transform([features])
-                anomaly_score = self.isolation_forest.score_samples(scaled_features)[0]
-                risk_score = self._calculate_risk_score(anomaly_score, processed_data)
-                
-                # Identify specific risk factors
-                risk_factors = self._identify_risk_factors(features, anomaly_score)
-            except Exception as e:
-                # If model is not fitted, use basic scoring
-                print(f"Model not fitted, using basic scoring: {e}")
-                risk_score = self._calculate_basic_risk_score(processed_data)
-                risk_factors = self._identify_basic_risk_factors(processed_data)
-        else:
-            # Fallback to basic scoring
-            risk_score = self._calculate_basic_risk_score(processed_data)
-            risk_factors = self._identify_basic_risk_factors(processed_data)
+            scaled_features = self.scaler.transform([features])
+            anomaly_score = self.isolation_forest.score_samples(scaled_features)[0]
+            risk_score = self._calculate_risk_score(anomaly_score, processed_data)
+            
+            # Identify specific risk factors
+            risk_factors = self._identify_risk_factors(features, anomaly_score)
         
         return {
             'risk_score': risk_score,
@@ -267,61 +256,7 @@ class InvoiceAnalyzer:
             session.rollback()
             raise e
     
-    def _extract_features(self, processed_data):
-        """Extract numerical features from processed invoice data for ML analysis"""
-        features = []
-        
-        # Basic invoice features
-        total_amount = processed_data.get('total_amount', 0)
-        line_items = processed_data.get('line_items', [])
-        
-        features.extend([
-            total_amount,
-            len(line_items),  # Number of line items
-            total_amount / max(len(line_items), 1),  # Average amount per line item
-        ])
-        
-        # Line item features
-        if line_items:
-            hours_list = [item.get('hours', 0) for item in line_items]
-            rates_list = [item.get('rate', 0) for item in line_items]
-            amounts_list = [item.get('amount', 0) for item in line_items]
-            
-            features.extend([
-                sum(hours_list),  # Total hours
-                sum(rates_list) / len(rates_list) if rates_list else 0,  # Average rate
-                max(rates_list) if rates_list else 0,  # Max rate
-                sum(amounts_list),  # Total amount from line items
-                len([h for h in hours_list if h > 10]),  # Count of high-hour entries
-            ])
-        else:
-            features.extend([0, 0, 0, 0, 0])
-        
-        return features
-
-    def _has_suspicious_line_items(self, line_items):
-        """Check if line items contain suspicious patterns"""
-        if not line_items:
-            return False
-        
-        suspicious_count = 0
-        total_items = len(line_items)
-        
-        for item in line_items:
-            description = item.get('description', '').lower()
-            hours = item.get('hours', 0)
-            rate = item.get('rate', 0)
-            
-            # Check for suspicious patterns
-            if hours > 24:  # More than 24 hours in a day
-                suspicious_count += 1
-            elif rate > 1000:  # Very high hourly rate
-                suspicious_count += 1
-            elif 'block billing' in description or 'various' in description:
-                suspicious_count += 1
-        
-        # Return True if more than 20% of items are suspicious
-        return (suspicious_count / total_items) > 0.2
+    def _initialize_new_models(self):
         """Initialize new ML models when they don't exist or fail to load"""
         self.isolation_forest = IsolationForest(
             contamination=0.1,
@@ -1040,63 +975,3 @@ class InvoiceAnalyzer:
             return 0
             
         return sum(rates) / len(rates)
-    
-    def _extract_features(self, processed_data):
-        """Extract feature vector from processed invoice data"""
-        # Basic features
-        total_amount = processed_data.get('total_amount', 0)
-        line_items = processed_data.get('line_items', [])
-        
-        # Calculate derived features
-        line_item_count = len(line_items)
-        total_hours = sum(item.get('hours', 0) for item in line_items)
-        avg_rate = sum(item.get('rate', 0) for item in line_items) / max(line_item_count, 1)
-        max_rate = max((item.get('rate', 0) for item in line_items), default=0)
-        
-        # Text complexity features
-        total_text_length = sum(len(str(item.get('description', ''))) for item in line_items)
-        avg_text_length = total_text_length / max(line_item_count, 1)
-        
-        # Feature vector
-        features = [
-            total_amount,
-            line_item_count,
-            total_hours,
-            avg_rate,
-            max_rate,
-            avg_text_length,
-            1 if total_amount > 50000 else 0,  # High amount flag
-            1 if avg_rate > 500 else 0,       # High rate flag
-            1 if total_hours > 100 else 0     # High hours flag
-        ]
-        
-        return features
-    
-    def _has_suspicious_line_items(self, line_items):
-        """Check if line items contain suspicious patterns"""
-        if not line_items:
-            return False
-            
-        suspicious_keywords = [
-            'block billing', 'excessive', 'unclear', 'vague',
-            'administrative', 'internal meeting', 'organizing'
-        ]
-        
-        for item in line_items:
-            description = str(item.get('description', '')).lower()
-            hours = float(item.get('hours', 0))
-            rate = float(item.get('rate', 0))
-            
-            # Check for suspicious patterns
-            if any(keyword in description for keyword in suspicious_keywords):
-                return True
-            
-            # Check for unusually high values
-            if hours > 12 or rate > 800:
-                return True
-                
-            # Check for very vague descriptions
-            if len(description.strip()) < 10:
-                return True
-                
-        return False
