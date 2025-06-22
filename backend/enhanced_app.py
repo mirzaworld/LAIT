@@ -29,16 +29,20 @@ from flask_limiter.util import get_remote_address
 from dotenv import load_dotenv
 from werkzeug.security import check_password_hash
 from sqlalchemy import func, desc
-from backend.db.database import User, Invoice, Vendor, SessionLocal, init_db, get_db_session
-from backend.models.db_models import AuditLog
+
+# Add current directory to Python path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from db.database import User, Invoice, Vendor, SessionLocal, init_db, get_db_session
+from models.db_models import AuditLog
 
 # Import ML models and analyzers
 try:
-    from backend.models.invoice_analyzer import InvoiceAnalyzer
-    from backend.models.vendor_analyzer import VendorAnalyzer
-    from backend.models.risk_predictor import RiskPredictor
-    from backend.models.matter_analyzer import MatterAnalyzer
-    from backend.models.enhanced_invoice_analyzer import EnhancedInvoiceAnalyzer
+    from models.invoice_analyzer import InvoiceAnalyzer
+    from models.vendor_analyzer import VendorAnalyzer
+    from models.risk_predictor import RiskPredictor
+    from models.matter_analyzer import MatterAnalyzer
+    from models.enhanced_invoice_analyzer import EnhancedInvoiceAnalyzer
 except ImportError as e:
     print(f"Warning: Model imports failed ({e}). ML features may be limited.")
     
@@ -155,7 +159,7 @@ def create_app():
         app.enhanced_invoice_analyzer = None
 
     # Import real-time data collector
-    from backend.services.real_time_data_collector import RealTimeLegalDataCollector
+    from services.real_time_data_collector import RealTimeLegalDataCollector
     
     # Initialize data collector instance
     data_collector = RealTimeLegalDataCollector()
@@ -173,7 +177,7 @@ def create_app():
     def dashboard_metrics():
         """Dashboard metrics endpoint"""
         try:
-            from backend.db.database import get_db_session, Invoice, Vendor
+            from db.database import get_db_session, Invoice, Vendor
             
             session = get_db_session()
             
@@ -515,7 +519,7 @@ def create_app():
     def populate_sample_data():
         """Populate database with sample data for testing"""
         try:
-            from backend.db.database import get_db_session, Invoice, Vendor
+            from db.database import get_db_session, Invoice, Vendor
             import random
             from datetime import datetime, timedelta
             
