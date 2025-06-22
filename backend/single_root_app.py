@@ -83,7 +83,7 @@ def create_app():
     
     # ============ DATABASE INITIALIZATION ============
     try:
-        from db.database import init_db, get_db_session, User, Invoice, Vendor
+        from db.database import init_db, get_db_session, User, Invoice, Vendor, Matter
         from sqlalchemy import func, desc
         init_db()
         logger.info("✅ Database initialized successfully")
@@ -93,6 +93,7 @@ def create_app():
         User = None
         Invoice = None
         Vendor = None
+        Matter = None
         database_available = False
         func = None
         desc = None
@@ -102,16 +103,26 @@ def create_app():
         from models.invoice_analyzer import InvoiceAnalyzer
         from models.vendor_analyzer import VendorAnalyzer
         from models.risk_predictor import RiskPredictor
+        from ml.data_processor import InvoiceDataProcessor, VendorDataProcessor
+        
+        # Initialize data processors
+        app.invoice_processor = InvoiceDataProcessor()
+        app.vendor_processor = VendorDataProcessor()
+        
+        # Initialize ML models
         app.invoice_analyzer = InvoiceAnalyzer()
         app.vendor_analyzer = VendorAnalyzer()
         app.risk_predictor = RiskPredictor()
-        logger.info("✅ ML models initialized successfully")
+        
+        logger.info("✅ ML models and data processors initialized successfully")
         ml_available = True
     except Exception as e:
         logger.warning(f"⚠️ ML models not available: {e}")
         app.invoice_analyzer = None
         app.vendor_analyzer = None
         app.risk_predictor = None
+        app.invoice_processor = None
+        app.vendor_processor = None
         ml_available = False
     
     # ============ SOCKET.IO HANDLERS ============
@@ -169,16 +180,39 @@ def create_app():
     # ============ HEALTH CHECK ============
     @app.route('/api/health')
     def health_check():
-        """Comprehensive health check"""
-        return jsonify({
-            "status": "healthy", 
-            "timestamp": datetime.utcnow().isoformat(),
-            "database": "connected" if database_available else "demo_mode",
-            "ml_models": "loaded" if ml_available else "unavailable",
-            "socket_io": "enabled",
-            "cors": "configured",
-            "version": "4.0.0-consolidated"
-        })
+        """Comprehensive health check with real data status"""
+        try:
+            status = {
+                "status": "healthy", 
+                "timestamp": datetime.utcnow().isoformat(),
+                "database": "connected" if database_available else "unavailable",
+                "ml_models": "loaded" if ml_available else "unavailable",
+                "socket_io": "enabled",
+                "cors": "configured",
+                "version": "4.0.0-consolidated-real-data"
+            }
+            
+            if database_available:
+                session = get_db_session()
+                try:
+                    invoice_count = session.query(func.count(Invoice.id)).scalar() or 0
+                    vendor_count = session.query(func.count(Vendor.id)).scalar() or 0
+                    status["data_stats"] = {
+                        "invoices": invoice_count,
+                        "vendors": vendor_count,
+                        "using_real_data": True,
+                        "demo_data_removed": True
+                    }
+                finally:
+                    session.close()
+            
+            return jsonify(status)
+        except Exception as e:
+            return jsonify({
+                "status": "error",
+                "error": str(e),
+                "timestamp": datetime.utcnow().isoformat()
+            }), 500
     
     # ============ AUTHENTICATION ROUTES ============
     
@@ -321,72 +355,121 @@ def create_app():
             if 'session' in locals():
                 session.close()
     
+    # ============ ML DATA PROCESSING ROUTES ============
+    
+    @app.route('/api/ml/process-data', methods=['POST'])
+    def process_ml_data():
+        """Process invoice data for ML models"""
+        try:
+            if not ml_available or not app.invoice_processor:
+                return jsonify({'error': 'ML processing not available'}), 500
+            
+            session = get_db_session()
+            
+            # Process invoice data
+            df = app.invoice_processor.process_invoice_data(session)
+            
+            if df.empty:
+                return jsonify({'message': 'No data to process'}), 200
+            
+            # Update vendor metrics
+            if app.vendor_processor:
+                app.vendor_processor.update_vendor_metrics(session)
+            
+            # Prepare data for risk prediction model
+            X, y = app.invoice_processor.prepare_risk_prediction_data(df)
+            
+            # Train/update risk prediction model if we have data
+            if len(X) > 0 and app.risk_predictor:
+                try:
+                    app.risk_predictor.train_model(X, y)
+                    logger.info("Risk prediction model updated with new data")
+                except Exception as e:
+                    logger.warning(f"Could not update risk model: {e}")
+            
+            return jsonify({
+                'message': 'Data processed successfully',
+                'processed_invoices': len(df),
+                'features_created': len(df.columns),
+                'risk_model_updated': len(X) > 0
+            })
+            
+        except Exception as e:
+            logger.error(f"ML data processing error: {str(e)}")
+            return jsonify({'error': str(e)}), 500
+        finally:
+            if 'session' in locals():
+                session.close()
+    
+    @app.route('/api/ml/retrain-models', methods=['POST'])
+    def retrain_ml_models():
+        """Retrain all ML models with current data"""
+        try:
+            if not ml_available:
+                return jsonify({'error': 'ML not available'}), 500
+            
+            session = get_db_session()
+            
+            # Process all data
+            df = app.invoice_processor.process_invoice_data(session)
+            
+            if df.empty:
+                return jsonify({'error': 'No data available for training'}), 400
+            
+            results = {}
+            
+            # Retrain risk prediction model
+            if app.risk_predictor and app.invoice_processor:
+                X, y = app.invoice_processor.prepare_risk_prediction_data(df)
+                if len(X) > 0:
+                    accuracy = app.risk_predictor.train_model(X, y)
+                    results['risk_model'] = {'accuracy': accuracy, 'samples': len(X)}
+            
+            # Update vendor performance data
+            if app.vendor_processor:
+                app.vendor_processor.update_vendor_metrics(session)
+                results['vendor_metrics'] = 'updated'
+            
+            return jsonify({
+                'message': 'Models retrained successfully',
+                'results': results
+            })
+            
+        except Exception as e:
+            logger.error(f"ML retraining error: {str(e)}")
+            return jsonify({'error': str(e)}), 500
+        finally:
+            if 'session' in locals():
+                session.close()
+    
     # ============ DASHBOARD ROUTES ============
     
     @app.route('/api/dashboard/metrics')
     def dashboard_metrics():
-        """Consolidated dashboard metrics"""
+        """Dashboard metrics from real data"""
         try:
-            if not database_available or not Invoice or not Vendor:
-                # Enhanced demo data
-                return jsonify({
-                    'total_spend': 2850000.0,
-                    'totalSpend': 2850000.0,
-                    'invoice_count': 247,
-                    'invoiceCount': 247,
-                    'vendor_count': 18,
-                    'vendorCount': 18,
-                    'average_risk_score': 0.28,
-                    'averageRiskScore': 0.28,
-                    'spend_change_percentage': 15.2,
-                    'spendChange': 15.2,
-                    'high_risk_invoices_count': 12,
-                    'risk_factors_count': 23,
-                    'avg_processing_time': 2.8,
-                    'recent_invoices': [
-                        {'id': 1, 'vendor': 'Morrison & Foerster LLP', 'amount': 75500.0, 'date': '2024-06-22', 'status': 'approved', 'riskScore': 0.15},
-                        {'id': 2, 'vendor': 'Baker McKenzie', 'amount': 42300.0, 'date': '2024-06-21', 'status': 'pending', 'riskScore': 0.35},
-                        {'id': 3, 'vendor': 'Latham & Watkins', 'amount': 89750.0, 'date': '2024-06-20', 'status': 'approved', 'riskScore': 0.22},
-                        {'id': 4, 'vendor': 'White & Case', 'amount': 56200.0, 'date': '2024-06-19', 'status': 'review', 'riskScore': 0.48},
-                        {'id': 5, 'vendor': 'Skadden Arps', 'amount': 38900.0, 'date': '2024-06-18', 'status': 'approved', 'riskScore': 0.19}
-                    ],
-                    'recentInvoices': [
-                        {'id': 1, 'vendor': 'Morrison & Foerster LLP', 'amount': 75500.0, 'date': '2024-06-22', 'status': 'approved', 'riskScore': 0.15},
-                        {'id': 2, 'vendor': 'Baker McKenzie', 'amount': 42300.0, 'date': '2024-06-21', 'status': 'pending', 'riskScore': 0.35},
-                        {'id': 3, 'vendor': 'Latham & Watkins', 'amount': 89750.0, 'date': '2024-06-20', 'status': 'approved', 'riskScore': 0.22},
-                        {'id': 4, 'vendor': 'White & Case', 'amount': 56200.0, 'date': '2024-06-19', 'status': 'review', 'riskScore': 0.48},
-                        {'id': 5, 'vendor': 'Skadden Arps', 'amount': 38900.0, 'date': '2024-06-18', 'status': 'approved', 'riskScore': 0.19}
-                    ],
-                    'top_vendors': [
-                        {'name': 'Morrison & Foerster LLP', 'totalSpend': 485000.0},
-                        {'name': 'Baker McKenzie', 'totalSpend': 368000.0},
-                        {'name': 'Latham & Watkins', 'totalSpend': 295000.0},
-                        {'name': 'White & Case', 'totalSpend': 248000.0},
-                        {'name': 'Skadden Arps', 'totalSpend': 187000.0}
-                    ],
-                    'topVendors': [
-                        {'name': 'Morrison & Foerster LLP', 'totalSpend': 485000.0},
-                        {'name': 'Baker McKenzie', 'totalSpend': 368000.0},
-                        {'name': 'Latham & Watkins', 'totalSpend': 295000.0},
-                        {'name': 'White & Case', 'totalSpend': 248000.0},
-                        {'name': 'Skadden Arps', 'totalSpend': 187000.0}
-                    ]
-                })
+            if not database_available:
+                return jsonify({'error': 'Database not available'}), 500
             
-            # Real database metrics
             session = get_db_session()
             
+            # Calculate real metrics from database
             total_spend = session.query(func.sum(Invoice.amount)).scalar() or 0
             invoice_count = session.query(func.count(Invoice.id)).scalar() or 0
             vendor_count = session.query(func.count(func.distinct(Invoice.vendor_id))).scalar() or 0
             avg_risk_score = session.query(func.avg(Invoice.risk_score)).scalar() or 0
             
+            # Calculate high risk invoices
+            high_risk_count = session.query(func.count(Invoice.id)).filter(Invoice.risk_score > 0.7).scalar() or 0
+            
+            # Get recent invoices
             recent_invoices = session.query(Invoice)\
                 .join(Vendor, Invoice.vendor_id == Vendor.id, isouter=True)\
                 .order_by(desc(Invoice.created_at))\
                 .limit(5)\
                 .all()
             
+            # Get top vendors by spend
             top_vendors = session.query(
                 Vendor.name,
                 func.sum(Invoice.amount).label('total_spend')
@@ -396,23 +479,45 @@ def create_app():
              .limit(5)\
              .all()
             
-            # Process data
+            # Process recent invoices data
             recent_invoices_data = []
             for invoice in recent_invoices:
-                vendor_name = invoice.vendor.name if invoice.vendor else 'Unknown'
+                vendor_name = invoice.vendor.name if invoice.vendor else 'Unknown Vendor'
                 recent_invoices_data.append({
                     'id': invoice.id,
                     'vendor': vendor_name,
-                    'amount': float(invoice.amount),
+                    'amount': float(invoice.amount) if invoice.amount else 0,
                     'date': invoice.date.isoformat() if invoice.date else None,
-                    'status': invoice.status,
+                    'status': invoice.status or 'pending',
                     'riskScore': float(invoice.risk_score) if invoice.risk_score else 0
                 })
             
-            top_vendors_data = [
-                {'name': vendor.name, 'totalSpend': float(vendor.total_spend)}
-                for vendor in top_vendors
-            ]
+            # Process top vendors data  
+            top_vendors_data = []
+            for vendor in top_vendors:
+                top_vendors_data.append({
+                    'name': vendor.name,
+                    'totalSpend': float(vendor.total_spend)
+                })
+            
+            # Calculate spend change (compare to previous period)
+            # For now, we'll calculate based on last 30 days vs previous 30 days
+            from datetime import datetime, timedelta
+            thirty_days_ago = datetime.now() - timedelta(days=30)
+            sixty_days_ago = datetime.now() - timedelta(days=60)
+            
+            recent_spend = session.query(func.sum(Invoice.amount))\
+                .filter(Invoice.date >= thirty_days_ago)\
+                .scalar() or 0
+            
+            previous_spend = session.query(func.sum(Invoice.amount))\
+                .filter(Invoice.date >= sixty_days_ago)\
+                .filter(Invoice.date < thirty_days_ago)\
+                .scalar() or 0
+            
+            spend_change = 0
+            if previous_spend > 0:
+                spend_change = ((recent_spend - previous_spend) / previous_spend) * 100
             
             return jsonify({
                 'total_spend': float(total_spend),
@@ -423,11 +528,11 @@ def create_app():
                 'vendorCount': int(vendor_count),
                 'average_risk_score': float(avg_risk_score),
                 'averageRiskScore': float(avg_risk_score),
-                'spend_change_percentage': 15.2,
-                'spendChange': 15.2,
-                'high_risk_invoices_count': 12,
-                'risk_factors_count': 23,
-                'avg_processing_time': 2.8,
+                'spend_change_percentage': float(spend_change),
+                'spendChange': float(spend_change),
+                'high_risk_invoices_count': int(high_risk_count),
+                'risk_factors_count': int(high_risk_count),  # Simplified for now
+                'avg_processing_time': 2.8,  # This would need separate tracking
                 'recent_invoices': recent_invoices_data,
                 'recentInvoices': recent_invoices_data,
                 'top_vendors': top_vendors_data,
@@ -518,171 +623,58 @@ def create_app():
     
     @app.route('/api/vendors', methods=['GET'])
     def get_vendors():
-        """Get all vendors"""
+        """Get all vendors from real data"""
         try:
-            if not database_available or not Vendor:
-                # Enhanced demo data with complete vendor structure
-                return jsonify([
-                    {
-                        "id": "1", 
-                        "name": "Morrison & Foerster LLP", 
-                        "category": "AmLaw 100", 
-                        "spend": 485000.0, 
-                        "matter_count": 42, 
-                        "avg_rate": 850.0, 
-                        "performance_score": 92.5, 
-                        "diversity_score": 78.2, 
-                        "on_time_rate": 94.8
-                    },
-                    {
-                        "id": "2", 
-                        "name": "Baker McKenzie", 
-                        "category": "Global", 
-                        "spend": 368000.0, 
-                        "matter_count": 28, 
-                        "avg_rate": 780.0, 
-                        "performance_score": 88.3, 
-                        "diversity_score": 82.1, 
-                        "on_time_rate": 91.2
-                    },
-                    {
-                        "id": "3", 
-                        "name": "Latham & Watkins", 
-                        "category": "AmLaw 100", 
-                        "spend": 295000.0, 
-                        "matter_count": 35, 
-                        "avg_rate": 925.0, 
-                        "performance_score": 89.7, 
-                        "diversity_score": 65.8, 
-                        "on_time_rate": 96.3
-                    },
-                    {
-                        "id": "4", 
-                        "name": "White & Case", 
-                        "category": "Global", 
-                        "spend": 248000.0, 
-                        "matter_count": 19, 
-                        "avg_rate": 810.0, 
-                        "performance_score": 85.9, 
-                        "diversity_score": 71.4, 
-                        "on_time_rate": 89.7
-                    },
-                    {
-                        "id": "5", 
-                        "name": "Skadden Arps", 
-                        "category": "AmLaw 50", 
-                        "spend": 187000.0, 
-                        "matter_count": 24, 
-                        "avg_rate": 890.0, 
-                        "performance_score": 91.2, 
-                        "diversity_score": 58.9, 
-                        "on_time_rate": 93.5
-                    },
-                    {
-                        "id": "6", 
-                        "name": "Kirkland & Ellis", 
-                        "category": "AmLaw 10", 
-                        "spend": 142000.0, 
-                        "matter_count": 15, 
-                        "avg_rate": 975.0, 
-                        "performance_score": 94.1, 
-                        "diversity_score": 62.3, 
-                        "on_time_rate": 97.8
-                    },
-                    {
-                        "id": "7", 
-                        "name": "Sullivan & Cromwell", 
-                        "category": "AmLaw 50", 
-                        "spend": 125000.0, 
-                        "matter_count": 12, 
-                        "avg_rate": 1050.0, 
-                        "performance_score": 93.6, 
-                        "diversity_score": 55.7, 
-                        "on_time_rate": 95.2
-                    }
-                ])
+            if not database_available:
+                return jsonify({'error': 'Database not available'}), 500
             
             session = get_db_session()
-            vendors = session.query(Vendor).all()
             
-            # Check if we have meaningful vendor data, otherwise use demo data
-            has_meaningful_data = any(
-                getattr(vendor, 'spend', 0) and getattr(vendor, 'spend', 0) > 0 
-                for vendor in vendors
-            )
+            # Get vendors with calculated metrics
+            vendors_query = session.query(
+                Vendor.id,
+                Vendor.name,
+                Vendor.industry_category.label('category'),
+                func.coalesce(Vendor.total_spend, 0).label('spend'),
+                func.coalesce(Vendor.invoice_count, 0).label('matter_count'),
+                func.coalesce(Vendor.avg_rate, 0).label('avg_rate'),
+                func.coalesce(Vendor.performance_score, 0).label('performance_score'),
+                func.coalesce(Vendor.diversity_score, 0).label('diversity_score'),
+                func.coalesce(Vendor.on_time_rate, 0).label('on_time_rate')
+            ).all()
             
-            if not has_meaningful_data:
-                # Return demo data if database vendors don't have spend data
-                return jsonify([
-                    {
-                        "id": "1", 
-                        "name": "Morrison & Foerster LLP", 
-                        "category": "AmLaw 100", 
-                        "spend": 485000.0, 
-                        "matter_count": 42, 
-                        "avg_rate": 850.0, 
-                        "performance_score": 92.5, 
-                        "diversity_score": 78.2, 
-                        "on_time_rate": 94.8
-                    },
-                    {
-                        "id": "2", 
-                        "name": "Baker McKenzie", 
-                        "category": "Global", 
-                        "spend": 368000.0, 
-                        "matter_count": 28, 
-                        "avg_rate": 780.0, 
-                        "performance_score": 88.3, 
-                        "diversity_score": 82.1, 
-                        "on_time_rate": 91.2
-                    },
-                    {
-                        "id": "3", 
-                        "name": "Latham & Watkins", 
-                        "category": "AmLaw 100", 
-                        "spend": 295000.0, 
-                        "matter_count": 35, 
-                        "avg_rate": 925.0, 
-                        "performance_score": 89.7, 
-                        "diversity_score": 65.8, 
-                        "on_time_rate": 96.3
-                    },
-                    {
-                        "id": "4", 
-                        "name": "White & Case", 
-                        "category": "Global", 
-                        "spend": 248000.0, 
-                        "matter_count": 19, 
-                        "avg_rate": 810.0, 
-                        "performance_score": 85.9, 
-                        "diversity_score": 71.4, 
-                        "on_time_rate": 89.7
-                    },
-                    {
-                        "id": "5", 
-                        "name": "Skadden Arps", 
-                        "category": "AmLaw 50", 
-                        "spend": 187000.0, 
-                        "matter_count": 24, 
-                        "avg_rate": 890.0, 
-                        "performance_score": 91.2, 
-                        "diversity_score": 58.9, 
-                        "on_time_rate": 93.5
-                    }
-                ])
+            # If no vendors exist, return empty array (no demo data)
+            if not vendors_query:
+                return jsonify([])
             
+            # Calculate actual spend from invoices for each vendor
             vendors_data = []
-            for vendor in vendors:
+            for vendor in vendors_query:
+                # Get actual spend from invoices
+                actual_spend = session.query(func.sum(Invoice.amount))\
+                    .filter(Invoice.vendor_id == vendor.id)\
+                    .scalar() or 0
+                
+                # Get actual matter count
+                actual_matter_count = session.query(func.count(func.distinct(Invoice.matter_id)))\
+                    .filter(Invoice.vendor_id == vendor.id)\
+                    .scalar() or 0
+                
+                # Calculate average rate from invoices
+                actual_avg_rate = session.query(func.avg(Invoice.rate))\
+                    .filter(Invoice.vendor_id == vendor.id)\
+                    .scalar() or 0
+                
                 vendors_data.append({
                     'id': str(vendor.id),
                     'name': vendor.name,
-                    'category': getattr(vendor, 'industry_category', 'Unknown'),
-                    'spend': float(getattr(vendor, 'spend', 0) or 0),
-                    'matter_count': int(getattr(vendor, 'matter_count', 0) or 0),
-                    'avg_rate': float(getattr(vendor, 'avg_rate', 0) or 0),
-                    'performance_score': float(getattr(vendor, 'performance_score', 0) or 0),
-                    'diversity_score': float(getattr(vendor, 'diversity_score', 0) or 0),
-                    'on_time_rate': float(getattr(vendor, 'on_time_rate', 0) or 0)
+                    'category': vendor.category or 'Unknown',
+                    'spend': float(actual_spend),
+                    'matter_count': int(actual_matter_count),
+                    'avg_rate': float(actual_avg_rate),
+                    'performance_score': float(vendor.performance_score),
+                    'diversity_score': float(vendor.diversity_score),
+                    'on_time_rate': float(vendor.on_time_rate)
                 })
             
             return jsonify(vendors_data)
@@ -698,37 +690,44 @@ def create_app():
     
     @app.route('/api/invoices', methods=['GET'])
     def get_invoices():
-        """Get all invoices"""
+        """Get all invoices from real data"""
         try:
-            if not database_available or not Invoice:
-                # Enhanced demo data
-                return jsonify([
-                    {"id": 1, "vendor": "Morrison & Foerster LLP", "amount": 75500, "status": "approved", "date": "2024-06-22", "riskScore": 0.15},
-                    {"id": 2, "vendor": "Baker McKenzie", "amount": 42300, "status": "pending", "date": "2024-06-21", "riskScore": 0.35},
-                    {"id": 3, "vendor": "Latham & Watkins", "amount": 89750, "status": "approved", "date": "2024-06-20", "riskScore": 0.22},
-                    {"id": 4, "vendor": "White & Case", "amount": 56200, "status": "review", "date": "2024-06-19", "riskScore": 0.48},
-                    {"id": 5, "vendor": "Skadden Arps", "amount": 38900, "status": "approved", "date": "2024-06-18", "riskScore": 0.19},
-                    {"id": 6, "vendor": "Kirkland & Ellis", "amount": 67800, "status": "approved", "date": "2024-06-17", "riskScore": 0.12},
-                    {"id": 7, "vendor": "Sullivan & Cromwell", "amount": 94500, "status": "pending", "date": "2024-06-16", "riskScore": 0.28}
-                ])
+            if not database_available:
+                return jsonify({'error': 'Database not available'}), 500
             
             session = get_db_session()
+            
+            # Get invoices with joins to vendors and matters
             invoices = session.query(Invoice)\
                 .join(Vendor, Invoice.vendor_id == Vendor.id, isouter=True)\
+                .join(Matter, Invoice.matter_id == Matter.id, isouter=True)\
                 .order_by(desc(Invoice.created_at))\
                 .limit(100)\
                 .all()
             
             invoices_data = []
             for invoice in invoices:
-                vendor_name = invoice.vendor.name if invoice.vendor else 'Unknown'
+                vendor_name = invoice.vendor.name if invoice.vendor else 'Unknown Vendor'
+                matter_name = invoice.matter.name if invoice.matter else 'Unknown Matter'
+                
                 invoices_data.append({
                     'id': invoice.id,
+                    'invoice_number': invoice.invoice_number,
                     'vendor': vendor_name,
-                    'amount': float(invoice.amount),
-                    'status': invoice.status,
+                    'vendor_id': invoice.vendor_id,
+                    'matter': matter_name,
+                    'matter_id': invoice.matter_id,
+                    'amount': float(invoice.amount) if invoice.amount else 0,
+                    'status': invoice.status or 'pending',
                     'date': invoice.date.isoformat() if invoice.date else None,
-                    'riskScore': float(invoice.risk_score) if invoice.risk_score else 0
+                    'description': invoice.description,
+                    'practice_area': invoice.practice_area,
+                    'attorney_name': invoice.attorney_name,
+                    'total_hours': float(invoice.total_hours) if invoice.total_hours else 0,
+                    'rate': float(invoice.rate) if invoice.rate else 0,
+                    'riskScore': float(invoice.risk_score) if invoice.risk_score else 0,
+                    'processed': invoice.processed,
+                    'created_at': invoice.created_at.isoformat() if invoice.created_at else None
                 })
             
             return jsonify(invoices_data)
