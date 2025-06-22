@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Doughnut, Bar, Line } from 'react-chartjs-2';
 import { pdfService } from '../services/pdfService';
 import LegalAnalytics from '../components/LegalAnalytics';
+import MLPoweredAnalytics from '../components/MLPoweredAnalytics';
 import ErrorBoundary from '../components/ErrorBoundary';
 import '../utils/chartConfig';
 
@@ -15,6 +16,7 @@ const Analytics: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [aiInsights, setAiInsights] = useState<string[]>([]);
+  const [activeView, setActiveView] = useState<'traditional' | 'ml'>('ml'); // Default to ML view
 
   const { type = '', dateRange } = location.state || {};
 
@@ -404,6 +406,71 @@ const Analytics: React.FC = () => {
       )}>
         <LegalAnalytics />
       </ErrorBoundary>
+
+      {/* ML-Powered Analytics Component */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">ML-Powered Analytics</h2>
+          <div className="flex items-center space-x-2">
+            <button 
+              onClick={() => setActiveView('traditional')}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                activeView === 'traditional' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Traditional
+            </button>
+            <button 
+              onClick={() => setActiveView('ml')}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                activeView === 'ml' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              ML-Powered
+            </button>
+          </div>
+        </div>
+        <div className="space-y-4">
+          {activeView === 'traditional' && (
+            <div className="text-center py-10">
+              <p className="text-gray-500">Traditional analytics view is currently unavailable.</p>
+              <button 
+                onClick={() => {
+                  // Force component re-render instead of full page reload
+                  window.location.hash = `#retry-traditional-${Date.now()}`;
+                  setTimeout(() => window.location.hash = '', 100);
+                }} 
+                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Retry Traditional Analytics
+              </button>
+            </div>
+          )}
+
+          {activeView === 'ml' && (
+            <ErrorBoundary fallback={({ error }) => (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
+                  <p className="text-gray-600">ML-powered analytics temporarily unavailable</p>
+                  <button 
+                    onClick={() => {
+                      // Force component re-render instead of full page reload
+                      window.location.hash = `#retry-ml-${Date.now()}`;
+                      setTimeout(() => window.location.hash = '', 100);
+                    }} 
+                    className="mt-2 text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Try again
+                  </button>
+                </div>
+              </div>
+            )}>
+              <MLPoweredAnalytics />
+            </ErrorBoundary>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
