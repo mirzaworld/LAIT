@@ -312,7 +312,11 @@ const Analytics: React.FC = () => {
                   <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
                   <p className="text-gray-600">Chart temporarily unavailable</p>
                   <button 
-                    onClick={() => window.location.reload()} 
+                    onClick={() => {
+                      // Force component re-render instead of full page reload
+                      window.location.hash = `#retry-${Date.now()}`;
+                      setTimeout(() => window.location.hash = '', 100);
+                    }} 
                     className="mt-2 text-blue-600 hover:text-blue-800 text-sm"
                   >
                     Try again
@@ -335,7 +339,11 @@ const Analytics: React.FC = () => {
                   <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
                   <p className="text-gray-600">Chart temporarily unavailable</p>
                   <button 
-                    onClick={() => window.location.reload()} 
+                    onClick={() => {
+                      // Force component re-render instead of full page reload
+                      window.location.hash = `#retry-trends-${Date.now()}`;
+                      setTimeout(() => window.location.hash = '', 100);
+                    }} 
                     className="mt-2 text-blue-600 hover:text-blue-800 text-sm"
                   >
                     Try again
@@ -382,7 +390,11 @@ const Analytics: React.FC = () => {
               Unable to load legal analytics data. This may be due to external service connectivity.
             </p>
             <button 
-              onClick={() => window.location.reload()} 
+              onClick={() => {
+                // Force component re-render instead of full page reload
+                window.location.hash = `#retry-legal-${Date.now()}`;
+                setTimeout(() => window.location.hash = '', 100);
+              }} 
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               Retry

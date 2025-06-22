@@ -43,10 +43,18 @@ const DefaultErrorFallback: React.FC<{ error?: Error }> = ({ error }) => (
       {error?.message || 'An unexpected error occurred while loading this component.'}
     </p>
     <button
-      onClick={() => window.location.reload()}
+      onClick={() => {
+        // Try to recover by forcing a re-render
+        window.location.hash = `#error-recovery-${Date.now()}`;
+        setTimeout(() => {
+          window.location.hash = '';
+          // If that doesn't work, allow reload
+          setTimeout(() => window.location.reload(), 2000);
+        }, 100);
+      }}
       className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
     >
-      Reload Page
+      Recover
     </button>
   </div>
 );

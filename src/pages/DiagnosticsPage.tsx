@@ -1,5 +1,7 @@
 import React from 'react';
 import ApiDiagnostics from '../components/ApiDiagnostics';
+import MLModelStatusPanel from '../components/MLModelStatusPanel';
+import ComprehensiveSystemTest from '../components/ComprehensiveSystemTest';
 
 const DiagnosticsPage: React.FC = () => {
   return (
@@ -7,6 +9,12 @@ const DiagnosticsPage: React.FC = () => {
       <h1 className="text-2xl font-bold mb-6">LAIT System Diagnostics</h1>
       
       <div className="space-y-6">
+        {/* Comprehensive System Test */}
+        <ComprehensiveSystemTest />
+        
+        {/* ML Models Status Panel */}
+        <MLModelStatusPanel />
+        
         <ApiDiagnostics />
         
         <div className="bg-white p-6 rounded-lg shadow-md">
