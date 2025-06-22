@@ -44,12 +44,13 @@ const DefaultErrorFallback: React.FC<{ error?: Error }> = ({ error }) => (
     </p>
     <button
       onClick={() => {
-        // Try to recover by forcing a re-render
+        // Try to recover by forcing a re-render without page reload
         window.location.hash = `#error-recovery-${Date.now()}`;
         setTimeout(() => {
           window.location.hash = '';
-          // If that doesn't work, allow reload
-          setTimeout(() => window.location.reload(), 2000);
+          // Force component re-render by updating a state variable
+          const event = new CustomEvent('component-retry', { detail: { timestamp: Date.now() } });
+          window.dispatchEvent(event);
         }, 100);
       }}
       className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
