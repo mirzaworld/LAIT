@@ -17,7 +17,7 @@ module.exports = {
   parserOptions: {
     ecmaVersion: 'latest',
     sourceType: 'module',
-    project: ['./tsconfig.json'],
+    project: ['./tsconfig.json', './tsconfig.node.json'],
     ecmaFeatures: {
       jsx: true
     }
@@ -36,7 +36,6 @@ module.exports = {
       'warn',
       { allowConstantExport: true },
     ],
-    'react/react-in-jsx-scope': 'off',
-    'react/prop-types': 'off'
+    'react/react-in-jsx-scope': 'off'
   }
 };

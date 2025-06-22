@@ -58,6 +58,15 @@ class DocketInfo:
     jury_demand: str
     jurisdiction_type: str
 
+@dataclass
+class LawFirmAnalysis:
+    """Law firm analysis results"""
+    attorneys: List[AttorneyInfo]
+    total_cases: int
+    practice_areas: List[str]
+    success_metrics: Dict[str, Any]
+    recent_cases: List[Dict[str, Any]]
+
 class CourtListenerClient:
     """Client for interacting with CourtListener API"""
     
@@ -76,33 +85,26 @@ class CourtListenerClient:
         self.min_request_interval = 1.0  # 1 second between requests for free tier
     
     def _make_request(self, endpoint: str, params: Dict = None) -> Dict:
-        """Make rate-limited request to CourtListener API"""
-        # Simple rate limiting
-        current_time = datetime.now().timestamp()
-        time_since_last = current_time - self.last_request_time
-        if time_since_last < self.min_request_interval:
-            time.sleep(self.min_request_interval - time_since_last)
-        
+        """Make a request to the CourtListener API"""
         url = urljoin(self.base_url, endpoint)
         
         try:
-            response = self.session.get(url, params=params)
+            response = self.session.get(url, params=params or {}, timeout=10)
             response.raise_for_status()
-            self.last_request_time = datetime.now().timestamp()
             return response.json()
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error making request to {url}: {str(e)}")
-            raise
+            logger.error(f"CourtListener API request failed: {str(e)}")
+            return {'results': [], 'count': 0}
 
     def search_courts(self, jurisdiction: str = None, level: str = None) -> List[Dict]:
-        """Search for courts by jurisdiction and level"""
+        """Search for courts"""
         params = {'format': 'json'}
         
         if jurisdiction:
             params['jurisdiction'] = jurisdiction
         if level:
-            params['position'] = level
-            
+            params['level'] = level
+        
         try:
             data = self._make_request('courts/', params)
             return data.get('results', [])
@@ -160,12 +162,12 @@ class CourtListenerClient:
             return []
 
     def get_docket_entries(self, docket_id: int, limit: int = 50) -> List[Dict]:
-        """Get docket entries (filings) for a specific case"""
+        """Get docket entries for a specific case"""
         params = {
             'docket': docket_id,
             'format': 'json',
             'page_size': limit,
-            'ordering': '-date_filed'
+            'ordering': '-date_created'
         }
         
         try:
@@ -175,23 +177,20 @@ class CourtListenerClient:
             logger.error(f"Error getting docket entries: {str(e)}")
             return []
 
-    def search_opinions(self, query: str, court: str = None, 
-                       date_filed_after: str = None, limit: int = 20) -> List[Dict]:
-        """Search for court opinions"""
+    def search_opinions(self, query: str, court: str = None, limit: int = 20) -> List[Dict]:
+        """Search for legal opinions"""
         params = {
             'q': query,
+            'type': 'o',  # Opinions
             'format': 'json',
-            'page_size': limit,
-            'ordering': '-date_filed'
+            'page_size': limit
         }
         
         if court:
             params['court'] = court
-        if date_filed_after:
-            params['date_filed__gte'] = date_filed_after
-            
+        
         try:
-            data = self._make_request('opinions/', params)
+            data = self._make_request('search/', params)
             return data.get('results', [])
         except Exception as e:
             logger.error(f"Error searching opinions: {str(e)}")
@@ -280,7 +279,7 @@ class CourtListenerClient:
             
             for attorney_data in data.get('results', []):
                 attorney = AttorneyInfo(
-                    id=attorney_data.get('id'),
+                    id=attorney_data.get('id', 0),
                     name=attorney_data.get('name', ''),
                     bar_admissions=attorney_data.get('bar_admissions', []),
                     organizations=[org.get('name', '') for org in attorney_data.get('organizations', [])],
@@ -313,10 +312,10 @@ class CourtListenerClient:
                 if 'docket' in party_data:
                     docket = party_data['docket']
                     case_info = {
-                        'case_id': docket.get('id'),
+                        'case_id': docket.get('id', ''),
                         'case_name': docket.get('case_name', ''),
                         'court': docket.get('court', {}).get('full_name', ''),
-                        'date_filed': docket.get('date_filed'),
+                        'date_filed': docket.get('date_filed', ''),
                         'case_type': docket.get('nature_of_suit', ''),
                         'party_type': party_data.get('party_type', ''),
                         'status': docket.get('docket_number', '')
@@ -328,63 +327,50 @@ class CourtListenerClient:
             logger.error(f"Error getting attorney case history: {str(e)}")
             return []
     
-    def analyze_law_firm(self, firm_name: str) -> LawFirmProfile:
-        """Analyze a law firm's profile and performance"""
+    def analyze_law_firm(self, firm_name: str) -> LawFirmAnalysis:
+        """Analyze a law firm's performance and track record"""
         try:
             # Search for attorneys at the firm
             attorneys = self.search_attorneys('', firm_name)
             
-            if not attorneys:
-                return LawFirmProfile(
-                    name=firm_name,
-                    attorneys=[],
-                    total_cases=0,
-                    practice_areas=[],
-                    courts_appeared=[],
-                    recent_cases=[],
-                    success_metrics={}
-                )
-            
-            # Aggregate data from all attorneys
-            all_cases = []
+            # Get case history for the firm
+            total_cases = 0
             practice_areas = set()
-            courts_appeared = set()
+            recent_cases = []
             
-            for attorney in attorneys:
-                cases = self.get_attorney_case_history(attorney.id, 50)
-                all_cases.extend(cases)
-                attorney.case_count = len(cases)
+            for attorney in attorneys[:5]:  # Analyze top 5 attorneys
+                cases = self.get_attorney_case_history(attorney.id, 20)
+                total_cases += len(cases)
                 
-                # Extract practice areas from case types
                 for case in cases:
                     if case.get('case_type'):
                         practice_areas.add(case['case_type'])
-                    if case.get('court'):
-                        courts_appeared.add(case['court'])
+                    recent_cases.append(case)
             
             # Calculate success metrics (simplified)
-            success_metrics = self._calculate_success_metrics(all_cases)
+            success_metrics = {
+                'total_attorneys': len(attorneys),
+                'total_cases': total_cases,
+                'avg_cases_per_attorney': total_cases / len(attorneys) if attorneys else 0,
+                'practice_areas_count': len(practice_areas)
+            }
             
-            return LawFirmProfile(
-                name=firm_name,
+            return LawFirmAnalysis(
                 attorneys=attorneys,
-                total_cases=len(all_cases),
+                total_cases=total_cases,
                 practice_areas=list(practice_areas),
-                courts_appeared=list(courts_appeared),
-                recent_cases=all_cases[:20],  # Most recent 20 cases
-                success_metrics=success_metrics
+                success_metrics=success_metrics,
+                recent_cases=recent_cases[:10]
             )
             
         except Exception as e:
-            logger.error(f"Error analyzing law firm {firm_name}: {str(e)}")
-            return LawFirmProfile(
-                name=firm_name,
+            logger.error(f"Error analyzing law firm: {str(e)}")
+            return LawFirmAnalysis(
                 attorneys=[],
                 total_cases=0,
                 practice_areas=[],
-                courts_appeared=[],
-                recent_cases=[],
-                success_metrics={}
+                success_metrics={},
+                recent_cases=[]
             )
     
     def get_judge_information(self, judge_name: str) -> Dict:
@@ -436,7 +422,7 @@ class CourtListenerClient:
                 case_info = {
                     'case_name': result.get('caseName', ''),
                     'court': result.get('court', ''),
-                    'date_filed': result.get('dateFiled'),
+                    'date_filed': result.get('dateFiled', ''),
                     'citation': result.get('citation', []),
                     'snippet': result.get('snippet', ''),
                     'relevance_score': result.get('score', 0)

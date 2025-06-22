@@ -9,7 +9,9 @@ import re
 import nltk
 import spacy
 from datetime import datetime
-from backend.db.database import get_db_session, Invoice, LineItem, RiskFactor, Vendor
+from db.database import get_db_session, Invoice, LineItem, RiskFactor, Vendor
+from models.db_models import Invoice, LineItem
+from utils.ml_preprocessing import extract_invoice_features, preprocess_text, scale_features
 
 class InvoiceAnalyzer:
     def __init__(self):
@@ -279,9 +281,9 @@ class InvoiceAnalyzer:
     
     def retrain_model(self):
         """Retrain models with all available data"""
-        from backend.db.database import get_db_session
-        from backend.models.db_models import Invoice, LineItem
-        from backend.utils.ml_preprocessing import extract_invoice_features, preprocess_text, scale_features
+        from db.database import get_db_session
+        from models.db_models import Invoice, LineItem
+        from utils.ml_preprocessing import extract_invoice_features, preprocess_text, scale_features
         import pandas as pd
         
         session = get_db_session()
@@ -366,9 +368,9 @@ class InvoiceAnalyzer:
 
     def _train_initial_models(self):
         """Train the initial models with historical data if available"""
-        from backend.db.database import get_db_session
-        from backend.models.db_models import Invoice, LineItem
-        from backend.utils.ml_preprocessing import extract_invoice_features, preprocess_text
+        from db.database import get_db_session
+        from models.db_models import Invoice, LineItem
+        from utils.ml_preprocessing import extract_invoice_features, preprocess_text
         import pandas as pd
         
         session = get_db_session()

@@ -1,8 +1,8 @@
 from flask import Blueprint, jsonify, request
 from sqlalchemy import func, desc, asc, and_, or_, text
-from backend.db.database import get_db_session
-from backend.models.db_models import Vendor, Invoice, LineItem
-from backend.dev_auth import development_jwt_required
+from db.database import get_db_session
+from models.db_models import Vendor, Invoice, LineItem
+from dev_auth import development_jwt_required
 from datetime import datetime, timedelta
 import logging
 

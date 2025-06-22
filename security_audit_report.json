@@ -1,0 +1,107 @@
+{
+  "timestamp": "2025-06-22",
+  "overall_score": 88.57142857142857,
+  "critical_issues_count": 0,
+  "high_issues_count": 2,
+  "medium_issues_count": 1,
+  "low_issues_count": 4,
+  "detailed_results": {
+    "authentication": {
+      "score": 80,
+      "issues": [
+        "No token expiration found in backend/auth.py",
+        "No token expiration found in backend/routes/auth.py"
+      ],
+      "recommendations": [
+        "Use environment variables for secrets",
+        "Implement proper token expiration",
+        "Add rate limiting for auth endpoints",
+        "Use HTTPS in production"
+      ]
+    },
+    "authorization": {
+      "score": 85,
+      "issues": [
+        "Missing role checks in backend/routes/analytics.py"
+      ],
+      "recommendations": [
+        "Implement proper role-based access control",
+        "Add JWT validation to all protected endpoints",
+        "Use principle of least privilege",
+        "Audit access logs regularly"
+      ]
+    },
+    "input_validation": {
+      "score": 80,
+      "issues": [
+        "Missing input validation in backend/routes/analytics.py",
+        "Missing input validation in backend/routes/vendors.py"
+      ],
+      "recommendations": [
+        "Use parameterized queries",
+        "Validate all user inputs",
+        "Implement input sanitization",
+        "Use ORM for database operations"
+      ]
+    },
+    "data_protection": {
+      "score": 100,
+      "issues": [],
+      "recommendations": [
+        "Use environment variables for sensitive data",
+        "Encrypt data at rest",
+        "Implement proper logging without sensitive data",
+        "Use HTTPS for data transmission"
+      ]
+    },
+    "api_security": {
+      "score": 85,
+      "issues": [
+        "Overly permissive CORS configuration"
+      ],
+      "recommendations": [
+        "Implement proper CORS policy",
+        "Add rate limiting",
+        "Use API versioning",
+        "Implement request validation"
+      ]
+    },
+    "dependencies": {
+      "score": 80,
+      "issues": [
+        "27 outdated packages found"
+      ],
+      "recommendations": [
+        "Update outdated packages",
+        "Use dependency scanning tools",
+        "Pin dependency versions",
+        "Regular security updates"
+      ]
+    },
+    "configuration": {
+      "score": 110,
+      "issues": [],
+      "recommendations": [
+        "Disable debug mode in production",
+        "Use secure headers",
+        "Implement proper error handling",
+        "Use environment-specific configurations"
+      ]
+    },
+    "overall_score": 88.57142857142857,
+    "critical_issues": [],
+    "high_issues": [
+      "input_validation: Missing input validation in backend/routes/analytics.py",
+      "input_validation: Missing input validation in backend/routes/vendors.py"
+    ],
+    "medium_issues": [
+      "dependencies: 27 outdated packages found"
+    ],
+    "low_issues": [
+      "authentication: No token expiration found in backend/auth.py",
+      "authentication: No token expiration found in backend/routes/auth.py",
+      "authorization: Missing role checks in backend/routes/analytics.py",
+      "api_security: Overly permissive CORS configuration"
+    ]
+  }
+}

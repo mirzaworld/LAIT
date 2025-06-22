@@ -1,0 +1,71 @@
+{
+  "timestamp": "2025-06-22T21:42:18.089Z",
+  "summary": {
+    "total": 12,
+    "passed": 0,
+    "failed": 12,
+    "successRate": 0
+  },
+  "details": [
+    {
+      "name": "Backend Health Check",
+      "status": "FAILED",
+      "error": "timeout of 30000ms exceeded"
+    },
+    {
+      "name": "Frontend Health Check",
+      "status": "FAILED",
+      "error": "Request failed with status code 404"
+    },
+    {
+      "name": "Legal Intelligence API",
+      "status": "FAILED",
+      "error": "timeout of 30000ms exceeded"
+    },
+    {
+      "name": "ML Models API",
+      "status": "FAILED",
+      "error": "timeout of 30000ms exceeded"
+    },
+    {
+      "name": "Analytics API",
+      "status": "FAILED",
+      "error": "timeout of 30000ms exceeded"
+    },
+    {
+      "name": "Vendor API",
+      "status": "FAILED",
+      "error": "timeout of 30000ms exceeded"
+    },
+    {
+      "name": "Invoice API",
+      "status": "FAILED",
+      "error": "timeout of 30000ms exceeded"
+    },
+    {
+      "name": "API Performance",
+      "status": "FAILED",
+      "error": "timeout of 30000ms exceeded"
+    },
+    {
+      "name": "ML Model Performance",
+      "status": "FAILED",
+      "error": "timeout of 30000ms exceeded"
+    },
+    {
+      "name": "Error Handling",
+      "status": "FAILED",
+      "error": "Unexpected error handling: timeout of 30000ms exceeded"
+    },
+    {
+      "name": "Data Consistency",
+      "status": "FAILED",
+      "error": "timeout of 30000ms exceeded"
+    },
+    {
+      "name": "Frontend-Backend Integration",
+      "status": "FAILED",
+      "error": "timeout of 30000ms exceeded"
+    }
+  ]
+}

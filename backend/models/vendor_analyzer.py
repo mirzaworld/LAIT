@@ -6,7 +6,7 @@ from sklearn.ensemble import IsolationForest
 import joblib
 import os
 from datetime import datetime, timedelta
-from backend.db.database import get_db_session
+from db.database import get_db_session
 
 class VendorAnalyzer:
     def __init__(self):
@@ -446,7 +446,7 @@ class VendorAnalyzer:
     
     def retrain_model(self):
         """Retrain the vendor clustering model with all available data"""
-        from backend.db.database import get_db_session
+        from db.database import get_db_session
         from models.db_models import Invoice, Vendor
         import pandas as pd
         from sqlalchemy import func

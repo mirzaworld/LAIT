@@ -3,11 +3,11 @@ Invoice routes: upload, list, get, file download
 """
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from backend.db.database import get_db_session
-from backend.models.db_models import Invoice as DbInvoice, Vendor
-from backend.services.s3_service import S3Service
-from backend.services.pdf_parser_service import PDFParserService
-from backend.dev_auth import development_jwt_required
+from db.database import get_db_session
+from models.db_models import Invoice as DbInvoice, Vendor
+from services.s3_service import S3Service
+from services.pdf_parser_service import PDFParserService
+from dev_auth import development_jwt_required
 import tempfile
 import os
 

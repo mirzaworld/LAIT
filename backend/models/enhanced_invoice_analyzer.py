@@ -10,6 +10,7 @@ import json
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 import logging
+from db.database import get_db_session, Invoice, LineItem, RiskFactor, Vendor
 
 # Setup logging
 logger = logging.getLogger(__name__)

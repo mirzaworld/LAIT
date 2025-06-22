@@ -1,0 +1,37 @@
+{
+  "timestamp": "2025-06-22 17:52:13",
+  "summary": {
+    "api_success_rate": 0,
+    "ml_success_rate": 0,
+    "load_success_rate": 0,
+    "avg_api_response_time": 0,
+    "avg_ml_response_time": 0,
+    "load_throughput": 0
+  },
+  "detailed_results": {
+    "api_tests": {
+      "error": "No successful API requests"
+    },
+    "ml_tests": {
+      "error": "No successful ML model requests"
+    },
+    "load_tests": {
+      "error": "No successful requests under load"
+    },
+    "memory_usage": {
+      "rss_mb": 37.765625,
+      "vms_mb": 401116.546875,
+      "percent": 0.2048916286892361,
+      "available_memory_mb": 3422.6875,
+      "total_memory_mb": 18432.0
+    },
+    "system_info": {
+      "cpu_count": 11,
+      "cpu_percent": 34.8,
+      "memory_percent": 81.4,
+      "disk_usage_percent": 8.7,
+      "platform": "Darwin",
+      "python_version": "3.13.5 (main, Jun 11 2025, 15:36:57) [Clang 17.0.0 (clang-1700.0.13.3)]"
+    }
+  }
+}

@@ -6,36 +6,53 @@ from flask import Flask
 from flask.testing import FlaskClient
 import jwt
 from typing import Generator, Dict, Any
+import tempfile
 
-from app import create_app
-from models import db, User, Invoice, Vendor
+from enhanced_app import create_app
+from db.database import init_db, get_db_session
+from models.db_models import User, Invoice, Vendor, Matter, LineItem
 from services.s3_service import S3Service
 
 @pytest.fixture
-def app() -> Flask:
-    """Create and configure a Flask application for testing."""
-    app = create_app('testing')
+def app():
+    """Create and configure a new app instance for each test."""
+    # Create a temporary file to isolate the database for each test
+    db_fd, db_path = tempfile.mkstemp()
+    
+    app = create_app()
     app.config.update({
         'TESTING': True,
-        'SQLALCHEMY_DATABASE_URI': 'postgresql://postgres:postgres@localhost:5432/test_db',
-        'JWT_SECRET_KEY': 'test-secret',
-        'S3_BUCKET': 'test-bucket'
+        'DATABASE': db_path,
+        'WTF_CSRF_ENABLED': False
     })
-    return app
+
+    # Create the database and load test data
+    with app.app_context():
+        init_db()
+        
+    yield app
+
+    # Clean up the temporary database
+    os.close(db_fd)
+    os.unlink(db_path)
 
 @pytest.fixture
-def client(app: Flask) -> FlaskClient:
-    """Create a test client."""
+def client(app):
+    """Create a test client for the app."""
     return app.test_client()
 
 @pytest.fixture
-def db_session(app: Flask) -> Generator:
-    """Create database tables and provide a session."""
+def runner(app):
+    """Create a test runner for the app's Click commands."""
+    return app.test_cli_runner()
+
+@pytest.fixture
+def session(app):
+    """Create a database session for testing."""
     with app.app_context():
-        db.create_all()
-        yield db.session
-        db.session.remove()
-        db.drop_all()
+        session = get_db_session()
+        yield session
+        session.close()
 
 @pytest.fixture
 def admin_token(app: Flask) -> str:
@@ -78,7 +95,7 @@ def mock_s3(monkeypatch) -> None:
     monkeypatch.setattr(S3Service, 'generate_presigned_url', mock_generate_presigned_url)
 
 @pytest.fixture
-def sample_vendor(db_session) -> Vendor:
+def sample_vendor(session) -> Vendor:
     """Create a sample vendor."""
     vendor = Vendor(
         name='Test Law Firm',
@@ -86,12 +103,12 @@ def sample_vendor(db_session) -> Vendor:
         diversity_score=80,
         success_rate=0.85
     )
-    db_session.add(vendor)
-    db_session.commit()
+    session.add(vendor)
+    session.commit()
     return vendor
 
 @pytest.fixture
-def sample_invoice(db_session, sample_vendor) -> Invoice:
+def sample_invoice(session, sample_vendor) -> Invoice:
     """Create a sample invoice."""
     invoice = Invoice(
         vendor_id=sample_vendor.id,
@@ -103,6 +120,6 @@ def sample_invoice(db_session, sample_vendor) -> Invoice:
         pdf_s3_key='test-invoice.pdf',
         uploaded_by=1
     )
-    db_session.add(invoice)
-    db_session.commit()
+    session.add(invoice)
+    session.commit()
     return invoice

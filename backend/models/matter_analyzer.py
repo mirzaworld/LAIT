@@ -7,6 +7,8 @@ import joblib
 import os
 from datetime import datetime, timedelta, date
 import logging
+from db.database import get_db_session
+from models.db_models import Matter, Invoice
 
 class MatterAnalyzer:
     def __init__(self):
