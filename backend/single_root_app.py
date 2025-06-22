@@ -521,27 +521,168 @@ def create_app():
         """Get all vendors"""
         try:
             if not database_available or not Vendor:
-                # Enhanced demo data
+                # Enhanced demo data with complete vendor structure
                 return jsonify([
-                    {"id": 1, "name": "Morrison & Foerster LLP", "industry_category": "AmLaw 100", "status": "active", "spend": 485000},
-                    {"id": 2, "name": "Baker McKenzie", "industry_category": "Global", "status": "active", "spend": 368000},
-                    {"id": 3, "name": "Latham & Watkins", "industry_category": "AmLaw 100", "status": "active", "spend": 295000},
-                    {"id": 4, "name": "White & Case", "industry_category": "Global", "status": "active", "spend": 248000},
-                    {"id": 5, "name": "Skadden Arps", "industry_category": "AmLaw 50", "status": "active", "spend": 187000},
-                    {"id": 6, "name": "Kirkland & Ellis", "industry_category": "AmLaw 10", "status": "active", "spend": 142000},
-                    {"id": 7, "name": "Sullivan & Cromwell", "industry_category": "AmLaw 50", "status": "active", "spend": 125000}
+                    {
+                        "id": "1", 
+                        "name": "Morrison & Foerster LLP", 
+                        "category": "AmLaw 100", 
+                        "spend": 485000.0, 
+                        "matter_count": 42, 
+                        "avg_rate": 850.0, 
+                        "performance_score": 92.5, 
+                        "diversity_score": 78.2, 
+                        "on_time_rate": 94.8
+                    },
+                    {
+                        "id": "2", 
+                        "name": "Baker McKenzie", 
+                        "category": "Global", 
+                        "spend": 368000.0, 
+                        "matter_count": 28, 
+                        "avg_rate": 780.0, 
+                        "performance_score": 88.3, 
+                        "diversity_score": 82.1, 
+                        "on_time_rate": 91.2
+                    },
+                    {
+                        "id": "3", 
+                        "name": "Latham & Watkins", 
+                        "category": "AmLaw 100", 
+                        "spend": 295000.0, 
+                        "matter_count": 35, 
+                        "avg_rate": 925.0, 
+                        "performance_score": 89.7, 
+                        "diversity_score": 65.8, 
+                        "on_time_rate": 96.3
+                    },
+                    {
+                        "id": "4", 
+                        "name": "White & Case", 
+                        "category": "Global", 
+                        "spend": 248000.0, 
+                        "matter_count": 19, 
+                        "avg_rate": 810.0, 
+                        "performance_score": 85.9, 
+                        "diversity_score": 71.4, 
+                        "on_time_rate": 89.7
+                    },
+                    {
+                        "id": "5", 
+                        "name": "Skadden Arps", 
+                        "category": "AmLaw 50", 
+                        "spend": 187000.0, 
+                        "matter_count": 24, 
+                        "avg_rate": 890.0, 
+                        "performance_score": 91.2, 
+                        "diversity_score": 58.9, 
+                        "on_time_rate": 93.5
+                    },
+                    {
+                        "id": "6", 
+                        "name": "Kirkland & Ellis", 
+                        "category": "AmLaw 10", 
+                        "spend": 142000.0, 
+                        "matter_count": 15, 
+                        "avg_rate": 975.0, 
+                        "performance_score": 94.1, 
+                        "diversity_score": 62.3, 
+                        "on_time_rate": 97.8
+                    },
+                    {
+                        "id": "7", 
+                        "name": "Sullivan & Cromwell", 
+                        "category": "AmLaw 50", 
+                        "spend": 125000.0, 
+                        "matter_count": 12, 
+                        "avg_rate": 1050.0, 
+                        "performance_score": 93.6, 
+                        "diversity_score": 55.7, 
+                        "on_time_rate": 95.2
+                    }
                 ])
             
             session = get_db_session()
             vendors = session.query(Vendor).all()
             
+            # Check if we have meaningful vendor data, otherwise use demo data
+            has_meaningful_data = any(
+                getattr(vendor, 'spend', 0) and getattr(vendor, 'spend', 0) > 0 
+                for vendor in vendors
+            )
+            
+            if not has_meaningful_data:
+                # Return demo data if database vendors don't have spend data
+                return jsonify([
+                    {
+                        "id": "1", 
+                        "name": "Morrison & Foerster LLP", 
+                        "category": "AmLaw 100", 
+                        "spend": 485000.0, 
+                        "matter_count": 42, 
+                        "avg_rate": 850.0, 
+                        "performance_score": 92.5, 
+                        "diversity_score": 78.2, 
+                        "on_time_rate": 94.8
+                    },
+                    {
+                        "id": "2", 
+                        "name": "Baker McKenzie", 
+                        "category": "Global", 
+                        "spend": 368000.0, 
+                        "matter_count": 28, 
+                        "avg_rate": 780.0, 
+                        "performance_score": 88.3, 
+                        "diversity_score": 82.1, 
+                        "on_time_rate": 91.2
+                    },
+                    {
+                        "id": "3", 
+                        "name": "Latham & Watkins", 
+                        "category": "AmLaw 100", 
+                        "spend": 295000.0, 
+                        "matter_count": 35, 
+                        "avg_rate": 925.0, 
+                        "performance_score": 89.7, 
+                        "diversity_score": 65.8, 
+                        "on_time_rate": 96.3
+                    },
+                    {
+                        "id": "4", 
+                        "name": "White & Case", 
+                        "category": "Global", 
+                        "spend": 248000.0, 
+                        "matter_count": 19, 
+                        "avg_rate": 810.0, 
+                        "performance_score": 85.9, 
+                        "diversity_score": 71.4, 
+                        "on_time_rate": 89.7
+                    },
+                    {
+                        "id": "5", 
+                        "name": "Skadden Arps", 
+                        "category": "AmLaw 50", 
+                        "spend": 187000.0, 
+                        "matter_count": 24, 
+                        "avg_rate": 890.0, 
+                        "performance_score": 91.2, 
+                        "diversity_score": 58.9, 
+                        "on_time_rate": 93.5
+                    }
+                ])
+            
             vendors_data = []
             for vendor in vendors:
                 vendors_data.append({
-                    'id': vendor.id,
+                    'id': str(vendor.id),
                     'name': vendor.name,
-                    'industry_category': vendor.industry_category,
-                    'status': getattr(vendor, 'status', 'active')
+                    'category': getattr(vendor, 'industry_category', 'Unknown'),
+                    'spend': float(getattr(vendor, 'spend', 0) or 0),
+                    'matter_count': int(getattr(vendor, 'matter_count', 0) or 0),
+                    'avg_rate': float(getattr(vendor, 'avg_rate', 0) or 0),
+                    'performance_score': float(getattr(vendor, 'performance_score', 0) or 0),
+                    'diversity_score': float(getattr(vendor, 'diversity_score', 0) or 0),
+                    'on_time_rate': float(getattr(vendor, 'on_time_rate', 0) or 0)
                 })
             
             return jsonify(vendors_data)

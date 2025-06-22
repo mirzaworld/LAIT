@@ -6,8 +6,7 @@ import { setupAPIMonitoring } from './utils/apiUtils';
 import ErrorBoundaryWithRetry from './components/ErrorBoundaryWithRetry';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
-import Analytics from './pages/Analytics';
-import AdvancedAnalytics from './pages/AdvancedAnalytics';
+import UnifiedAnalytics from './pages/UnifiedAnalytics';
 import Invoices from './pages/Invoices';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
@@ -27,7 +26,6 @@ import { AppProvider, useApp } from './context/AppContext';
 import 'react-toastify/dist/ReactToastify.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
-import UnifiedAnalytics from './pages/UnifiedAnalytics';
 
 // Set mock token for development and auto-authenticate
 const setDevelopmentToken = () => {
@@ -56,10 +54,21 @@ const AuthRoute: React.FC<{element: React.ReactNode}> = ({ element }) => {
   const { isAuthenticated } = useApp();
   
   if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
   
   return <>{element}</>;
+};
+
+// Home route component to redirect authenticated users to dashboard
+const HomeRoute: React.FC = () => {
+  const { isAuthenticated } = useApp();
+  
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return <Landing />;
 };
 
 // Create a client
@@ -143,7 +152,8 @@ const AppContent = () => {
                 <div className="min-h-screen bg-gray-50">
                   <Routes>
                     {/* Public Routes */}
-                    <Route path="/" element={<Landing />} />
+                    <Route path="/" element={<HomeRoute />} />
+                    <Route path="/landing" element={<Landing />} />
                     <Route path="/login" element={<AuthRoute element={<Login />} />} />
                     <Route path="/signup" element={<AuthRoute element={<SignUp />} />} />
                     <Route path="/contact" element={<Contact />} />
@@ -157,7 +167,7 @@ const AppContent = () => {
                       } />
                     } />
                     
-                    {/* Unified Analytics Route - replaces both Analytics and AdvancedAnalytics */}
+                    {/* Analytics Route */}
                     <Route path="/analytics" element={
                       <ProtectedRoute element={
                         <Layout>
@@ -238,13 +248,6 @@ const AppContent = () => {
                         </Layout>
                       } />
                     } />
-                    
-                    {/* Redirect old analytics routes to unified analytics */}
-                    <Route path="/advanced-analytics" element={<Navigate to="/analytics" replace />} />
-                    <Route path="/analytics/spend" element={<Navigate to="/analytics?type=spend" replace />} />
-                    <Route path="/analytics/invoices" element={<Navigate to="/analytics?type=invoices" replace />} />
-                    <Route path="/analytics/outliers" element={<Navigate to="/analytics?type=outliers" replace />} />
-                    <Route path="/analytics/processing" element={<Navigate to="/analytics?type=processing" replace />} />
                     
                     {/* Catch all route */}
                     <Route path="*" element={<ProtectedRoute element={<Navigate to="/dashboard" replace />} />} />
