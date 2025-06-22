@@ -96,12 +96,13 @@ const DefaultErrorFallback: React.FC<DefaultErrorFallbackProps> = ({ error, retr
     ) : (
       <button
         onClick={() => {
-          // Try to recover gracefully first
+          // Try to recover gracefully without page reload
           window.location.hash = `#retry-boundary-${Date.now()}`;
           setTimeout(() => {
             window.location.hash = '';
-            // Fallback to reload if recovery doesn't work
-            setTimeout(() => window.location.reload(), 2000);
+            // Force component re-render by dispatching custom event
+            const event = new CustomEvent('boundary-retry', { detail: { timestamp: Date.now() } });
+            window.dispatchEvent(event);
           }, 100);
         }}
         className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
