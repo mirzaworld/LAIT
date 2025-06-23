@@ -133,6 +133,8 @@ class LineItem(Base):
     timekeeper = Column(String(100))
     timekeeper_title = Column(String(100))
     date = Column(DateTime)
+    is_flagged = Column(Boolean, default=False)
+    flag_reason = Column(String(500))
     created_at = Column(DateTime, default=datetime.utcnow)
     
     invoice = relationship("Invoice", back_populates="line_items")

@@ -55,8 +55,9 @@ class RealAILegalService:
         self.rapidapi_key = os.getenv('RAPIDAPI_KEY', '')
         self.github_token = os.getenv('GITHUB_TOKEN', '')
         
-        # Initialize models
-        self._init_models()
+        # Initialize models lazily
+        self.models = {}
+        self._models_initialized = False
         
         # API endpoints
         self.api_endpoints = {
@@ -78,9 +79,10 @@ class RealAILegalService:
         }
         
     def _init_models(self):
-        """Initialize AI models"""
-        self.models = {}
-        
+        """Initialize AI models lazily"""
+        if self._models_initialized:
+            return
+            
         if TRANSFORMERS_AVAILABLE:
             try:
                 # Initialize sentiment analysis for contract risk assessment
@@ -97,12 +99,20 @@ class RealAILegalService:
                 self.models['sentence_transformer'] = SentenceTransformer('all-MiniLM-L6-v2')
                 
                 logger.info("AI models initialized successfully")
+                self._models_initialized = True
             except Exception as e:
                 logger.error(f"Failed to initialize models: {e}")
+    
+    def _ensure_models_loaded(self):
+        """Ensure models are loaded before use"""
+        if not self._models_initialized:
+            self._init_models()
                 
     def analyze_contract_with_huggingface(self, contract_text: str) -> Dict[str, Any]:
         """Analyze contract using HuggingFace models"""
         try:
+            self._ensure_models_loaded()
+            
             headers = {"Authorization": f"Bearer {self.huggingface_token}"}
             
             results = {}

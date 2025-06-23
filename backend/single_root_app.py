@@ -137,9 +137,10 @@ def create_app():
     # ============ AI SERVICE INTEGRATION ============
     try:
         from services.real_ai_legal_service import ai_service
+        # Lazy load AI service to avoid blocking server startup
         app.ai_service = ai_service
         ai_available = True
-        logger.info("✅ AI Legal Service integrated successfully")
+        logger.info("✅ AI Legal Service integrated successfully (lazy loading)")
     except ImportError as e:
         ai_available = False
         app.ai_service = None
