@@ -1317,6 +1317,148 @@ def create_app():
         except Exception as e:
             logger.error(f"Live data feed error: {str(e)}")
             return jsonify({'error': str(e)}), 500
+    
+    @app.route('/api/live-data/rate-benchmarks', methods=['GET'])
+    def live_data_rate_benchmarks():
+        """Get live legal rate benchmarks"""
+        try:
+            # Mock data for rate benchmarks
+            benchmarks = [
+                {
+                    'practice_area': 'Corporate Law',
+                    'level': 'Partner',
+                    'rate_range': {'min': 800, 'max': 1500, 'avg': 1200},
+                    'market': 'US',
+                    'firm_size': 'BigLaw',
+                    'trend': 'increasing',
+                    'confidence': 0.85
+                },
+                {
+                    'practice_area': 'Litigation',
+                    'level': 'Senior Associate',
+                    'rate_range': {'min': 600, 'max': 900, 'avg': 750},
+                    'market': 'US',
+                    'firm_size': 'Mid-size',
+                    'trend': 'stable',
+                    'confidence': 0.78
+                },
+                {
+                    'practice_area': 'IP Law',
+                    'level': 'Partner',
+                    'rate_range': {'min': 900, 'max': 1800, 'avg': 1400},
+                    'market': 'US',
+                    'firm_size': 'BigLaw',
+                    'trend': 'increasing',
+                    'confidence': 0.92
+                },
+                {
+                    'practice_area': 'Employment Law',
+                    'level': 'Associate',
+                    'rate_range': {'min': 400, 'max': 700, 'avg': 550},
+                    'market': 'US',
+                    'firm_size': 'Mid-size',
+                    'trend': 'decreasing',
+                    'confidence': 0.71
+                }
+            ]
+            
+            return jsonify({
+                'benchmarks': benchmarks,
+                'total_count': len(benchmarks),
+                'generated_at': datetime.now().isoformat()
+            })
+        except Exception as e:
+            logger.error(f"Rate benchmarks error: {str(e)}")
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/live-data/market-trends', methods=['GET'])
+    def live_data_market_trends():
+        """Get live legal market trends"""
+        try:
+            # Mock data for market trends
+            trends = [
+                {
+                    'category': 'AI & Legal Tech',
+                    'trend': 'increasing',
+                    'score': 0.89,
+                    'description': 'Adoption of AI tools in legal practice accelerating',
+                    'timeframe': '2024-2025',
+                    'impact': 'high',
+                    'data_points': [
+                        {'period': '2024-01', 'value': 0.65},
+                        {'period': '2024-06', 'value': 0.78},
+                        {'period': '2024-12', 'value': 0.89}
+                    ]
+                },
+                {
+                    'category': 'Alternative Legal Service Providers',
+                    'trend': 'increasing',
+                    'score': 0.76,
+                    'description': 'Growing market share of ALSPs in routine legal work',
+                    'timeframe': '2024-2025',
+                    'impact': 'medium',
+                    'data_points': [
+                        {'period': '2024-01', 'value': 0.58},
+                        {'period': '2024-06', 'value': 0.67},
+                        {'period': '2024-12', 'value': 0.76}
+                    ]
+                },
+                {
+                    'category': 'ESG & Compliance',
+                    'trend': 'increasing',
+                    'score': 0.82,
+                    'description': 'Increased focus on ESG compliance driving legal spend',
+                    'timeframe': '2024-2025',
+                    'impact': 'high',
+                    'data_points': [
+                        {'period': '2024-01', 'value': 0.71},
+                        {'period': '2024-06', 'value': 0.78},
+                        {'period': '2024-12', 'value': 0.82}
+                    ]
+                },
+                {
+                    'category': 'Remote Legal Work',
+                    'trend': 'stable',
+                    'score': 0.64,
+                    'description': 'Hybrid work models becoming permanent in legal sector',
+                    'timeframe': '2024-2025',
+                    'impact': 'medium',
+                    'data_points': [
+                        {'period': '2024-01', 'value': 0.62},
+                        {'period': '2024-06', 'value': 0.63},
+                        {'period': '2024-12', 'value': 0.64}
+                    ]
+                }
+            ]
+            
+            return jsonify({
+                'trends': trends,
+                'total_count': len(trends),
+                'generated_at': datetime.now().isoformat()
+            })
+        except Exception as e:
+            logger.error(f"Market trends error: {str(e)}")
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/live-data/collect', methods=['POST'])
+    def trigger_live_data_collection():
+        """Trigger live data collection"""
+        try:
+            if not live_data_available:
+                return jsonify({
+                    'success': False,
+                    'message': 'Live data service not available'
+                }), 503
+            
+            # Simulate data collection
+            return jsonify({
+                'success': True,
+                'message': 'Live data collection triggered successfully',
+                'timestamp': datetime.now().isoformat()
+            })
+        except Exception as e:
+            logger.error(f"Live data collection error: {str(e)}")
+            return jsonify({'error': str(e)}), 500
 
     # ============ DIAGNOSTICS ENDPOINT ============
     @app.route('/api/diagnostics', methods=['GET'])

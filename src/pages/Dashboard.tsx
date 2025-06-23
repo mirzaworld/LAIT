@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DollarSign, FileText, Users, Calendar, Download, Loader2, AlertTriangle } from 'lucide-react';
+import { DollarSign, FileText, Users, Calendar, Download, Loader2, AlertTriangle, Activity } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MetricCard from '../components/MetricCard';
 import SpendChart from '../components/SpendChart';
@@ -7,6 +7,7 @@ import RecentInvoices from '../components/RecentInvoices';
 import TopVendors from '../components/TopVendors';
 import AlertsPanel from '../components/AlertsPanel';
 import ApiStatus from '../components/ApiStatus';
+import LiveDashboardPanel from '../components/LiveDashboardPanel';
 import { useDashboardMetrics } from '../hooks/useApi';
 import { pdfService } from '../services/pdfService';
 import DatePicker from 'react-datepicker';
@@ -196,6 +197,11 @@ const DashboardContent: React.FC = () => {
           className="border border-gray-300 rounded-lg py-2 px-3 shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           placeholderText="Select date range"
         />
+      </div>
+
+      {/* Live Data Intelligence Panel */}
+      <div className="mb-6">
+        <LiveDashboardPanel />
       </div>
 
       {/* Metrics Grid */}

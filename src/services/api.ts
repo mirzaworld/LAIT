@@ -572,3 +572,276 @@ export const getGitHubLegalTools = async (): Promise<any> => {
     throw error;
   }
 };
+
+/**
+ * LIVE DATA API FUNCTIONS - Real-time legal industry data
+ */
+
+// Live Data Types
+export interface LiveDataSource {
+  name: string;
+  enabled: boolean;
+  data_type: string;
+  update_frequency: string;
+  status: 'active' | 'inactive' | 'error';
+  last_update?: string;
+}
+
+export interface LiveInsight {
+  source: string;
+  title: string;
+  content: string;
+  category: string;
+  impact_score: number;
+  relevance_score: number;
+  created_at: string;
+}
+
+export interface MarketTrend {
+  trend_type: string;
+  description: string;
+  trend_score: number;
+  source: string;
+  created_at: string;
+}
+
+export interface RateBenchmark {
+  practice_area: string;
+  seniority_level: string;
+  avg_rate: number;
+  market: string;
+  source: string;
+  created_at: string;
+}
+
+export interface LiveDataStatus {
+  service_status: string;
+  total_sources: number;
+  active_sources: number;
+  connected_sources: number;
+  total_insights: number;
+  recent_insights_24h: number;
+  last_update: string;
+}
+
+/**
+ * Get live data sources status
+ */
+export const getLiveDataSources = async (): Promise<{sources: LiveDataSource[], total_sources: number}> => {
+  try {
+    const response = await fetch(apiUrl('/api/live-data/sources'), {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Live data sources fetch failed: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching live data sources:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get live market insights
+ */
+export const getLiveInsights = async (limit: number = 20): Promise<LiveInsight[]> => {
+  try {
+    const response = await fetch(apiUrl(`/api/live-data/insights?limit=${limit}`), {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Live insights fetch failed: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data.insights || data; // Handle different response formats
+  } catch (error) {
+    console.error('Error fetching live insights:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get rate benchmarks
+ */
+export const getRateBenchmarks = async (): Promise<RateBenchmark[]> => {
+  try {
+    const response = await fetch(apiUrl('/api/live-data/rate-benchmarks'), {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Rate benchmarks fetch failed: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching rate benchmarks:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get market trends
+ */
+export const getMarketTrends = async (): Promise<MarketTrend[]> => {
+  try {
+    const response = await fetch(apiUrl('/api/live-data/trends'), {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Market trends fetch failed: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching market trends:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get live data service status
+ */
+export const getLiveDataStatus = async (): Promise<LiveDataStatus> => {
+  try {
+    const response = await fetch(apiUrl('/api/live-data/status'), {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Live data status fetch failed: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching live data status:', error);
+    throw error;
+  }
+};
+
+/**
+ * Trigger live data collection
+ */
+export const triggerLiveDataCollection = async (): Promise<any> => {
+  try {
+    const response = await fetch(apiUrl('/api/live-data/collect'), {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Live data collection trigger failed: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error triggering live data collection:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get comprehensive analytics data
+ */
+export const getAnalyticsData = async (timeframe: string = '12M'): Promise<any> => {
+  try {
+    const response = await fetch(apiUrl(`/api/analytics/comprehensive?timeframe=${timeframe}`), {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Analytics data fetch failed: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching analytics data:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get vendor performance analytics
+ */
+export const getVendorAnalytics = async (): Promise<any> => {
+  try {
+    const response = await fetch(apiUrl('/api/analytics/vendor-performance'), {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Vendor analytics fetch failed: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching vendor analytics:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get predictive analytics
+ */
+export const getPredictiveAnalytics = async (): Promise<any> => {
+  try {
+    const response = await fetch(apiUrl('/api/analytics/predictive'), {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Predictive analytics fetch failed: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching predictive analytics:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get real-time court data
+ */
+export const getCourtData = async (): Promise<any> => {
+  try {
+    const response = await fetch(apiUrl('/api/legal-intelligence/court-data'), {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Court data fetch failed: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching court data:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get legal market analysis
+ */
+export const getLegalMarketAnalysis = async (): Promise<any> => {
+  try {
+    const response = await fetch(apiUrl('/api/legal-intelligence/market-analysis'), {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Legal market analysis fetch failed: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching legal market analysis:', error);
+    throw error;
+  }
+};

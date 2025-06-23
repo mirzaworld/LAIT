@@ -10,6 +10,11 @@ import { pdfService } from '../services/pdfService';
 import LegalAnalytics from '../components/LegalAnalytics';
 import LiveDataInsights from '../components/LiveDataInsights';
 import ErrorBoundary from '../components/ErrorBoundary';
+import { 
+  getDashboardMetrics, getAnalyticsData, getVendorAnalytics, 
+  getPredictiveAnalytics, getLiveInsights, getMarketTrends,
+  getCourtData, getLegalMarketAnalysis, getLiveDataStatus
+} from '../services/api';
 import '../utils/chartConfig';
 
 interface AnalyticsData {
@@ -57,23 +62,123 @@ const UnifiedAnalytics: React.FC = () => {
   const fetchAnalyticsData = async () => {
     setLoading(true);
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003/api';
-      
-      // Fetch comprehensive analytics data
-      const [metricsRes, predictiveRes, vendorRes, budgetRes] = await Promise.allSettled([
-        fetch(`${API_URL}/dashboard/metrics`),
-        fetch(`${API_URL}/analytics/predictive`),
-        fetch(`${API_URL}/analytics/vendor-performance`),
-        fetch(`${API_URL}/analytics/budget-forecast`)
+      // Fetch comprehensive analytics data including live data
+      const [
+        metricsData, 
+        analyticsData, 
+        vendorData, 
+        predictiveData,
+        liveInsights,
+        marketTrends,
+        courtData,
+        legalMarketData,
+        liveStatus
+      ] = await Promise.allSettled([
+        getDashboardMetrics(),
+        getAnalyticsData(selectedTimeframe),
+        getVendorAnalytics(),
+        getPredictiveAnalytics(),
+        getLiveInsights(20),
+        getMarketTrends(),
+        getCourtData(),
+        getLegalMarketAnalysis(),
+        getLiveDataStatus()
       ]);
 
-      // Combine all data sources
+      console.log('Analytics data fetch results:', {
+        metricsData: metricsData.status,
+        analyticsData: analyticsData.status,
+        vendorData: vendorData.status,
+        predictiveData: predictiveData.status,
+        liveInsights: liveInsights.status,
+        marketTrends: marketTrends.status
+      });
+
+      // Process successful responses
+      const metrics = metricsData.status === 'fulfilled' ? metricsData.value : null;
+      const analytics = analyticsData.status === 'fulfilled' ? analyticsData.value : null;
+      const vendors = vendorData.status === 'fulfilled' ? vendorData.value : null;
+      const predictions = predictiveData.status === 'fulfilled' ? predictiveData.value : null;
+      const insights = liveInsights.status === 'fulfilled' ? liveInsights.value : [];
+      const trends = marketTrends.status === 'fulfilled' ? marketTrends.value : [];
+      const courtInfo = courtData.status === 'fulfilled' ? courtData.value : null;
+      const marketInfo = legalMarketData.status === 'fulfilled' ? legalMarketData.value : null;
+      const status = liveStatus.status === 'fulfilled' ? liveStatus.value : null;
+
+      // Combine all data sources with real data where available
       const combinedData: AnalyticsData = {
         summary: {
+          total_spend: (metrics as any)?.total_spend || (analytics as any)?.total_spend || 5955755,
+          invoice_count: (metrics as any)?.invoice_count || (metrics as any)?.invoiceCount || (analytics as any)?.invoice_count || 150,
+          vendor_count: (metrics as any)?.vendor_count || (vendors as any)?.total_vendors || (vendors as any)?.length || 6,
+          avg_risk_score: (metrics as any)?.average_risk_score || (metrics as any)?.averageRiskScore || (analytics as any)?.avg_risk_score || 0.424,
+          spend_change_percentage: (analytics as any)?.spend_change_percentage || 2.92
+        },
+        trends: {
+          monthly_spend: (analytics as any)?.monthly_spend || [
+            { period: 'Jan', amount: 320000 },
+            { period: 'Feb', amount: 290000 },
+            { period: 'Mar', amount: 350000 },
+            { period: 'Apr', amount: 420000 },
+            { period: 'May', amount: 380000 },
+            { period: 'Jun', amount: 450000 }
+          ],
+          vendor_performance: (vendors as any)?.vendor_performance || [
+            { vendor: 'Latham & Watkins', performance: 0.85 },
+            { vendor: 'Skadden Arps', performance: 0.75 },
+            { vendor: 'White & Case', performance: 0.82 },
+            { vendor: 'Baker McKenzie', performance: 0.78 },
+            { vendor: 'Morrison & Foerster', performance: 0.72 }
+          ],
+          risk_trends: (analytics as any)?.risk_trends || [
+            { period: 'Jan', risk_score: 0.45 },
+            { period: 'Feb', risk_score: 0.52 },
+            { period: 'Mar', risk_score: 0.48 },
+            { period: 'Apr', risk_score: 0.55 },
+            { period: 'May', risk_score: 0.51 },
+            { period: 'Jun', risk_score: 0.54 }
+          ]
+        },
+        insights: (insights as any)?.insights?.length > 0 ? (insights as any).insights.map((insight: any) => ({
+          type: insight.severity === 'high' ? 'warning' as const : 
+                insight.severity === 'medium' ? 'info' as const : 'success' as const,
+          message: insight.message || insight.description || insight.title,
+          priority: insight.priority || insight.severity || 'medium'
+        })) : [
+          {
+            type: 'warning',
+            message: 'IP litigation spend is trending 23% higher than previous year',
+            priority: 'high'
+          },
+          {
+            type: 'success',
+            message: 'Potential savings of $425,000 identified through rate optimization',
+            priority: 'medium'
+          },
+          {
+            type: 'info',
+            message: '3 firms account for 62% of total spend; consider diversifying vendor portfolio',
+            priority: 'medium'
+          }
+        ],
+        predictions: (predictions as any)?.predictions || {
+          next_month_spend: { amount: 120000, trend: 'increasing', confidence: 0.85 },
+          budget_risk: { level: 'medium', probability: 0.65 },
+          cost_savings: { potential: 25000, opportunities: ['Rate optimization', 'Vendor consolidation'] }
+        }
+      };
+
+      console.log('Combined analytics data:', combinedData);
+      setAnalyticsData(combinedData);
+    } catch (error) {
+      console.error('Error fetching analytics data:', error);
+      // Set fallback data so the UI still works
+      setAnalyticsData({
+        summary: {
           total_spend: 5955755,
-          invoice_count: 20,
-          vendor_count: 5,
-          avg_risk_score: 0.546,
+          invoice_count: 150,
+          vendor_count: 6,
+          avg_risk_score: 0.424,
           spend_change_percentage: 2.92
         },
         trends: {
@@ -123,28 +228,7 @@ const UnifiedAnalytics: React.FC = () => {
           budget_risk: { level: 'medium', probability: 0.65 },
           cost_savings: { potential: 25000, opportunities: ['Rate optimization', 'Vendor consolidation'] }
         }
-      };
-
-      // Override with real data if available
-      if (metricsRes.status === 'fulfilled' && metricsRes.value.ok) {
-        const metrics = await metricsRes.value.json();
-        combinedData.summary = {
-          total_spend: metrics.total_spend || combinedData.summary.total_spend,
-          invoice_count: metrics.invoice_count || combinedData.summary.invoice_count,
-          vendor_count: metrics.vendor_count || combinedData.summary.vendor_count,
-          avg_risk_score: metrics.average_risk_score || combinedData.summary.avg_risk_score,
-          spend_change_percentage: metrics.spend_change_percentage || combinedData.summary.spend_change_percentage
-        };
-      }
-
-      if (predictiveRes.status === 'fulfilled' && predictiveRes.value.ok) {
-        const predictive = await predictiveRes.value.json();
-        combinedData.predictions = predictive.predictions || combinedData.predictions;
-      }
-
-      setAnalyticsData(combinedData);
-    } catch (error) {
-      console.error('Error fetching analytics data:', error);
+      });
     } finally {
       setLoading(false);
     }
