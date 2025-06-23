@@ -678,10 +678,11 @@ export const getRateBenchmarks = async (): Promise<RateBenchmark[]> => {
       throw new Error(`Rate benchmarks fetch failed: ${response.statusText}`);
     }
     
-    return await response.json();
+    const data = await response.json();
+    return data.benchmarks || [];
   } catch (error) {
     console.error('Error fetching rate benchmarks:', error);
-    throw error;
+    throw error;  
   }
 };
 
@@ -690,7 +691,7 @@ export const getRateBenchmarks = async (): Promise<RateBenchmark[]> => {
  */
 export const getMarketTrends = async (): Promise<MarketTrend[]> => {
   try {
-    const response = await fetch(apiUrl('/api/live-data/trends'), {
+    const response = await fetch(apiUrl('/api/live-data/market-trends'), {
       headers: getAuthHeaders()
     });
     
@@ -698,7 +699,8 @@ export const getMarketTrends = async (): Promise<MarketTrend[]> => {
       throw new Error(`Market trends fetch failed: ${response.statusText}`);
     }
     
-    return await response.json();
+    const data = await response.json();
+    return data.trends || [];
   } catch (error) {
     console.error('Error fetching market trends:', error);
     throw error;
