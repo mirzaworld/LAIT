@@ -433,3 +433,142 @@ export const getSpendTrends = async (period: string = 'monthly', category?: stri
     throw error;
   }
 };
+
+/**
+ * AI-powered PDF analysis
+ */
+export const analyzePDFWithAI = async (file: File): Promise<any> => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const token = getAuthToken();
+    const headers: HeadersInit = {
+      'Accept': 'application/json'
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await fetch(apiUrl('/api/ai/analyze-pdf'), {
+      method: 'POST',
+      headers,
+      body: formData
+    });
+    
+    if (!response.ok) {
+      throw new Error(`AI PDF analysis failed: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error analyzing PDF with AI:', error);
+    throw error;
+  }
+};
+
+/**
+ * Analyze contract text with AI
+ */
+export const analyzeContractWithAI = async (contractText: string): Promise<any> => {
+  try {
+    const response = await fetch(apiUrl('/api/ai/analyze-contract'), {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ text: contractText })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Contract analysis failed: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error analyzing contract with AI:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get legal insights from AI
+ */
+export const getLegalInsightsAI = async (query: string): Promise<any> => {
+  try {
+    const response = await fetch(apiUrl('/api/ai/legal-insights'), {
+      method: 'POST', 
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ query })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Legal insights failed: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error getting legal insights:', error);
+    throw error;
+  }
+};
+
+/**
+ * Enhanced AI-powered file upload
+ */
+export const uploadWithAI = async (file: File, additionalData: any = {}): Promise<any> => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Add additional data to form
+    Object.keys(additionalData).forEach(key => {
+      if (additionalData[key] !== undefined && additionalData[key] !== null) {
+        formData.append(key, additionalData[key].toString());
+      }
+    });
+    
+    const token = getAuthToken();
+    const headers: HeadersInit = {
+      'Accept': 'application/json'
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await fetch(apiUrl('/api/ai/enhanced-upload'), {
+      method: 'POST',
+      headers,
+      body: formData
+    });
+    
+    if (!response.ok) {
+      throw new Error(`AI upload failed: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error uploading with AI:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get GitHub legal tools
+ */
+export const getGitHubLegalTools = async (): Promise<any> => {
+  try {
+    const response = await fetch(apiUrl('/api/ai/github-tools'), {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) {
+      throw new Error(`GitHub tools fetch failed: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching GitHub legal tools:', error);
+    throw error;
+  }
+};

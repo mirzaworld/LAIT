@@ -12,10 +12,8 @@ import { pdfService } from '../services/pdfService';
 import DatePicker from 'react-datepicker';
 import ErrorBoundaryWithRetry from '../components/ErrorBoundaryWithRetry';
 import 'react-datepicker/dist/react-datepicker.css';
-import { Line } from 'react-chartjs-2';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
-import '../utils/chartConfig';
 
 const Dashboard: React.FC = () => {
   return (
@@ -155,28 +153,6 @@ const DashboardContent: React.FC = () => {
     }
   ];
 
-  const spendTrendData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    datasets: [
-      {
-        label: 'Spend ($)',
-        data: [12000, 15000, 18000, 20000, 22000, 25000],
-        borderColor: 'rgba(59, 130, 246, 1)',
-        backgroundColor: 'rgba(59, 130, 246, 0.2)',
-      },
-    ],
-  };
-
-  const outlierRateData = {
-    datasets: [
-      {
-        data: [5, 95],
-        backgroundColor: ['rgba(220, 38, 38, 1)', 'rgba(229, 231, 235, 1)'],
-        borderWidth: 0,
-      },
-    ],
-  };
-
   const outlierRate = 5;
 
   return (
@@ -244,10 +220,6 @@ const DashboardContent: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <SpendChart />
-          <div className="lg:col-span-2">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Spend Trend</h3>
-            <Line data={spendTrendData} options={{ responsive: true, plugins: { legend: { position: 'top' } } }} />
-          </div>
         </div>
         <div>
           <AlertsPanel />

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Upload, FileText, AlertTriangle, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
-import { uploadInvoice } from '../services/api';
+import { Upload, FileText, AlertTriangle, CheckCircle, XCircle, RefreshCw, Brain, Zap } from 'lucide-react';
+import { uploadInvoice, uploadWithAI, analyzePDFWithAI } from '../services/api';
 
 interface UploadResult {
   invoice_id: string;
@@ -10,6 +10,8 @@ interface UploadResult {
     risk_level: string;
     recommendations: string[];
   };
+  ai_analysis?: any;
+  extracted_data?: any;
 }
 
 const UploadInvoice: React.FC = () => {
@@ -18,6 +20,8 @@ const UploadInvoice: React.FC = () => {
   const [uploadResults, setUploadResults] = useState<Record<string, UploadResult>>({});
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [useAI, setUseAI] = useState(true);
+  const [showAIAnalysis, setShowAIAnalysis] = useState<Record<string, boolean>>({});
   
   // Constants
   const MAX_FILES = 5; // Maximum number of files that can be uploaded at once
@@ -110,15 +114,26 @@ const UploadInvoice: React.FC = () => {
           });
         }, 300);
         
-        // Use the API service function
-        const result = await uploadInvoice(
-          file,
-          'Unknown Vendor', // Default vendor
-          undefined, // Amount will be extracted from file
-          undefined, // Date will be extracted from file
-          'Legal Services', // Default category
-          `Uploaded via web interface: ${file.name}`
-        );
+        let result;
+        
+        if (useAI) {
+          // Use AI-powered upload
+          result = await uploadWithAI(file, {
+            vendor: 'Unknown Vendor',
+            category: 'Legal Services',
+            description: `AI-processed upload: ${file.name}`
+          });
+        } else {
+          // Use standard upload
+          result = await uploadInvoice(
+            file,
+            'Unknown Vendor',
+            undefined,
+            undefined,
+            'Legal Services',
+            `Uploaded via web interface: ${file.name}`
+          );
+        }
         
         clearInterval(progressInterval);
         setUploadProgress(prev => ({ ...prev, [file.name]: 100 }));
@@ -168,11 +183,45 @@ const UploadInvoice: React.FC = () => {
 
   return (
     <div className="p-6 space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Upload Invoices</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Upload legal invoices for automatic analysis and risk assessment
-        </p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Upload Invoices</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Upload legal invoices for automatic analysis and risk assessment
+          </p>
+        </div>
+        
+        {/* AI Processing Toggle */}
+        <div className="flex flex-col items-center space-y-2">
+          <div className="flex items-center space-x-3">
+            <span className="text-sm text-gray-600">Standard</span>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={useAI}
+                onChange={(e) => setUseAI(e.target.checked)}
+                className="sr-only"
+              />
+              <div className={`w-11 h-6 rounded-full transition-colors ${
+                useAI ? 'bg-blue-600' : 'bg-gray-200'
+              }`}>
+                <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${
+                  useAI ? 'transform translate-x-5' : ''
+                }`}></div>
+              </div>
+            </label>
+            <span className="text-sm text-gray-600 flex items-center">
+              <Brain className="w-4 h-4 mr-1" />
+              AI-Powered
+            </span>
+          </div>
+          {useAI && (
+            <div className="flex items-center text-xs text-blue-600">
+              <Zap className="w-3 h-3 mr-1" />
+              Enhanced analysis with real AI models
+            </div>
+          )}
+        </div>
       </div>
 
       {error && (

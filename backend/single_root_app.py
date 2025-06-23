@@ -134,6 +134,17 @@ def create_app():
         live_data_available = False
         logger.warning(f"Live data service not available: {e}")
     
+    # ============ AI SERVICE INTEGRATION ============
+    try:
+        from services.real_ai_legal_service import ai_service
+        app.ai_service = ai_service
+        ai_available = True
+        logger.info("✅ AI Legal Service integrated successfully")
+    except ImportError as e:
+        ai_available = False
+        app.ai_service = None
+        logger.warning(f"⚠️ AI Legal Service not available: {e}")
+    
     # ============ SOCKET.IO HANDLERS ============
     @socketio.on('connect')
     def handle_connect():
