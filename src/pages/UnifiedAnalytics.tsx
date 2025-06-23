@@ -5,9 +5,10 @@ import {
   BarChart, LineChart, Activity, Zap, Eye, EyeOff
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Doughnut, Bar, Line, Area } from 'react-chartjs-2';
+import { Doughnut, Bar, Line } from 'react-chartjs-2';
 import { pdfService } from '../services/pdfService';
 import LegalAnalytics from '../components/LegalAnalytics';
+import LiveDataInsights from '../components/LiveDataInsights';
 import ErrorBoundary from '../components/ErrorBoundary';
 import '../utils/chartConfig';
 
@@ -274,7 +275,7 @@ const UnifiedAnalytics: React.FC = () => {
       {/* Tab Navigation */}
       <div className="border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">
-          {['overview', 'trends', 'predictions', 'insights', 'legal-intelligence'].map((tab) => (
+          {['overview', 'trends', 'predictions', 'live-data', 'legal-intelligence'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -604,6 +605,13 @@ const UnifiedAnalytics: React.FC = () => {
         </div>
       )}
 
+      {/* Live Data Tab */}
+      {activeTab === 'live-data' && (
+        <div className="space-y-6">
+          <LiveDataInsights />
+        </div>
+      )}
+
       {/* Legal Intelligence Tab */}
       {activeTab === 'legal-intelligence' && (
         <div className="space-y-6">
@@ -665,4 +673,4 @@ const UnifiedAnalytics: React.FC = () => {
   );
 };
 
-export default UnifiedAnalytics; 
+export default UnifiedAnalytics;

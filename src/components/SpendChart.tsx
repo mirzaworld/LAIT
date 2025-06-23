@@ -11,34 +11,27 @@ const SpendChart: React.FC = () => {
   
   // Build the default chart data
   const createChartData = () => {
-    if (!trends || !trends.datasets) {
+    if (!trends || !trends.datasets || trends.datasets.length === 0) {
       return {
         labels: [],
         datasets: []
       };
     }
     
-    // Use the data from the hooks (which uses mockData in dev)
+    // Get the primary spend dataset (usually the first one)
+    const primaryDataset = trends.datasets[0];
+    
+    // Only show one main trend line
     return {
       labels: trends.labels || [],
       datasets: [
-        // Add datasets from trends
-        ...(Array.isArray(trends.datasets) ? trends.datasets.map((dataset: any, index: number) => ({
-          label: dataset.label,
-          data: dataset.data,
-          borderColor: getDatasetColor(index, 'border'),
-          backgroundColor: getDatasetColor(index, 'background'),
+        {
+          label: primaryDataset.label || 'Monthly Spend',
+          data: primaryDataset.data || [],
+          borderColor: 'rgb(59, 130, 246)',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
           tension: 0.4,
           fill: true,
-        })) : []),
-        // Add budget line (constant value)
-        {
-          label: 'Budget Threshold',
-          data: Array(trends.labels.length).fill(550000),
-          borderColor: 'rgb(239, 68, 68)',
-          backgroundColor: 'rgba(239, 68, 68, 0.1)',
-          borderDash: [5, 5],
-          tension: 0,
         }
       ]
     };
@@ -187,41 +180,6 @@ const SpendChart: React.FC = () => {
           <div className="h-80">
             <Line data={data} options={options} />
           </div>
-          
-          {/* Category filters */}
-          {trends && trends.datasets && trends.datasets.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <div className="flex flex-wrap gap-2">
-                <span className="text-sm text-gray-500">Filter by category:</span>
-                <button
-                  onClick={() => handleCategoryClick(undefined)}
-                  className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
-                    selectedCategory === undefined
-                      ? 'bg-primary-100 text-primary-700'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  All
-                </button>
-                {trends.datasets.map((dataset: any, index: number) => (
-                  <button
-                    key={dataset.label}
-                    onClick={() => handleCategoryClick(dataset.label)}
-                    className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
-                      selectedCategory === dataset.label
-                        ? 'bg-primary-100 text-primary-700'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                    style={{
-                      borderColor: getDatasetColor(index, 'border')
-                    }}
-                  >
-                    {dataset.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </>
       )}
     </div>

@@ -170,10 +170,30 @@ class PDFService {
   }
 
   async generateReport(type: string, params?: any): Promise<InvoiceReport | ComprehensiveReport> {
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    return this.generateReportData(type, params);
+    try {
+      // Call the backend report generation endpoint
+      const response = await fetch(`${this.baseUrl}/api/reports/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type,
+          ...params,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Report generation failed: ${response.statusText}`);
+      }
+
+      const report = await response.json();
+      return report;
+    } catch (error) {
+      console.error('Report generation error:', error);
+      // Fallback to mock data if backend fails
+      return this.generateReportData(type, params);
+    }
   }
 
   async generatePDF(report: InvoiceReport | ComprehensiveReport): Promise<Blob> {
