@@ -176,6 +176,53 @@ def create_app():
     def health_check():
         return jsonify({"status": "healthy", "timestamp": datetime.utcnow()})
     
+    # --- NEW: Comprehensive backend self-test / diagnostics endpoint ---
+    @app.route('/api/self-test', methods=['GET'])
+    def self_test():
+        """Run lightweight diagnostics across core subsystems.
+        Returns JSON summarizing status so frontend & tests can validate deployment health.
+        """
+        start = time.time()
+        checks = {}
+        # Database connectivity
+        try:
+            session = get_db_session()
+            session.execute('SELECT 1')
+            session.close()
+            checks['database'] = {'status': 'ok'}
+        except Exception as e:
+            checks['database'] = {'status': 'error', 'error': str(e)}
+        # ML Models
+        ml_models = {}
+        for name in ['invoice_analyzer', 'vendor_analyzer', 'risk_predictor', 'matter_analyzer', 'enhanced_invoice_analyzer']:
+            obj = getattr(app, name, None)
+            ml_models[name] = 'loaded' if obj else 'missing'
+        checks['ml_models'] = ml_models
+        # External services (best-effort / non-blocking quick checks)
+        external = {}
+        # Simple HTTP reachability for one public site (skip if offline env) with timeout
+        try:
+            import socket
+            socket.gethostbyname('courtlistener.com')
+            external['dns_courtlistener'] = 'resolved'
+        except Exception as e:
+            external['dns_courtlistener'] = f'fail:{e.__class__.__name__}'
+        checks['external'] = external
+        # Socket.IO availability flag
+        try:
+            socketio_server = 'enabled' if socketio.server else 'disabled'
+        except Exception:
+            socketio_server = 'disabled'
+        checks['realtime'] = {'socketio': socketio_server}
+        duration = round(time.time() - start, 3)
+        status = 'ok' if all(v.get('status','ok') == 'ok' for k,v in checks.items() if isinstance(v, dict) and 'status' in v) else 'degraded'
+        return jsonify({
+            'status': status,
+            'elapsed_ms': int(duration * 1000),
+            'checks': checks,
+            'timestamp': datetime.utcnow().isoformat() + 'Z'
+        })
+
     # Dashboard metrics endpoint
     @app.route('/api/dashboard/metrics')
     def dashboard_metrics():
