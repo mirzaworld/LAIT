@@ -291,6 +291,7 @@ def create_app():
             "status": "operational",
             "endpoints": {
                 "health": "/api/health",
+                "self_test": "/api/self-test",
                 "dashboard": "/api/dashboard/metrics",
                 "invoices": "/api/invoices",
                 "vendors": "/api/vendors",
@@ -305,6 +306,7 @@ def create_app():
         })
 
     # Proper legal case search endpoint (extracted from misplaced block)
+    @limiter.limit("30 per minute")
     @app.route('/api/legal/search', methods=['POST'])
     def legal_case_search():
         """Enhanced legal case search with real-time data integration"""
@@ -493,241 +495,163 @@ def create_app():
             logger.error(f"Spend trends analytics error: {str(e)}")
             return jsonify({'error': str(e)}), 500
 
-    # Sample data population endpoint
-    @app.route('/api/data/populate-sample', methods=['POST'])
-    def populate_sample_data():
-        """Populate database with sample data for testing"""
+    # ================== INVOICE ENDPOINTS ==================
+    @app.route('/api/invoices', methods=['GET'])
+    @jwt_required(optional=True)
+    def list_invoices():
         try:
-            from db.database import get_db_session, Invoice, Vendor
-            import random
-            from datetime import datetime, timedelta
-            
             session = get_db_session()
-            
-            # Check if we already have data
-            existing_vendors = session.query(Vendor).count()
-            if existing_vendors > 0:
-                return jsonify({'message': 'Sample data already exists', 'vendors': existing_vendors})
-            
-            # Create sample vendors
-            sample_vendors = [
-                {'name': 'Morrison & Foerster LLP', 'industry_category': 'AmLaw 100', 'email': 'contact@mofo.com'},
-                {'name': 'Baker McKenzie', 'industry_category': 'Global', 'email': 'contact@bakermckenzie.com'},
-                {'name': 'Latham & Watkins', 'industry_category': 'AmLaw 100', 'email': 'contact@lw.com'},
-                {'name': 'Skadden Arps', 'industry_category': 'AmLaw 50', 'email': 'contact@skadden.com'},
-                {'name': 'White & Case', 'industry_category': 'Global', 'email': 'contact@whitecase.com'}
-            ]
-            
-            vendors_created = []
-            for vendor_data in sample_vendors:
-                vendor = Vendor(
-                    name=vendor_data['name'],
-                    industry_category=vendor_data['industry_category'],
-                    email=vendor_data['email'],
-                    status='active'
-                )
-                session.add(vendor)
-                session.flush()  # Get the ID
-                vendors_created.append({'id': vendor.id, 'name': vendor.name})
-            
-            # Create sample invoices
-            import random
-            from datetime import datetime, timedelta
-            
-            practice_areas = ['Corporate Law', 'Litigation', 'Employment Law', 'Real Estate', 'Intellectual Property']
-            
-            for i in range(20):
-                vendor_id = random.choice([v['id'] for v in vendors_created])
-                amount = random.randint(50000, 500000)
-                date = datetime.now() - timedelta(days=random.randint(1, 365))
-                
-                invoice = Invoice(
-                    vendor_id=vendor_id,
-                    amount=amount,
-                    date=date,
-                    status=random.choice(['approved', 'pending', 'review']),
-                    practice_area=random.choice(practice_areas),
-                    description=f'Legal services for matter {1000 + i}',
-                    risk_score=random.uniform(0.1, 0.9)
-                )
-                session.add(invoice)
-            
-            session.commit()
-            
-            return jsonify({
-                'message': 'Sample data created successfully',
-                'vendors_created': len(vendors_created),
-                'invoices_created': 20
-            })
-            
-        except Exception as e:
-            logger.error(f"Sample data population error: {str(e)}")
-            return jsonify({'error': str(e)}), 500
-        finally:
+            from db.database import Invoice, Vendor
+            status = request.args.get('status')
+            q = session.query(Invoice).join(Vendor, Invoice.vendor_id == Vendor.id, isouter=True)
+            if status:
+                q = q.filter(Invoice.status == status)
+            invoices = []
+            for inv in q.order_by(desc(Invoice.created_at)).all():
+                invoices.append({
+                    'id': str(inv.id),
+                    'vendor': inv.vendor.name if inv.vendor else 'Unknown',
+                    'amount': float(inv.amount or 0),
+                    'status': inv.status or 'pending',
+                    'date': inv.date.isoformat() if inv.date else None,
+                    'dueDate': (inv.date + timedelta(days=30)).isoformat() if inv.date else None,
+                    'matter': inv.matter or 'General',
+                    'riskScore': float(inv.risk_score or 0) * 100 if (inv.risk_score and inv.risk_score <= 1) else float(inv.risk_score or 0),
+                    'category': inv.category or 'Uncategorized',
+                    'description': inv.description or '',
+                    'hours': float(inv.hours or 0),
+                    'rate': float(inv.rate or 0),
+                    'total': float(inv.amount or 0)
+                })
             session.close()
-
-    # ML Test Endpoint
-    @app.route('/api/ml/test')
-    def ml_test():
-        """Test ML models and return status"""
-        try:
-            ml_status = {
-                'status': 'operational',
-                'models': {
-                    'invoice_analyzer': bool(app.invoice_analyzer),
-                    'vendor_analyzer': bool(app.vendor_analyzer),
-                    'risk_predictor': bool(app.risk_predictor),
-                    'enhanced_invoice_analyzer': bool(app.enhanced_invoice_analyzer)
-                },
-                'features': [
-                    'Invoice Analysis',
-                    'Vendor Risk Assessment', 
-                    'Spend Prediction',
-                    'Anomaly Detection',
-                    'Legal Intelligence'
-                ],
-                'real_time_data': True,
-                'data_sources': ['CourtListener', 'Internal Database', 'ML Models'],
-                'last_updated': datetime.utcnow().isoformat()
-            }
-            return jsonify(ml_status)
+            return jsonify(invoices)
         except Exception as e:
-            logger.error(f"ML test error: {str(e)}")
-            return jsonify({'error': str(e), 'status': 'degraded'}), 500
-
-    # Electronic Billing Workflow Endpoint
-    @app.route('/api/workflow/electronic-billing')
-    def electronic_billing_workflow():
-        """Get electronic billing workflow status and metrics"""
-        try:
-            workflow_status = {
-                'status': 'active',
-                'processing_queue': 0,
-                'daily_processed': 15,
-                'success_rate': 98.5,
-                'average_processing_time': 2.3,
-                'integrations': {
-                    'ledes': True,
-                    'utbms': True,
-                    'acca': True,
-                    'custom_formats': True
-                },
-                'automation': {
-                    'auto_categorization': True,
-                    'duplicate_detection': True,
-                    'compliance_check': True,
-                    'spend_validation': True
-                },
-                'last_sync': datetime.utcnow().isoformat()
-            }
-            return jsonify(workflow_status)
-        except Exception as e:
-            logger.error(f"Electronic billing workflow error: {str(e)}")
+            logger.error(f"List invoices error: {e}")
             return jsonify({'error': str(e)}), 500
 
-    # Report Generation Endpoints
-    @app.route('/api/reports/generate/<report_type>', methods=['POST'])
-    def generate_report(report_type):
-        """Generate and download various reports"""
+    @app.route('/api/invoices/<invoice_id>', methods=['GET'])
+    @jwt_required(optional=True)
+    def invoice_detail(invoice_id):
         try:
-            data = request.get_json() or {}
-            
-            # Import PDF generation library
-            from reportlab.pdfgen import canvas
-            from reportlab.lib.pagesizes import letter
-            from reportlab.lib import colors
-            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-            from reportlab.lib.styles import getSampleStyleSheet
-            import io
-            
-            buffer = io.BytesIO()
-            
-            if report_type == 'spend-analysis':
-                # Generate spend analysis report
-                doc = SimpleDocTemplate(buffer, pagesize=letter)
-                styles = getSampleStyleSheet()
-                story = []
-                
-                # Title
-                title = Paragraph(f"Legal Spend Analysis Report - {datetime.now().strftime('%B %Y')}", styles['Title'])
-                story.append(title)
-                story.append(Spacer(1, 20))
-                
-                # Get data from database
-                session = get_db_session()
-                total_spend = session.query(func.sum(Invoice.amount)).scalar() or 0
-                vendor_count = session.query(func.count(func.distinct(Invoice.vendor_id))).scalar() or 0
-                
-                # Summary data
-                summary_data = [
-                    ['Metric', 'Value'],
-                    ['Total Spend', f'${total_spend:,.2f}'],
-                    ['Active Vendors', str(vendor_count)],
-                    ['Generated On', datetime.now().strftime('%Y-%m-%d %H:%M:%S')]
-                ]
-                
-                summary_table = Table(summary_data)
-                summary_table.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                    ('FONTSIZE', (0, 0), (-1, 0), 14),
-                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                    ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-                    ('GRID', (0, 0), (-1, -1), 1, colors.black)
-                ]))
-                
-                story.append(summary_table)
-                session.close()
-                
-            elif report_type == 'vendor-performance':
-                # Generate vendor performance report
-                doc = SimpleDocTemplate(buffer, pagesize=letter)
-                styles = getSampleStyleSheet()
-                story = []
-                
-                title = Paragraph("Vendor Performance Report", styles['Title'])
-                story.append(title)
-                story.append(Spacer(1, 20))
-                
-                # Add performance metrics
-                performance_text = Paragraph("This report contains vendor performance metrics, compliance scores, and recommendations.", styles['Normal'])
-                story.append(performance_text)
-                
-            elif report_type == 'legal-intelligence':
-                # Generate legal intelligence report
-                doc = SimpleDocTemplate(buffer, pagesize=letter)
-                styles = getSampleStyleSheet()
-                story = []
-                
-                title = Paragraph("Legal Intelligence Report", styles['Title'])
-                story.append(title)
-                story.append(Spacer(1, 20))
-                
-                intel_text = Paragraph("This report contains legal market insights, case analysis, and competitive intelligence.", styles['Normal'])
-                story.append(intel_text)
-                
-            else:
-                return jsonify({'error': 'Invalid report type'}), 400
-                
-            # Build the PDF
-            doc.build(story)
-            
-            # Return the PDF
-            buffer.seek(0)
-            
-            return Response(
-                buffer.getvalue(),
-                mimetype='application/pdf',
-                headers={
-                    'Content-Disposition': f'attachment; filename="{report_type}-report-{datetime.now().strftime("%Y%m%d")}.pdf"',
-                    'Content-Type': 'application/pdf'
-                }
-            )
-            
+            session = get_db_session()
+            from db.database import Invoice, Vendor
+            inv = session.query(Invoice).filter(Invoice.id == invoice_id).first()
+            if not inv:
+                return jsonify({'error': 'Not found'}), 404
+            data = {
+                'id': str(inv.id),
+                'vendor': inv.vendor.name if inv.vendor else 'Unknown',
+                'amount': float(inv.amount or 0),
+                'status': inv.status or 'pending',
+                'date': inv.date.isoformat() if inv.date else None,
+                'dueDate': (inv.date + timedelta(days=30)).isoformat() if inv.date else None,
+                'matter': inv.matter or 'General',
+                'riskScore': float(inv.risk_score or 0) * 100 if (inv.risk_score and inv.risk_score <= 1) else float(inv.risk_score or 0),
+                'lineItems': json.loads(inv.line_items or '[]'),
+                'analysis': json.loads(inv.analysis or '{}')
+            }
+            session.close()
+            return jsonify(data)
         except Exception as e:
-            logger.error(f"Report generation error: {str(e)}")
+            logger.error(f"Invoice detail error: {e}")
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/invoices/<invoice_id>/analyze', methods=['POST'])
+    @jwt_required(optional=True)
+    def analyze_invoice_endpoint(invoice_id):
+        try:
+            session = get_db_session()
+            from db.database import Invoice
+            inv = session.query(Invoice).filter(Invoice.id == invoice_id).first()
+            if not inv:
+                return jsonify({'error': 'Not found'}), 404
+            analyzer = getattr(current_app, 'enhanced_invoice_analyzer', None) or getattr(current_app, 'invoice_analyzer', None)
+            analysis = {}
+            if analyzer:
+                try:
+                    analysis = analyzer.analyze_invoice({
+                        'id': inv.id,
+                        'vendor': inv.vendor_id,
+                        'amount': float(inv.amount or 0),
+                        'date': inv.date.isoformat() if inv.date else None
+                    })
+                except Exception as e:
+                    logger.warning(f"Analyzer failed: {e}")
+            # Fallback simple risk
+            if not analysis:
+                analysis = {
+                    'invoice_id': str(inv.id),
+                    'risk_score': float(inv.risk_score or random.uniform(0.1, 0.9)),
+                    'risk_level': 'high' if (inv.risk_score or 0) > 0.7 else 'medium' if (inv.risk_score or 0) > 0.4 else 'low',
+                    'anomalies': [],
+                    'recommendations': []
+                }
+            inv.analysis = json.dumps(analysis)
+            session.commit()
+            socketio.emit('notification', {
+                'type': 'invoice_analysis',
+                'timestamp': datetime.utcnow().isoformat() + 'Z',
+                'data': {
+                    'invoice_id': inv.id,
+                    'invoice_number': inv.id,
+                    'risk_score': analysis.get('risk_score'),
+                    'status': inv.status,
+                    'amount': float(inv.amount or 0)
+                }
+            })
+            session.close()
+            return jsonify(analysis)
+        except Exception as e:
+            logger.error(f"Analyze invoice error: {e}")
+            return jsonify({'error': str(e)}), 500
+
+    @limiter.limit("10/minute")
+    @app.route('/api/upload-invoice', methods=['POST'])
+    @jwt_required(optional=True)
+    def upload_invoice():
+        try:
+            if 'file' not in request.files:
+                return jsonify({'error': 'file is required'}), 400
+            f = request.files['file']
+            filename = f.filename
+            content = f.read()
+            amount = float(request.form.get('amount') or 0)
+            vendor_name = request.form.get('vendor') or 'Unknown Vendor'
+            session = get_db_session()
+            from db.database import Invoice, Vendor
+            vendor = session.query(Vendor).filter(Vendor.name == vendor_name).first()
+            if not vendor:
+                vendor = Vendor(name=vendor_name)
+                session.add(vendor)
+                session.flush()
+            new_inv = Invoice(
+                vendor_id=vendor.id,
+                amount=amount or random.uniform(1000, 5000),
+                status='processing',
+                date=datetime.utcnow().date(),
+                risk_score=random.uniform(0, 1),
+                matter='General',
+                category=request.form.get('category'),
+                description=request.form.get('description'),
+                line_items=json.dumps([])
+            )
+            session.add(new_inv)
+            session.commit()
+            socketio.emit('notification', {
+                'type': 'invoice_analysis',
+                'timestamp': datetime.utcnow().isoformat() + 'Z',
+                'data': {
+                    'invoice_id': new_inv.id,
+                    'invoice_number': new_inv.id,
+                    'risk_score': new_inv.risk_score,
+                    'status': new_inv.status,
+                    'amount': float(new_inv.amount or 0)
+                }
+            })
+            session.close()
+            return jsonify({'id': str(new_inv.id), 'filename': filename, 'status': 'uploaded'}), 201
+        except Exception as e:
+            logger.error(f"Upload invoice error: {e}")
             return jsonify({'error': str(e)}), 500
 
     # Import and register routes

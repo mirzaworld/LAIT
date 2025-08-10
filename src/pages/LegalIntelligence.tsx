@@ -43,43 +43,23 @@ const LegalIntelligence: React.FC = () => {
   const [attorneyVerification, setAttorneyVerification] = useState<any>(null);
   const [selectedCase, setSelectedCase] = useState<CaseDetails | null>(null);
   const [showCaseDetails, setShowCaseDetails] = useState(false);
+  const [jurisdiction, setJurisdiction] = useState('all');
+  const [selfTestResult, setSelfTestResult] = useState<any>(null);
+  const [runningSelfTest, setRunningSelfTest] = useState(false);
 
   // Initialize legal data service
   const legalService = new LegalDataService();
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
-    
     setLoading(true);
     try {
-      // Test backend connection first
       await legalService.testBackendConnection();
-      
-      // Use backend API for search
-      const results = await legalService.searchCasesBackend(searchQuery);
+      const results = await legalService.searchCasesBackend(searchQuery, { court: jurisdiction });
       setSearchResults(results.cases || []);
     } catch (error) {
       console.error('Search failed:', error);
-      // Fallback to mock data if backend is not available
-      const mockResults: SearchResult[] = [
-        {
-          id: '1',
-          title: `${searchQuery} - Contract Dispute`,
-          court: 'District Court of California',
-          date: '2024-01-15',
-          relevance: 95,
-          excerpt: 'Court ruled on vendor liability in service agreements...'
-        },
-        {
-          id: '2',
-          title: `${searchQuery} - Legal Precedent`,
-          court: 'Federal Circuit Court',
-          date: '2023-11-20',
-          relevance: 87,
-          excerpt: 'Precedent case involving government contractor obligations...'
-        }
-      ];
-      setSearchResults(mockResults);
+      setSearchResults([]);
     } finally {
       setLoading(false);
     }
@@ -138,6 +118,18 @@ const LegalIntelligence: React.FC = () => {
       console.error('Failed to load case details:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const runSelfTest = async () => {
+    setRunningSelfTest(true);
+    try {
+      const result = await legalService.runBackendSelfTest();
+      setSelfTestResult(result);
+    } catch (e) {
+      setSelfTestResult({ error: 'Self test failed' });
+    } finally {
+      setRunningSelfTest(false);
     }
   };
 
@@ -215,6 +207,16 @@ const LegalIntelligence: React.FC = () => {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
+                <select
+                  value={jurisdiction}
+                  onChange={(e) => setJurisdiction(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Jurisdictions</option>
+                  <option value="federal">Federal</option>
+                  <option value="state">State</option>
+                  <option value="unknown">Unknown</option>
+                </select>
                 <button
                   onClick={handleSearch}
                   disabled={loading}
@@ -222,6 +224,13 @@ const LegalIntelligence: React.FC = () => {
                 >
                   <Search className="h-4 w-4" />
                   {loading ? 'Searching...' : 'Search'}
+                </button>
+                <button
+                  onClick={runSelfTest}
+                  disabled={runningSelfTest}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 text-sm"
+                >
+                  {runningSelfTest ? 'Testing...' : 'Run Self-Test'}
                 </button>
               </div>
 
@@ -245,6 +254,13 @@ const LegalIntelligence: React.FC = () => {
                       <p className="text-gray-700">{result.excerpt}</p>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {selfTestResult && (
+                <div className="mt-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                  <h4 className="font-semibold mb-2">Backend Self-Test</h4>
+                  <pre className="text-xs whitespace-pre-wrap max-h-64 overflow-y-auto">{JSON.stringify(selfTestResult, null, 2)}</pre>
                 </div>
               )}
             </div>

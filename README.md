@@ -36,6 +36,82 @@ cd /Users/mirza/Documents/GitHub/LAIT
 npm run dev
 ```
 
+## Quick Start (Unified Backend + Frontend)
+
+### Prerequisites
+
+- Python 3.11+
+- Node.js 18+
+- PostgreSQL (or set `DATABASE_URL` to your DB)
+
+### 1. Backend Setup
+
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+alembic upgrade head
+python -c "from db.database import init_db; init_db()"
+python enhanced_app.py  # or: gunicorn -k eventlet -w 1 enhanced_app:app
+```
+
+Backend runs on <http://localhost:5003>
+
+### 2. Frontend Setup
+
+```bash
+npm install
+npm run dev
+```
+
+Frontend runs on <http://localhost:5173>
+
+### 3. Self Test
+
+Check core subsystems:
+
+```bash
+curl http://localhost:5003/api/self-test | jq .
+```
+
+### 4. Legal Case Search
+
+```bash
+curl -X POST http://localhost:5003/api/legal/search \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"contract dispute","jurisdiction":"federal"}' | jq '.metadata'
+```
+
+### 5. Invoice Workflow
+
+Upload (multipart/form-data):
+
+```bash
+curl -X POST http://localhost:5003/api/upload-invoice \
+  -H 'Authorization: Bearer <TOKEN>' \
+  -F file=@invoice.pdf
+```
+
+List invoices:
+
+```bash
+curl http://localhost:5003/api/invoices -H 'Authorization: Bearer <TOKEN>' | jq '.[0]'
+```
+
+### 6. Diagnostics
+
+Open Diagnostics page in UI or run:
+
+```bash
+node scripts/api_smoke_test.cjs
+```
+
+## New Endpoints
+
+- `/api/self-test`
+- `/api/legal/search`
+
 ## 📖 **Complete Documentation**
 
 For comprehensive project documentation, technical specifications, feature details, deployment guides, and roadmap, see:

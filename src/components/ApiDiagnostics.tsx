@@ -12,6 +12,7 @@ interface EndpointStatus {
 const ApiDiagnostics: React.FC = () => {
   const [endpoints, setEndpoints] = useState<EndpointStatus[]>([
     { endpoint: '/api/health', description: 'Health Check', status: 'loading' },
+    { endpoint: '/api/self-test', description: 'Self Test', status: 'loading' },
     { endpoint: '/api/dashboard/metrics', description: 'Dashboard Metrics', status: 'loading' },
     { endpoint: '/api/invoices', description: 'Invoices List', status: 'loading' },
     { endpoint: '/api/vendors', description: 'Vendors List', status: 'loading' },

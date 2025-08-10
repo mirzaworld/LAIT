@@ -698,43 +698,37 @@ class LegalDataService {
    */
   async searchCasesBackend(query: string, options?: any): Promise<any> {
     try {
-      const response = await axios.post(`${LAIT_BACKEND_API}/legal-intelligence/search`, {
+      const response = await axios.post(`${LAIT_BACKEND_API}/api/legal/search`, {
         query,
         jurisdiction: options?.court || 'all',
         dateRange: options?.date_range || {}
       }, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('lait_token') || localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('lait_token') || localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
         }
       });
       return response.data;
     } catch (error) {
       console.error('Backend search failed, using mock data:', error);
-      // Return mock data with structure similar to expected response
       return {
-        cases: [
-          {
-            id: '1',
-            title: `${query} - Contract Dispute Analysis`,
-            court: 'District Court of California',
-            date: '2024-01-15',
-            relevance: 95,
-            excerpt: `Legal analysis shows precedent for ${query} related cases...`,
-            source: 'lait-backend'
-          },
-          {
-            id: '2',
-            title: `${query} - Regulatory Compliance Case`,
-            court: 'Federal Circuit Court',
-            date: '2023-11-20',
-            relevance: 87,
-            excerpt: `Court ruling establishes framework for ${query} compliance...`,
-            source: 'lait-backend'
-          }
-        ],
-        total: 2,
-        query: query
+        cases: [],
+        total: 0,
+        query
       };
+    }
+  }
+
+  /**
+   * Run backend self-test
+   */
+  async runBackendSelfTest(): Promise<any> {
+    try {
+      const response = await axios.get(`${LAIT_BACKEND_API}/api/self-test`);
+      return response.data;
+    } catch (error) {
+      console.error('Self-test failed:', error);
+      throw error;
     }
   }
 

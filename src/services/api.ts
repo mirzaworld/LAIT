@@ -847,3 +847,12 @@ export const getLegalMarketAnalysis = async (): Promise<any> => {
     throw error;
   }
 };
+
+/**
+ * Self-test API helper
+ */
+export const runSelfTest = async (): Promise<any> => {
+  const response = await fetch(apiUrl('/api/self-test'), { headers: getAuthHeaders() });
+  if (!response.ok) throw new Error('Self test failed');
+  return response.json();
+};
