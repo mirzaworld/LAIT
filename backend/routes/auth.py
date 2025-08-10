@@ -147,38 +147,26 @@ def logout():
 @auth_bp.route('/me', methods=['GET'])
 @jwt_required(optional=True)
 def get_user():
-    """Get current user information with resilience to monkeypatched identity.
-    Falls back to manually decoding JWT if verification bypassed in tests.
-    """
+    """Get current user information with resilience to monkeypatched identity."""
     from flask_jwt_extended import get_jwt, get_jwt_identity
-    from flask_jwt_extended.utils import decode_token
     claimed_identity = None
     email_claim = None
-    # First try normal helpers (may be monkeypatched to always return 1)
     try:
         claimed_identity = get_jwt_identity()
     except Exception:
         pass
     try:
         claims = get_jwt()
-        if claims:
-            email_claim = claims.get('email')
-            if not claimed_identity:
-                claimed_identity = claims.get('user_id') or claims.get('sub') or claims.get('identity')
+        email_claim = claims.get('email')
+        if not claimed_identity:
+            claimed_identity = claims.get('user_id') or claims.get('sub') or claims.get('identity')
     except Exception:
         claims = {}
-    # Manual decode path if we still only have default id and header supplied
-    if (not email_claim or (claimed_identity == 1 and email_claim == 'default@example.com')) and 'Authorization' in request.headers:
-        auth_header = request.headers.get('Authorization')
-        if auth_header.lower().startswith('bearer '):
-            raw_token = auth_header.split(' ', 1)[1].strip()
-            try:
-                decoded = decode_token(raw_token, allow_expired=False)
-                # Prefer decoded claims over monkeypatched ones
-                email_claim = decoded.get('email') or email_claim
-                claimed_identity = decoded.get('user_id') or decoded.get('sub') or claimed_identity
-            except Exception:
-                pass
+    
+    # Debug logging for test failures
+    if current_app.config.get('TESTING'):
+        print(f"DEBUG /me: claimed_identity={claimed_identity}, email_claim={email_claim}, claims_keys={list(claims.keys()) if claims else 'no_claims'}")
+    
     if current_app.config.get('TESTING') and not claimed_identity:
         claimed_identity = 1
     session = get_db_session()
@@ -186,6 +174,7 @@ def get_user():
         user = None
         if claimed_identity:
             user = session.query(User).filter_by(id=claimed_identity).first()
+        # If identity resolved to default user but email claim refers to a different user, honor email claim
         if email_claim and (not user or user.email != email_claim):
             user_by_email = session.query(User).filter_by(email=email_claim).first()
             if user_by_email:
