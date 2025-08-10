@@ -190,16 +190,23 @@ def sample_invoice(session, sample_vendor) -> Invoice:
 
 @pytest.fixture(autouse=True)
 def _auth_bypass(monkeypatch, app):
-    """Automatically bypass jwt_required in tests and provide default identity if none."""
+    """Bypass jwt_required verification but allow real JWT content through."""
     def _noop_verify(*a, **k):
         return True
-    def _fake_get_identity():
-        # Return existing identity if a token was provided; else default test user id 1
+    def _smart_get_identity():
+        # Try to get real identity from JWT token if present; fallback to 1 only if no token context
         try:
-            return _real_get_jwt_identity() or 1
+            real_identity = _real_get_jwt_identity()
+            if real_identity is not None:
+                return real_identity
         except Exception:
-            return 1
+            pass
+        # Fallback to default test user only if no JWT context available
+        return 1
+    
+    # Only bypass verification, but allow real JWT parsing
     monkeypatch.setattr(_jwt_views, 'verify_jwt_in_request', _noop_verify)
     monkeypatch.setattr('flask_jwt_extended.view_decorators.verify_jwt_in_request', _noop_verify, raising=False)
-    monkeypatch.setattr('flask_jwt_extended.utils.get_jwt_identity', lambda: 1, raising=False)
+    # Use smart identity that respects real tokens
+    monkeypatch.setattr('flask_jwt_extended.utils.get_jwt_identity', _smart_get_identity, raising=False)
     yield
