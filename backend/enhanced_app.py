@@ -19,6 +19,7 @@ import time
 import math
 import io
 import base64
+import uuid
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, send_file, current_app, make_response, Response
 from flask_cors import CORS
@@ -79,6 +80,75 @@ def create_app():
     """
     app = Flask(__name__)
     
+    # --------------------------------------------------
+    # Request correlation & timing middleware (backend polish step 1)
+    # --------------------------------------------------
+    @app.before_request
+    def _request_instrumentation():
+        request.start_time = time.time()
+        req_id = request.headers.get('X-Request-ID') or str(uuid.uuid4())
+        request.request_id = req_id
+        # Attach to g for potential downstream usage
+        try:
+            from flask import g
+            g.request_id = req_id
+        except Exception:
+            pass
+
+    @app.after_request
+    def _add_security_headers(resp):  # security hardening headers
+        duration_ms = None
+        if hasattr(request, 'start_time'):
+            duration_ms = int((time.time() - request.start_time) * 1000)
+            resp.headers['X-Response-Time-ms'] = str(duration_ms)
+        if hasattr(request, 'request_id'):
+            resp.headers['X-Request-ID'] = request.request_id
+        # Security headers (minimal CSP allowing frontend dev host & APIs)
+        resp.headers.setdefault('X-Content-Type-Options', 'nosniff')
+        resp.headers.setdefault('X-Frame-Options', 'DENY')
+        resp.headers.setdefault('X-XSS-Protection', '1; mode=block')
+        resp.headers.setdefault('Referrer-Policy', 'no-referrer')
+        csp = "default-src 'self'; connect-src 'self' http://localhost:5173 ws://localhost:5173 http://localhost:5003 ws://localhost:5003; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;"
+        resp.headers.setdefault('Content-Security-Policy', csp)
+        resp.headers.setdefault('Cache-Control', 'no-store')
+        return resp
+
+    # Unified JSON error response helper
+    def _json_error(status_code: int, error_code: str, message: str, details=None):
+        payload = {
+            'error': {
+                'code': error_code,
+                'message': message,
+                'status': status_code,
+                'request_id': getattr(request, 'request_id', None),
+                'timestamp': datetime.utcnow().isoformat() + 'Z'
+            }
+        }
+        if details is not None:
+            payload['error']['details'] = details
+        return jsonify(payload), status_code
+
+    # Global exception handlers
+    @app.errorhandler(404)
+    def _not_found(e):
+        return _json_error(404, 'not_found', 'Resource not found')
+
+    @app.errorhandler(400)
+    def _bad_request(e):
+        return _json_error(400, 'bad_request', 'Invalid request')
+
+    @app.errorhandler(Exception)
+    def _unhandled(e):  # catch-all
+        logger.exception('Unhandled exception')
+        debug = app.config.get('DEBUG', False)
+        details = None
+        if debug:
+            details = {'type': e.__class__.__name__, 'str': str(e)}
+        return _json_error(500, 'internal_error', 'Internal server error', details)
+
+    # --------------------------------------------------
+    # Existing configuration continues below
+    # --------------------------------------------------
     # Configure app
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@localhost/legalspend')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -727,6 +797,30 @@ def create_app():
             models_status[attr] = bool(obj)
         return jsonify({'models': models_status, 'status': 'ok'}), 200
     
+    # Readiness endpoint (deep health incl. DB + ML models)
+    @app.route('/api/ready')
+    def readiness():
+        db_ok = True
+        db_error = None
+        try:
+            session = get_db_session()
+            session.execute('SELECT 1')
+            session.close()
+        except Exception as e:
+            db_ok = False
+            db_error = str(e)
+        ml_status = {}
+        for name in ['invoice_analyzer', 'vendor_analyzer', 'risk_predictor']:
+            ml_status[name] = bool(getattr(app, name, None))
+        ready = db_ok and all(ml_status.values())
+        return jsonify({
+            'status': 'ready' if ready else 'degraded',
+            'database': 'ok' if db_ok else 'error',
+            'database_error': db_error,
+            'ml_models': ml_status,
+            'timestamp': datetime.utcnow().isoformat() + 'Z'
+        }), (200 if ready else 503)
+
     return app
 
 # Create a .env file if it doesn't exist
