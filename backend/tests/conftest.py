@@ -8,7 +8,7 @@ import jwt
 from typing import Generator, Dict, Any
 import tempfile
 
-from enhanced_app import create_app
+from backend.enhanced_app import create_app
 from db.database import init_db, get_db_session
 from models.db_models import User, Invoice, Vendor, Matter, LineItem
 from services.s3_service import S3Service
