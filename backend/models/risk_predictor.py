@@ -395,6 +395,7 @@ class RiskPredictor:
             # Check for overreliance on expensive resources
             expensive_hours = sum(tk['hours'] for tk in timekeepers.values()
                                 if tk['rate'] >= 500)
+            if expensive_hours / total_hours > 0.6:
                 risk_factors.append({
                     'type': 'expensive_resources',
                     'severity': 'medium',
@@ -635,3 +636,28 @@ class RiskPredictor:
                     return True
                     
         return False
+    
+    # ------------------------------------------------------------------
+    # Test adapter API expected by legacy/unit tests (train & predict_proba)
+    # ------------------------------------------------------------------
+    def train(self, df, target='overspend'):  # type: ignore
+        """Lightweight classifier-style training for tests.
+        Expects df with numeric feature columns: hours, rate, line_total and target label column.
+        """
+        import pandas as _pd
+        from sklearn.ensemble import RandomForestClassifier as _RFC
+        required = {'hours', 'rate', 'line_total', target}
+        if not required.issubset(df.columns):
+            raise ValueError(f"DataFrame must contain columns {required}")
+        X = df[['hours', 'rate', 'line_total']].values
+        y = df[target].values
+        self._clf = _RFC(n_estimators=50, random_state=42)
+        self._clf.fit(X, y)
+        return self
+
+    def predict_proba(self, X):  # type: ignore
+        if not hasattr(self, '_clf'):
+            raise RuntimeError("Model not trained. Call train() first.")
+        import numpy as _np
+        X = _np.asarray(X)
+        return self._clf.predict_proba(X)
