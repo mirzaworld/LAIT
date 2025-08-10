@@ -3,7 +3,7 @@ Invoice routes: upload, list, get, file download
 """
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from dev_auth import development_jwt_required
+from dev_auth import development_jwt_required, get_current_user_id
 from db.database import get_db_session, Invoice as DbInvoice, LineItem, Vendor
 from services.s3_service import S3Service
 from services.pdf_parser_service import PDFParserService
@@ -47,7 +47,7 @@ def list_invoices():
 @invoices_bp.route('/<int:invoice_id>', methods=['GET'])
 @development_jwt_required
 def get_invoice(invoice_id):
-    current_user = get_jwt_identity()
+    current_user = get_current_user_id()
     session = get_db_session()
     try:
         inv = session.query(DbInvoice).filter_by(id=invoice_id).first()
@@ -102,7 +102,7 @@ def create_invoice_legacy():
 @development_jwt_required
 def upload_invoice():
     """Upload a new invoice (PDF) and save parsed data to the database with ML analysis"""
-    user_id = get_jwt_identity()
+    user_id = get_current_user_id()
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
     file = request.files['file']
@@ -210,7 +210,7 @@ def upload_invoice():
 @development_jwt_required
 def download_invoice(invoice_id):
     """Download invoice PDF from S3"""
-    current_user = get_jwt_identity()
+    current_user = get_current_user_id()
     session = get_db_session()
     try:
         inv = session.query(DbInvoice).filter_by(id=invoice_id).first()

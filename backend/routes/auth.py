@@ -214,7 +214,7 @@ def get_user():
         session.close()
 
 @auth_bp.route('/admin/users', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 @role_required(['admin'])
 def get_all_users():
     """Admin only: Get all users"""
@@ -239,7 +239,7 @@ def get_all_users():
         session.close()
 
 @auth_bp.route('/admin/users/<int:user_id>', methods=['PUT'])
-@jwt_required()
+@development_jwt_required
 @role_required(['admin'])
 def update_user(user_id):
     """Admin only: Update user information"""
@@ -294,7 +294,7 @@ def update_user(user_id):
         session.close()
 
 @auth_bp.route('/change-password', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def change_password():
     """Allow users to change their password"""
     user_id = get_jwt_identity()
@@ -325,7 +325,7 @@ def change_password():
         session.close()
 
 @auth_bp.route('/role-management', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 @role_required(['admin'])
 def role_management():
     """Allow admin to update user roles"""

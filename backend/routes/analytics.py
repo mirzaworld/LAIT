@@ -4,7 +4,7 @@ from db.database import get_db_session
 from models.db_models import Invoice, LineItem, Vendor, Matter, RiskFactor
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from auth import role_required
-from dev_auth import development_jwt_required
+from dev_auth import development_jwt_required, get_current_user_id
 from datetime import datetime, timedelta
 import calendar
 from models.vendor_analyzer import VendorAnalyzer
@@ -539,7 +539,7 @@ def get_risk_factor_analysis():
 @development_jwt_required
 def vendor_risk_profile(vendor_id):
     """Get advanced risk profile and analytics for a specific vendor."""
-    current_user = get_jwt_identity()
+    current_user = get_current_user_id()
     try:
         analyzer = VendorAnalyzer()
         profile = analyzer.advanced_risk_profile(vendor_id)
@@ -551,7 +551,7 @@ def vendor_risk_profile(vendor_id):
 @development_jwt_required
 def matter_analytics_list():
     """Get matter comparison analytics"""
-    current_user = get_jwt_identity()
+    current_user = get_current_user_id()
     session = get_db_session()
     try:
         # Get date range parameters
@@ -630,7 +630,7 @@ def matter_analytics_list():
 @development_jwt_required
 def matter_risk_profile(matter_id):
     """Get advanced risk profile and analytics for a specific matter."""
-    current_user = get_jwt_identity()
+    current_user = get_current_user_id()
     try:
         analyzer = MatterAnalyzer()
         profile = analyzer.analyze_matter_risk(matter_id)
@@ -642,7 +642,7 @@ def matter_risk_profile(matter_id):
 @development_jwt_required
 def matter_expense_forecast(matter_id):
     """Get expense forecast for a specific matter."""
-    current_user = get_jwt_identity()
+    current_user = get_current_user_id()
     try:
         analyzer = MatterAnalyzer()
         forecast = analyzer.forecast_expenses(matter_id)
@@ -654,7 +654,7 @@ def matter_expense_forecast(matter_id):
 @development_jwt_required
 def vendor_analytics():
     """Get analytics for top vendors"""
-    current_user = get_jwt_identity()
+    current_user = get_current_user_id()
     session = get_db_session()
     try:
         # Fetch top vendors by spend

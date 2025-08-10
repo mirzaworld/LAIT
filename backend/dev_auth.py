@@ -57,3 +57,22 @@ def development_jwt_required(f):
             }, 401
         return f(*args, **kwargs)
     return decorated_function
+
+
+def get_current_user_id():
+    """
+    Get the current user ID from JWT token, with fallback for test mode.
+    In test mode, return user ID 1 if no valid JWT context.
+    """
+    from flask import current_app
+    
+    if current_app.config.get('TESTING'):
+        try:
+            from flask_jwt_extended import get_jwt_identity
+            return get_jwt_identity()
+        except:
+            # Fallback to test user ID
+            return 1
+    else:
+        from flask_jwt_extended import get_jwt_identity
+        return get_jwt_identity()

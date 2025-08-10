@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from flask_socketio import SocketIO, emit
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from dev_auth import development_jwt_required
+from dev_auth import development_jwt_required, get_current_user_id
 from datetime import datetime
 import json
 from typing import Dict, List, Optional
@@ -179,7 +179,7 @@ notification_manager = NotificationManager()
 @notification_bp.route('', methods=['GET'])
 @development_jwt_required
 def get_notifications():
-    user_id = get_jwt_identity()
+    user_id = get_current_user_id()
     rl = _enforce_rate(int(user_id), 'notifications_list')
     if rl:
         return rl
@@ -189,7 +189,7 @@ def get_notifications():
 @notification_bp.route('/unread-count', methods=['GET'])
 @development_jwt_required
 def unread_count():
-    user_id = get_jwt_identity()
+    user_id = get_current_user_id()
     rl = _enforce_rate(int(user_id), 'notifications_unread')
     if rl:
         return rl
@@ -198,7 +198,7 @@ def unread_count():
 @notification_bp.route('/<int:notification_id>/read', methods=['POST'])
 @development_jwt_required
 def mark_as_read(notification_id):
-    user_id = get_jwt_identity()
+    user_id = get_current_user_id()
     rl = _enforce_rate(int(user_id), 'notifications_mark_read')
     if rl:
         return rl
@@ -208,7 +208,7 @@ def mark_as_read(notification_id):
 @notification_bp.route('/read-all', methods=['POST'])
 @development_jwt_required
 def mark_all_as_read():
-    user_id = get_jwt_identity()
+    user_id = get_current_user_id()
     rl = _enforce_rate(int(user_id), 'notifications_read_all')
     if rl:
         return rl
@@ -218,7 +218,7 @@ def mark_all_as_read():
 @notification_bp.route('/<int:notification_id>', methods=['DELETE'])
 @development_jwt_required
 def delete_notification_route(notification_id):
-    user_id = get_jwt_identity()
+    user_id = get_current_user_id()
     rl = _enforce_rate(int(user_id), 'notifications_delete')
     if rl:
         return rl
@@ -228,7 +228,7 @@ def delete_notification_route(notification_id):
 @notification_bp.route('', methods=['DELETE'])
 @development_jwt_required
 def clear_all_notifications():
-    user_id = get_jwt_identity()
+    user_id = get_current_user_id()
     # reuse delete rate limit
     rl = _enforce_rate(int(user_id), 'notifications_delete')
     if rl:
@@ -240,7 +240,7 @@ def clear_all_notifications():
 @notification_bp.route('/test', methods=['POST'])
 @development_jwt_required
 def add_test_notification():
-    user_id = get_jwt_identity()
+    user_id = get_current_user_id()
     rl = _enforce_rate(int(user_id), 'notifications_list')  # treat as list-level usage
     if rl:
         return rl
@@ -262,7 +262,7 @@ def ack_notification(notification_id):
     """Alias for mark-as-read returning unread count for optimistic UI.
     Idempotent: will not decrement unread below 0 on repeated calls.
     """
-    user_id = get_jwt_identity()
+    user_id = get_current_user_id()
     rl = _enforce_rate(int(user_id), 'notifications_ack')
     if rl:
         return rl
