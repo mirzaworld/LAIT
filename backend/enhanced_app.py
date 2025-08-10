@@ -70,6 +70,9 @@ logger = logging.getLogger(__name__)
 # Initialize Socket.IO
 socketio = SocketIO()
 
+# Configure rate limiter globally
+limiter = Limiter(key_func=get_remote_address, default_limits=["200 per minute"])  # Adjust as needed
+
 def create_app():
     """
     Application factory function that creates and configures the Flask app.
@@ -97,7 +100,7 @@ def create_app():
             "expose_headers": ["Content-Type", "Authorization"]
         }
     })
-    
+    limiter.init_app(app)
     # Add an OPTIONS handler for preflight requests
     @app.before_request
     def handle_preflight():

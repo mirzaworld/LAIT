@@ -26,7 +26,15 @@ end tell'
 
 # Wait for backend to initialize
 echo "Waiting for backend to initialize..."
-sleep 3
+sleep 6
+
+# Quick self-test
+STATUS_JSON=$(curl -s http://localhost:5003/api/self-test || true)
+if echo "$STATUS_JSON" | grep -q '"status":'; then
+  echo "Self-test: $STATUS_JSON"
+else
+  echo "Self-test endpoint not reachable yet. Proceeding..."
+fi
 
 # Start the frontend
 echo -e "${GREEN}Starting frontend on http://localhost:5174${NC}"

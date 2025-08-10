@@ -14,7 +14,7 @@ from models.enhanced_invoice_analyzer import analyze_invoice_enhanced
 analytics_bp = Blueprint('analytics', __name__)
 
 @analytics_bp.route('/dashboard/metrics', methods=['GET'])
-@development_jwt_required
+@jwt_required()
 def dashboard_metrics():
     """Get dashboard metrics for main dashboard"""
     session = get_db_session()
@@ -95,7 +95,7 @@ def dashboard_metrics():
         session.close()
 
 @analytics_bp.route('/summary', methods=['GET'])
-@development_jwt_required
+@jwt_required()
 def summary():
     """Get summary analytics for dashboard"""
     session = get_db_session()
@@ -230,7 +230,7 @@ def summary():
         session.close()
 
 @analytics_bp.route('/vendors', methods=['GET'])
-@development_jwt_required
+@jwt_required()
 def vendors():
     """Get vendor comparison analytics"""
     session = get_db_session()

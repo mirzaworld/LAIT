@@ -1,12 +1,11 @@
 """
 Invoice routes: upload, list, get, file download
 """
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from db.database import get_db_session, Invoice as DbInvoice, LineItem, Vendor
 from services.s3_service import S3Service
 from services.pdf_parser_service import PDFParserService
-from dev_auth import development_jwt_required
 import tempfile
 import os
 from datetime import datetime
@@ -14,9 +13,8 @@ from datetime import datetime
 invoices_bp = Blueprint('invoices', __name__, url_prefix='/api/invoices')
 
 @invoices_bp.route('', methods=['GET'])
-@development_jwt_required
+@jwt_required()
 def list_invoices():
-    # current_user = get_jwt_identity()  # Commented out for testing
     session = get_db_session()
     try:
         invoices = session.query(DbInvoice).all()
@@ -101,7 +99,6 @@ def list_invoices():
                 }
             ]
             return jsonify({'invoices': demo_invoices})
-        
         result = []
         for inv in invoices:
             result.append({
@@ -110,6 +107,7 @@ def list_invoices():
                 'invoice_number': inv.invoice_number,
                 'date': inv.date.isoformat() if inv.date else None,
                 'total_amount': inv.amount,
+                'risk_score': inv.risk_score,
                 'overspend_risk': inv.overspend_risk,
                 'processed': inv.processed,
                 'pdf_s3_key': inv.pdf_s3_key
@@ -132,16 +130,17 @@ def get_invoice(invoice_id):
             
         s3 = S3Service()
         file_url = s3.generate_presigned_url(inv.pdf_s3_key) if inv.pdf_s3_key else None
+        # Fix relationship attribute (line_items instead of lines)
         lines = [
             {
                 'id': l.id,
                 'description': l.description,
                 'hours': l.hours,
                 'rate': l.rate,
-                'line_total': l.line_total,
+                'amount': l.amount,
                 'is_flagged': l.is_flagged,
                 'flag_reason': l.flag_reason
-            } for l in inv.lines
+            } for l in inv.line_items
         ]
         return jsonify({
             'id': inv.id,
@@ -149,9 +148,11 @@ def get_invoice(invoice_id):
             'invoice_number': inv.invoice_number,
             'date': inv.date.isoformat() if inv.date else None,
             'total_amount': inv.amount,
+            'risk_score': inv.risk_score,
             'overspend_risk': inv.overspend_risk,
             'processed': inv.processed,
             'pdf_url': file_url,
+            'analysis_result': inv.analysis_result,
             'lines': lines
         })
     except Exception as e:
@@ -162,7 +163,7 @@ def get_invoice(invoice_id):
 @invoices_bp.route('/upload', methods=['POST'])
 @jwt_required()
 def upload_invoice():
-    """Upload a new invoice (PDF) and save parsed data to the database"""
+    """Upload a new invoice (PDF) and save parsed data to the database with ML analysis"""
     user_id = get_jwt_identity()
     if 'file' not in request.files:
         return jsonify({'message': 'No file provided'}), 400
@@ -174,13 +175,10 @@ def upload_invoice():
     temp_file_path = None
     session = get_db_session()
     try:
-        # Save file temporarily
         with tempfile.NamedTemporaryFile(delete=False) as temp_file:
             file.save(temp_file.name)
             temp_file_path = temp_file.name
-        # Parse PDF
         parsed_data = parser.parse_pdf(temp_file_path)
-        # Upload to S3 (optional if bucket configured)
         pdf_s3_key = None
         try:
             if os.getenv('AWS_S3_BUCKET'):
@@ -188,42 +186,60 @@ def upload_invoice():
                     from werkzeug.datastructures import FileStorage
                     fobj_seek = FileStorage(stream=fobj, filename=file.filename, content_type='application/pdf')
                     pdf_s3_key = s3.upload_file(fobj_seek)
-        except Exception as s3e:
-            # Non-fatal if S3 not configured
+        except Exception:
             pdf_s3_key = None
-        # Find or create vendor
         vendor_name = parsed_data.get('vendor_name') or 'Unknown Vendor'
         vendor = session.query(Vendor).filter_by(name=vendor_name).first()
         if not vendor:
             vendor = Vendor(name=vendor_name, status='active')
             session.add(vendor)
             session.flush()
-        # Convert date
         date_val = None
         raw_date = parsed_data.get('date')
         if raw_date:
             try:
                 date_val = datetime.strptime(raw_date, '%Y-%m-%d')
             except ValueError:
-                date_val = datetime.utcnow()
-        # Basic risk score placeholder (could integrate analyzer)
-        total_amount = parsed_data.get('total_amount') or 0
-        risk_score = min(100, (total_amount / 1000.0)) if total_amount else 0
+                try:
+                    date_val = datetime.fromisoformat(raw_date)
+                except Exception:
+                    date_val = datetime.utcnow()
+        total_amount = parsed_data.get('total_amount') or parsed_data.get('amount') or 0
+        # ML Analysis integration
+        risk_score = None
+        analysis_result = None
+        try:
+            analyzer = getattr(current_app, 'invoice_analyzer', None)
+            if analyzer:
+                # Build minimal structure expected by analyzer
+                invoice_input = {
+                    'amount': total_amount,
+                    'line_items': parsed_data.get('line_items', []),
+                    'description': parsed_data.get('description'),
+                    'vendor_name': vendor_name
+                }
+                analysis_result = analyzer.analyze_invoice(invoice_input)
+                risk_score = analysis_result.get('risk_score') or analysis_result.get('risk', {}).get('score')
+        except Exception as ml_e:
+            current_app.logger.warning(f"Invoice ML analysis failed: {ml_e}")
+        # Fallback risk scoring
+        if risk_score is None:
+            risk_score = min(100, (float(total_amount) / 1000.0)) if total_amount else 0
         invoice = DbInvoice(
             vendor_id=vendor.id,
             invoice_number=parsed_data.get('invoice_number'),
             date=date_val or datetime.utcnow(),
             amount=total_amount,
-            overspend_risk=risk_score / 100.0,
+            overspend_risk=(float(risk_score) / 100.0) if risk_score else 0,
             processed=True,
             pdf_s3_key=pdf_s3_key,
             uploaded_by=user_id,
             status='uploaded',
-            risk_score=risk_score
+            risk_score=risk_score,
+            analysis_result=analysis_result
         )
         session.add(invoice)
         session.flush()
-        # Persist line items
         for li in parsed_data.get('line_items', []):
             line = LineItem(
                 invoice_id=invoice.id,
@@ -234,8 +250,7 @@ def upload_invoice():
             )
             session.add(line)
         session.commit()
-        invoice_id = invoice.id
-        return jsonify({'message': 'Invoice uploaded successfully', 'invoice_id': invoice_id})
+        return jsonify({'message': 'Invoice uploaded successfully', 'invoice_id': invoice.id, 'risk_score': risk_score})
     except Exception as e:
         session.rollback()
         return jsonify({'message': f'Error processing invoice: {str(e)}'}), 500
