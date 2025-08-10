@@ -7,6 +7,8 @@ from typing import Dict, List, Optional
 import threading
 import queue
 import time
+from db.database import get_db_session
+from models.db_models import Notification, User
 
 notification_bp = Blueprint('notification', __name__)
 socketio = SocketIO()
@@ -14,108 +16,178 @@ notification_queue = queue.Queue()
 
 class NotificationManager:
     def __init__(self):
-        self.notifications: List[Dict] = []
         self._start_notification_worker()
 
+    # ---------------- Background Worker (placeholder logic) -----------------
     def _start_notification_worker(self):
         def worker():
             while True:
                 try:
-                    # Process automated notifications
-                    self._check_invoice_processing()
-                    self._check_risk_alerts()
-                    self._check_spend_thresholds()
-                    time.sleep(60)  # Check every minute
+                    # Future: poll for system events to generate notifications
+                    time.sleep(60)
                 except Exception as e:
                     print(f"Error in notification worker: {e}")
-
         thread = threading.Thread(target=worker, daemon=True)
         thread.start()
 
-    def _check_invoice_processing(self):
-        # In a real app, this would check database for new processed invoices
-        pass
+    # ---------------- Persistence Helpers -----------------
+    def add_notification(self, user_id: Optional[int], notification_type: str, message: str, metadata: Optional[Dict] = None):
+        session = get_db_session()
+        try:
+            notif = Notification(
+                user_id=user_id,
+                type=notification_type,
+                content={
+                    'message': message,
+                    'metadata': metadata or {}
+                },
+                read=False
+            )
+            session.add(notif)
+            session.commit()
+            payload = self._serialize(notif)
+            socketio.emit('notification', payload)
+            return payload
+        finally:
+            session.close()
 
-    def _check_risk_alerts(self):
-        # In a real app, this would check for new risk alerts
-        pass
+    def get_notifications(self, user_id: int, limit: int = 50) -> List[Dict]:
+        session = get_db_session()
+        try:
+            q = session.query(Notification).filter((Notification.user_id == user_id) | (Notification.user_id.is_(None)))\
+                .order_by(Notification.created_at.desc()).limit(limit)
+            return [self._serialize(n) for n in q]
+        finally:
+            session.close()
 
-    def _check_spend_thresholds(self):
-        # In a real app, this would monitor spending thresholds
-        pass
+    def mark_as_read(self, user_id: int, notification_id: int) -> bool:
+        session = get_db_session()
+        try:
+            notif = session.query(Notification).filter(Notification.id == notification_id, ((Notification.user_id == user_id) | (Notification.user_id.is_(None)))).first()
+            if not notif:
+                return False
+            notif.read = True
+            notif.read_at = datetime.utcnow()
+            session.commit()
+            return True
+        finally:
+            session.close()
 
-    def add_notification(self, notification_type: str, message: str, metadata: Optional[Dict] = None):
-        notification = {
-            'id': str(len(self.notifications) + 1),
-            'type': notification_type,
-            'message': message,
-            'timestamp': datetime.utcnow().isoformat(),
-            'read': False,
-            'metadata': metadata or {}
+    def mark_all_as_read(self, user_id: int) -> int:
+        session = get_db_session()
+        try:
+            q = session.query(Notification).filter(((Notification.user_id == user_id) | (Notification.user_id.is_(None))), Notification.read.is_(False))
+            count = 0
+            for notif in q:
+                notif.read = True
+                notif.read_at = datetime.utcnow()
+                count += 1
+            session.commit()
+            return count
+        finally:
+            session.close()
+
+    def unread_count(self, user_id: int) -> int:
+        session = get_db_session()
+        try:
+            return session.query(Notification).filter(((Notification.user_id == user_id) | (Notification.user_id.is_(None))), Notification.read.is_(False)).count()
+        finally:
+            session.close()
+
+    def delete_notification(self, user_id: int, notification_id: int) -> bool:
+        session = get_db_session()
+        try:
+            notif = session.query(Notification).filter(Notification.id == notification_id, ((Notification.user_id == user_id) | (Notification.user_id.is_(None)))).first()
+            if not notif:
+                return False
+            session.delete(notif)
+            session.commit()
+            return True
+        finally:
+            session.close()
+
+    def clear_notifications(self, user_id: int) -> int:
+        session = get_db_session()
+        try:
+            q = session.query(Notification).filter(((Notification.user_id == user_id) | (Notification.user_id.is_(None))))
+            count = q.count()
+            q.delete(synchronize_session=False)
+            session.commit()
+            return count
+        finally:
+            session.close()
+
+    def _serialize(self, notif: Notification) -> Dict:
+        return {
+            'id': notif.id,
+            'type': notif.type,
+            'message': (notif.content or {}).get('message'),
+            'metadata': (notif.content or {}).get('metadata', {}),
+            'timestamp': (notif.created_at or datetime.utcnow()).isoformat() + 'Z',
+            'read': bool(notif.read),
+            'readAt': notif.read_at.isoformat() + 'Z' if notif.read_at else None
         }
-        self.notifications.insert(0, notification)
-        socketio.emit('notification', notification)
-        return notification
-
-    def get_notifications(self, limit: int = 50) -> List[Dict]:
-        return self.notifications[:limit]
-
-    def mark_as_read(self, notification_id: str) -> bool:
-        for notification in self.notifications:
-            if notification['id'] == notification_id:
-                notification['read'] = True
-                return True
-        return False
-
-    def mark_all_as_read(self) -> bool:
-        for notification in self.notifications:
-            notification['read'] = True
-        return True
-
-    def delete_notification(self, notification_id: str) -> bool:
-        self.notifications = [n for n in self.notifications if n['id'] != notification_id]
-        return True
-
-    def clear_notifications(self) -> bool:
-        self.notifications.clear()
-        return True
 
 notification_manager = NotificationManager()
 
+# ---------------- Routes -----------------
 @notification_bp.route('/api/notifications', methods=['GET'])
 @jwt_required()
 def get_notifications():
-    current_user = get_jwt_identity()
+    user_id = get_jwt_identity()
     limit = int(request.args.get('limit', 50))
-    return jsonify(notification_manager.get_notifications(limit))
+    return jsonify(notification_manager.get_notifications(int(user_id), limit))
 
-@notification_bp.route('/api/notifications/<notification_id>/read', methods=['POST'])
+@notification_bp.route('/api/notifications/unread-count', methods=['GET'])
+@jwt_required()
+def unread_count():
+    user_id = get_jwt_identity()
+    return jsonify({'unread': notification_manager.unread_count(int(user_id))})
+
+@notification_bp.route('/api/notifications/<int:notification_id>/read', methods=['POST'])
 @jwt_required()
 def mark_as_read(notification_id):
-    current_user = get_jwt_identity()
-    success = notification_manager.mark_as_read(notification_id)
+    user_id = get_jwt_identity()
+    success = notification_manager.mark_as_read(int(user_id), notification_id)
     return jsonify({'success': success})
 
 @notification_bp.route('/api/notifications/read-all', methods=['POST'])
 @jwt_required()
 def mark_all_as_read():
-    current_user = get_jwt_identity()
-    success = notification_manager.mark_all_as_read()
-    return jsonify({'success': success})
+    user_id = get_jwt_identity()
+    count = notification_manager.mark_all_as_read(int(user_id))
+    return jsonify({'updated': count})
 
-@notification_bp.route('/api/notifications/<notification_id>', methods=['DELETE'])
+@notification_bp.route('/api/notifications/<int:notification_id>', methods=['DELETE'])
 @jwt_required()
 def delete_notification_route(notification_id):
-    current_user = get_jwt_identity()
-    success = notification_manager.delete_notification(notification_id)
+    user_id = get_jwt_identity()
+    success = notification_manager.delete_notification(int(user_id), notification_id)
     return jsonify({'success': success})
 
 @notification_bp.route('/api/notifications', methods=['DELETE'])
 @jwt_required()
 def clear_all_notifications():
-    current_user = get_jwt_identity()
-    success = notification_manager.clear_notifications()
-    return jsonify({'success': success})
+    user_id = get_jwt_identity()
+    count = notification_manager.clear_notifications(int(user_id))
+    return jsonify({'deleted': count})
+
+# Example bulk test notifications
+@notification_bp.route('/api/notifications/test', methods=['POST'])
+@jwt_required()
+def add_test_notification():
+    user_id = get_jwt_identity()
+    notification_types = ['success', 'warning', 'info', 'error']
+    test_messages = [
+        'New invoice processed successfully',
+        'High-risk invoice detected',
+        'Monthly spend report ready',
+        'Failed to process invoice'
+    ]
+    created = []
+    for type_, message in zip(notification_types, test_messages):
+        created.append(notification_manager.add_notification(int(user_id), type_, message))
+    return jsonify({'created': created})
 
 @socketio.on('connect')
 def handle_connect():
@@ -124,21 +196,3 @@ def handle_connect():
 @socketio.on('disconnect')
 def handle_disconnect():
     print('Client disconnected from notifications')
-
-# Example notifications for testing
-@notification_bp.route('/api/notifications/test', methods=['POST'])
-@jwt_required()
-def add_test_notification():
-    current_user = get_jwt_identity()
-    notification_types = ['success', 'warning', 'info', 'error']
-    test_messages = [
-        'New invoice processed successfully',
-        'High-risk invoice detected',
-        'Monthly spend report ready',
-        'Failed to process invoice'
-    ]
-    
-    for type_, message in zip(notification_types, test_messages):
-        notification_manager.add_notification(type_, message)
-    
-    return jsonify({'success': True})
