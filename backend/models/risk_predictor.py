@@ -686,9 +686,9 @@ class RiskPredictor:
                 risk_scores += (hours_agg['mean'] > hours_threshold).reindex(df_invoices['invoice_id']).fillna(False).astype(float) * 0.3
             risk_scores += (df_invoices['status'] == 'pending').astype(float) * 0.2
             if risk_scores.max() > 0:
-                y = (risk_scores / risk_scores.max()).values
+                y = (risk_scores / risk_scores.max()).fillna(0).values
             else:
-                y = risk_scores.values
+                y = risk_scores.fillna(0).values
             self.scaler = _SS()
             X_scaled = self.scaler.fit_transform(feats.values)
             self.model = _RFR(n_estimators=100, random_state=42)
