@@ -12,8 +12,13 @@ from db.database import get_db_session
 from models.db_models import Notification, User
 
 notification_bp = Blueprint('notification', __name__, url_prefix='/api/notifications')
-socketio = SocketIO()
+socketio = None  # Will be set by enhanced_app.py
 notification_queue = queue.Queue()
+
+def set_socketio(socketio_instance):
+    """Set the socketio instance from the main app"""
+    global socketio
+    socketio = socketio_instance
 
 # ---------------- Simple In-Memory Rate Limiting (per user or IP) -----------------
 RATE_LIMITS = {
@@ -82,11 +87,13 @@ class NotificationManager:
             session.add(notif)
             session.commit()
             payload = self._serialize(notif)
-            socketio.emit('notification', payload)
-            # emit updated unread count for user if provided
-            if user_id:
-                unread = self.unread_count(user_id)
-                socketio.emit('notification_unread_count', {'user_id': user_id, 'unread': unread})
+            # Emit socketio events only if socketio is initialized
+            if socketio and hasattr(socketio, 'server') and socketio.server:
+                socketio.emit('notification', payload)
+                # emit updated unread count for user if provided
+                if user_id:
+                    unread = self.unread_count(user_id)
+                    socketio.emit('notification_unread_count', {'user_id': user_id, 'unread': unread})
             return payload
         finally:
             session.close()
@@ -269,10 +276,4 @@ def ack_notification(notification_id):
     success = notification_manager.mark_as_read(int(user_id), notification_id)
     return jsonify({'success': success, 'unread': notification_manager.unread_count(int(user_id))})
 
-@socketio.on('connect')
-def handle_connect():
-    print('Client connected to notifications')
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    print('Client disconnected from notifications')
+# SocketIO event handlers are defined in enhanced_app.py instead

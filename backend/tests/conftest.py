@@ -102,6 +102,11 @@ def client(app):
     return app.test_client()
 
 @pytest.fixture
+def no_auth_client(app):
+    """Create a test client without automatic auth header injection."""
+    return app.test_client()
+
+@pytest.fixture
 def runner(app):
     """Create a test runner for the app's Click commands."""
     return app.test_cli_runner()

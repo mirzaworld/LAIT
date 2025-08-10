@@ -24,11 +24,16 @@ def development_jwt_required(f):
         auto_bypass = True
         if current_app:
             auto_bypass = current_app.config.get('AUTO_AUTH_BYPASS', True)
-        bypass_enabled = (
-            os.getenv('FLASK_ENV') == 'development' or
-            os.getenv('ENVIRONMENT') == 'dev' or
-            (testing and auto_bypass)
-        )
+        bypass_enabled = False
+        if testing:
+            # In testing mode, only bypass if explicitly allowed
+            bypass_enabled = auto_bypass
+        else:
+            # In non-testing mode, use development environment checks
+            bypass_enabled = (
+                os.getenv('FLASK_ENV') == 'development' or
+                os.getenv('ENVIRONMENT') == 'dev'
+            )
 
         if bypass_enabled:
             auth_header = request.headers.get('Authorization')

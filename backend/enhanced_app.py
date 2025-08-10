@@ -323,6 +323,14 @@ def create_app():
         engineio_logger=True
     )
     
+    # Set socketio instance for notification routes
+    try:
+        from routes.notification import set_socketio
+        set_socketio(socketio)
+        logger.info("✅ SocketIO instance set for notifications")
+    except Exception as e:
+        logger.warning(f"⚠️ Could not set SocketIO for notifications: {e}")
+    
     # Socket.IO event handlers
     @socketio.on('connect')
     def handle_connect():

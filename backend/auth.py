@@ -11,12 +11,19 @@ def role_required(roles):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            verify_jwt_in_request()
+            try:
+                verify_jwt_in_request()
+            except Exception:
+                # If JWT verification fails (missing token, invalid token, etc.), return 401
+                return jsonify({'message': 'Authorization token required'}), 401
             
             # Get user claims from JWT
-            claims = get_jwt()
-            if 'role' not in claims or claims['role'] not in roles:
-                return jsonify({'message': 'Unauthorized access'}), 403
+            try:
+                claims = get_jwt()
+                if 'role' not in claims or claims['role'] not in roles:
+                    return jsonify({'message': 'Unauthorized access'}), 403
+            except Exception:
+                return jsonify({'message': 'Invalid token'}), 401
                 
             return f(*args, **kwargs)
         return decorated_function

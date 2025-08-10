@@ -11,13 +11,13 @@ def _auth_headers(client):
     return {'Authorization': f'Bearer {token}'}
 
 
-def test_notifications_auth_required(app, client):
+def test_notifications_auth_required(app, no_auth_client):
     # Temporarily disable auth bypass to test actual 401 behavior
     with app.app_context():
         original_bypass = app.config.get('AUTO_AUTH_BYPASS', True)
         app.config['AUTO_AUTH_BYPASS'] = False
         try:
-            r = client.get('/api/notifications')
+            r = no_auth_client.get('/api/notifications')
             assert r.status_code in (401, 422)  # missing auth
         finally:
             app.config['AUTO_AUTH_BYPASS'] = original_bypass
