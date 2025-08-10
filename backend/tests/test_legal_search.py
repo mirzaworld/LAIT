@@ -7,7 +7,7 @@ def test_legal_search_requires_query(client):
 
 def test_legal_search_minimal_query(client, monkeypatch):
     # Patch collector to avoid real external calls
-    from backend.enhanced_app import app as global_app
+    from enhanced_app import app as global_app
     collector = global_app.data_collector
 
     def fake_courtlistener(query, limit=20):

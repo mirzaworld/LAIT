@@ -108,7 +108,7 @@ class Matter(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    invoices = relationship("Invoice", back_populates="matter")
+    invoices = relationship("Invoice", back_populates="matter_rel")
 
 class Vendor(Base):
     __tablename__ = 'vendors'

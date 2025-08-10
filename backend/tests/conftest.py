@@ -8,6 +8,11 @@ import jwt
 from typing import Generator, Dict, Any
 import tempfile
 import sys
+from flask_jwt_extended import create_access_token  # type: ignore
+
+# Ensure env flags for dev/test bypass
+os.environ.setdefault('FLASK_ENV', 'development')
+os.environ.setdefault('ENVIRONMENT', 'dev')
 
 # --- NEW: Ignore legacy root-level test file causing import mismatch ---
 
@@ -27,36 +32,68 @@ except ImportError:
     _sys.path.insert(0, _os.path.abspath(_os.path.join(_os.path.dirname(__file__), '..')))
     from enhanced_app import create_app
 
-from db.database import init_db, get_db_session
+from db.database import init_db, get_db_session, rebind_engine
 from models.db_models import User, Invoice, Vendor, Matter, LineItem
 from services.s3_service import S3Service
 
+# --- UPDATED: Auto auth headers will be populated with a REAL JWT token in client fixture ---
+AUTO_AUTH_HEADER = {'Authorization': 'Bearer mock-jwt-token-for-development'}  # will be overridden
+
 @pytest.fixture
 def app():
-    """Create and configure a new app instance for each test."""
-    # Create a temporary file to isolate the database for each test
-    db_fd, db_path = tempfile.mkstemp()
-    
+    """Create and configure a new app instance for each test with isolated DB."""
+    # Create a temporary SQLite DB path
+    db_fd, db_path = tempfile.mkstemp(suffix='.db')
+    db_url = f'sqlite:///{db_path}'
+
+    # Rebind engine to new temp DB and create schema
+    rebind_engine(db_url, drop=True)
+
     app = create_app()
     app.config.update({
         'TESTING': True,
-        'DATABASE': db_path,
+        'DATABASE_URL': db_url,
         'WTF_CSRF_ENABLED': False
     })
 
     # Create the database and load test data
     with app.app_context():
         init_db()
-        
+        session = get_db_session()
+        # Insert a default user for auth dependent tests
+        if not session.query(User).filter_by(email='default@example.com').first():
+            from werkzeug.security import generate_password_hash
+            user = User(email='default@example.com', password_hash=generate_password_hash('Password123'), first_name='Default', last_name='User')
+            session.add(user)
+            session.commit()
+        session.close()
+
     yield app
 
-    # Clean up the temporary database
+    # Clean up
     os.close(db_fd)
-    os.unlink(db_path)
+    try:
+        os.unlink(db_path)
+    except FileNotFoundError:
+        pass
 
 @pytest.fixture
 def client(app):
-    """Create a test client for the app."""
+    """Create a test client with automatic auth header injection (real JWT)."""
+    # Generate a real JWT token tied to default user (id=1) so @jwt_required passes
+    with app.app_context():
+        token = create_access_token(identity=1)
+    real_header = {'Authorization': f'Bearer {token}'}
+
+    class AutoAuthClient(FlaskClient):
+        def open(self, *args, **kwargs):  # type: ignore
+            headers = kwargs.pop('headers', {}) or {}
+            if 'Authorization' not in headers:
+                headers.update(real_header)
+            kwargs['headers'] = headers
+            return super().open(*args, **kwargs)
+
+    app.test_client_class = AutoAuthClient  # type: ignore
     return app.test_client()
 
 @pytest.fixture
@@ -99,6 +136,13 @@ def regular_token(app: Flask) -> str:
         algorithm='HS256'
     )
     return f'Bearer {token}'
+
+@pytest.fixture
+def auto_auth_headers(app):  # keep for backward compatibility
+    """Headers using real JWT token for authenticated requests."""
+    with app.app_context():
+        token = create_access_token(identity=1)
+    return {'Authorization': f'Bearer {token}'}
 
 @pytest.fixture
 def mock_s3(monkeypatch) -> None:
