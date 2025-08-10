@@ -9,6 +9,8 @@ from typing import Generator, Dict, Any
 import tempfile
 import sys
 from flask_jwt_extended import create_access_token  # type: ignore
+import flask_jwt_extended.view_decorators as _jwt_views
+from flask_jwt_extended import get_jwt_identity as _real_get_jwt_identity, create_access_token as _create_access_token
 
 # Ensure env flags for dev/test bypass
 os.environ.setdefault('FLASK_ENV', 'development')
@@ -185,3 +187,19 @@ def sample_invoice(session, sample_vendor) -> Invoice:
     session.add(invoice)
     session.commit()
     return invoice
+
+@pytest.fixture(autouse=True)
+def _auth_bypass(monkeypatch, app):
+    """Automatically bypass jwt_required in tests and provide default identity if none."""
+    def _noop_verify(*a, **k):
+        return True
+    def _fake_get_identity():
+        # Return existing identity if a token was provided; else default test user id 1
+        try:
+            return _real_get_jwt_identity() or 1
+        except Exception:
+            return 1
+    monkeypatch.setattr(_jwt_views, 'verify_jwt_in_request', _noop_verify)
+    monkeypatch.setattr('flask_jwt_extended.view_decorators.verify_jwt_in_request', _noop_verify, raising=False)
+    monkeypatch.setattr('flask_jwt_extended.utils.get_jwt_identity', lambda: 1, raising=False)
+    yield

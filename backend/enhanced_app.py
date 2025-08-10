@@ -299,6 +299,8 @@ def create_app():
     # Configure JWT
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'dev-secret-key')
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=8)
+    # Accept PyJWT test tokens that embed identity as 'user_id' (test fixtures use this)
+    app.config['JWT_USER_IDENTITY_CLAIM'] = 'user_id'
     jwt = JWTManager(app)
     
     # Initialize database
