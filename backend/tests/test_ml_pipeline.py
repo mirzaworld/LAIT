@@ -4,10 +4,11 @@ Test suite for the ML pipeline components
 import pytest
 import pandas as pd
 import numpy as np
-from ..generate_synthetic_data import generate_synthetic_invoices
-from ..models.outlier_detector import OutlierDetector
-from ..models.risk_predictor import RiskPredictor
-from ..models.vendor_analyzer import VendorAnalyzer
+
+from ml.generate_synthetic_data import generate_synthetic_invoices
+from ml.models.outlier_detector import OutlierDetector
+from models.risk_predictor import RiskPredictor
+from models.vendor_analyzer import VendorAnalyzer
 
 @pytest.fixture
 def synthetic_data():
@@ -112,6 +113,8 @@ def test_edge_cases():
         generate_synthetic_invoices(n_invoices=-1)
     
     # Test outlier detection with empty data
-    detector = OutlierDetector()
+    from ml.models.outlier_detector import OutlierDetector as OD
+    detector = OD()
+    import pandas as pd
     with pytest.raises(ValueError):
         detector.train(pd.DataFrame())

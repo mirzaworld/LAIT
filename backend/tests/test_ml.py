@@ -5,9 +5,10 @@ from datetime import datetime
 import pandas as pd
 from sklearn.ensemble import IsolationForest
 
-from ml.models.invoice_analyzer import InvoiceAnalyzer
-from ml.models.risk_predictor import RiskPredictor
-from ml.models.vendor_analyzer import VendorAnalyzer
+# Updated imports to reflect actual module locations
+from models.invoice_analyzer import InvoiceAnalyzer
+from models.risk_predictor import RiskPredictor
+from models.vendor_analyzer import VendorAnalyzer
 from ml.model_manager import ModelManager
 
 @pytest.fixture
