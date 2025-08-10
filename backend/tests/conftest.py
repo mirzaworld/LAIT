@@ -190,23 +190,15 @@ def sample_invoice(session, sample_vendor) -> Invoice:
 
 @pytest.fixture(autouse=True)
 def _auth_bypass(monkeypatch, app):
-    """Bypass jwt_required verification but allow real JWT content through."""
-    def _noop_verify(*a, **k):
-        return True
-    def _smart_get_identity():
-        # Try to get real identity from JWT token if present; fallback to 1 only if no token context
+    """Minimize auth bypassing to allow real JWT tokens to work in tests."""
+    # Only disable the actual jwt verification errors, but allow JWT context setup
+    def _lenient_verify(*args, **kwargs):
         try:
-            real_identity = _real_get_jwt_identity()
-            if real_identity is not None:
-                return real_identity
+            return _jwt_views.verify_jwt_in_request(*args, **kwargs)
         except Exception:
+            # Allow expired/invalid tokens to pass in test environment
             pass
-        # Fallback to default test user only if no JWT context available
-        return 1
     
-    # Only bypass verification, but allow real JWT parsing
-    monkeypatch.setattr(_jwt_views, 'verify_jwt_in_request', _noop_verify)
-    monkeypatch.setattr('flask_jwt_extended.view_decorators.verify_jwt_in_request', _noop_verify, raising=False)
-    # Use smart identity that respects real tokens
-    monkeypatch.setattr('flask_jwt_extended.utils.get_jwt_identity', _smart_get_identity, raising=False)
+    # Patch only the verification function, NOT get_jwt_identity or get_jwt
+    monkeypatch.setattr(_jwt_views, 'verify_jwt_in_request', _lenient_verify)
     yield
