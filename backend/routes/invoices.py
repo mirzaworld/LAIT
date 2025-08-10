@@ -76,91 +76,6 @@ def get_invoice(invoice_id):
             'amount': inv.amount,
             'total_amount': inv.amount,
             'status': inv.status or 'processing',
-                    'category': 'Employment',
-                    'description': 'Settlement negotiations and documentation',
-                    'hours': 31.0,
-                    'rate': 1050,
-                    'total': 32500
-                },
-                {
-                    'id': 'INV-2024-005',
-                    'vendor': 'White & Case',
-                    'amount': 18900,
-                    'status': 'approved',
-                    'date': '2024-01-11',
-                    'dueDate': '2024-02-10',
-                    'matter': 'Contract Negotiation - Software License',
-                    'riskScore': 12,
-                    'category': 'IP',
-                    'description': 'Software licensing agreement review and negotiation',
-                    'hours': 21.0,
-                    'rate': 900,
-                    'total': 18900
-                }
-            ]
-            return jsonify({'invoices': demo_invoices})
-        result = []
-        for inv in invoices:
-            vendor_name = inv.vendor.name if inv.vendor else 'Unknown Vendor'
-            matter_name = inv.matter.name if hasattr(inv, 'matter') and inv.matter else ''
-            matter_category = inv.matter.category if hasattr(inv, 'matter') and inv.matter else None
-            result.append({
-                'id': str(inv.id),
-                'invoice_number': inv.invoice_number,
-                'vendor_name': vendor_name,
-                'vendor': vendor_name,  # frontend compatibility
-                'date': inv.date.isoformat() if inv.date else None,
-                'amount': inv.amount,
-                'total_amount': inv.amount,
-                'status': inv.status or 'processing',
-                'risk_score': inv.risk_score,
-                'riskScore': inv.risk_score,  # frontend expected camelCase
-                'overspend_risk': inv.overspend_risk,
-                'processed': inv.processed,
-                'category': matter_category,
-                'matter': matter_name,
-                'description': inv.description,
-                'pdf_s3_key': inv.pdf_s3_key
-            })
-        return jsonify({'invoices': result})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        session.close()
-
-@invoices_bp.route('/<int:invoice_id>', methods=['GET'])
-@jwt_required()
-def get_invoice(invoice_id):
-    current_user = get_jwt_identity()
-    session = get_db_session()
-    try:
-        inv = session.query(DbInvoice).filter_by(id=invoice_id).first()
-        if not inv:
-            return jsonify({"error": "Invoice not found"}), 404
-            
-        s3 = S3Service()
-        file_url = s3.generate_presigned_url(inv.pdf_s3_key) if inv.pdf_s3_key else None
-        # Fix relationship attribute (line_items instead of lines)
-        lines = [
-            {
-                'id': l.id,
-                'description': l.description,
-                'hours': l.hours,
-                'rate': l.rate,
-                'amount': l.amount,
-                'is_flagged': l.is_flagged,
-                'flag_reason': l.flag_reason
-            } for l in inv.line_items
-        ]
-        return jsonify({
-            'id': inv.id,
-            'vendor_name': inv.vendor.name if inv.vendor else 'Unknown Vendor',
-            'vendor': inv.vendor.name if inv.vendor else 'Unknown Vendor',
-            'invoice_number': inv.invoice_number,
-            'date': inv.date.isoformat() if inv.date else None,
-            'amount': inv.amount,
-            'total_amount': inv.amount,
-            'status': inv.status or 'processing',
             'risk_score': inv.risk_score,
             'riskScore': inv.risk_score,
             'overspend_risk': inv.overspend_risk,
@@ -177,19 +92,21 @@ def get_invoice(invoice_id):
     finally:
         session.close()
 
+@invoices_bp.route('', methods=['POST'])
+@jwt_required()
+def create_invoice_legacy():
+    return upload_invoice()
+
 @invoices_bp.route('/upload', methods=['POST'])
 @jwt_required()
 def upload_invoice():
     """Upload a new invoice (PDF) and save parsed data to the database with ML analysis"""
     user_id = get_jwt_identity()
     if 'file' not in request.files:
-        return jsonify({'message': 'No file provided'}), 400
+        return jsonify({'error': 'No file provided'}), 400
     file = request.files['file']
-    if file.filename == '':
-        return jsonify({'message': 'No selected file'}), 400
-    # Validate PDF file type
     if not file.filename.lower().endswith('.pdf'):
-        return jsonify({'message': 'File is not a valid PDF'}), 400
+        return jsonify({'error': 'File must be a PDF'}), 400
     parser = PDFParserService()
     s3 = S3Service()
     temp_file_path = None
@@ -287,13 +204,6 @@ def upload_invoice():
         if temp_file_path and os.path.exists(temp_file_path):
             os.remove(temp_file_path)
         session.close()
-
-# Legacy-compatible route path without '/upload' for tests expecting POST /api/invoices
-@invoices_bp.route('', methods=['POST'])
-@jwt_required()
-def create_invoice_legacy():
-    """Backward-compatible wrapper calling upload_invoice logic when tests POST to base path."""
-    return upload_invoice()
 
 @invoices_bp.route('/download/<int:invoice_id>', methods=['GET'])
 @jwt_required()
