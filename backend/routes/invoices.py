@@ -187,6 +187,9 @@ def upload_invoice():
     file = request.files['file']
     if file.filename == '':
         return jsonify({'message': 'No selected file'}), 400
+    # Validate PDF file type
+    if not file.filename.lower().endswith('.pdf'):
+        return jsonify({'message': 'File is not a valid PDF'}), 400
     parser = PDFParserService()
     s3 = S3Service()
     temp_file_path = None
@@ -284,6 +287,13 @@ def upload_invoice():
         if temp_file_path and os.path.exists(temp_file_path):
             os.remove(temp_file_path)
         session.close()
+
+# Legacy-compatible route path without '/upload' for tests expecting POST /api/invoices
+@invoices_bp.route('', methods=['POST'])
+@jwt_required()
+def create_invoice_legacy():
+    """Backward-compatible wrapper calling upload_invoice logic when tests POST to base path."""
+    return upload_invoice()
 
 @invoices_bp.route('/download/<int:invoice_id>', methods=['GET'])
 @jwt_required()

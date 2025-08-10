@@ -10,7 +10,7 @@ import time
 from db.database import get_db_session
 from models.db_models import Notification, User
 
-notification_bp = Blueprint('notification', __name__)
+notification_bp = Blueprint('notification', __name__, url_prefix='/api/notifications')
 socketio = SocketIO()
 notification_queue = queue.Queue()
 
@@ -175,7 +175,7 @@ class NotificationManager:
 notification_manager = NotificationManager()
 
 # ---------------- Routes -----------------
-@notification_bp.route('/api/notifications', methods=['GET'])
+@notification_bp.route('', methods=['GET'])
 @jwt_required()
 def get_notifications():
     user_id = get_jwt_identity()
@@ -185,7 +185,7 @@ def get_notifications():
     limit = int(request.args.get('limit', 50))
     return jsonify(notification_manager.get_notifications(int(user_id), limit))
 
-@notification_bp.route('/api/notifications/unread-count', methods=['GET'])
+@notification_bp.route('/unread-count', methods=['GET'])
 @jwt_required()
 def unread_count():
     user_id = get_jwt_identity()
@@ -194,7 +194,7 @@ def unread_count():
         return rl
     return jsonify({'unread': notification_manager.unread_count(int(user_id))})
 
-@notification_bp.route('/api/notifications/<int:notification_id>/read', methods=['POST'])
+@notification_bp.route('/<int:notification_id>/read', methods=['POST'])
 @jwt_required()
 def mark_as_read(notification_id):
     user_id = get_jwt_identity()
@@ -204,7 +204,7 @@ def mark_as_read(notification_id):
     success = notification_manager.mark_as_read(int(user_id), notification_id)
     return jsonify({'success': success})
 
-@notification_bp.route('/api/notifications/read-all', methods=['POST'])
+@notification_bp.route('/read-all', methods=['POST'])
 @jwt_required()
 def mark_all_as_read():
     user_id = get_jwt_identity()
@@ -214,7 +214,7 @@ def mark_all_as_read():
     count = notification_manager.mark_all_as_read(int(user_id))
     return jsonify({'updated': count})
 
-@notification_bp.route('/api/notifications/<int:notification_id>', methods=['DELETE'])
+@notification_bp.route('/<int:notification_id>', methods=['DELETE'])
 @jwt_required()
 def delete_notification_route(notification_id):
     user_id = get_jwt_identity()
@@ -224,7 +224,7 @@ def delete_notification_route(notification_id):
     success = notification_manager.delete_notification(int(user_id), notification_id)
     return jsonify({'success': success})
 
-@notification_bp.route('/api/notifications', methods=['DELETE'])
+@notification_bp.route('', methods=['DELETE'])
 @jwt_required()
 def clear_all_notifications():
     user_id = get_jwt_identity()
@@ -236,7 +236,7 @@ def clear_all_notifications():
     return jsonify({'deleted': count})
 
 # Example bulk test notifications
-@notification_bp.route('/api/notifications/test', methods=['POST'])
+@notification_bp.route('/test', methods=['POST'])
 @jwt_required()
 def add_test_notification():
     user_id = get_jwt_identity()
@@ -255,7 +255,7 @@ def add_test_notification():
         created.append(notification_manager.add_notification(int(user_id), type_, message))
     return jsonify({'created': created})
 
-@notification_bp.route('/api/notifications/<int:notification_id>/ack', methods=['POST'])
+@notification_bp.route('/<int:notification_id>/ack', methods=['POST'])
 @jwt_required()
 def ack_notification(notification_id):
     """Alias for mark-as-read returning unread count for optimistic UI.

@@ -19,7 +19,7 @@ blueprints = [
     (invoices_bp, None),  # url_prefix already included in blueprint
     (analytics_bp, '/api/analytics'),
     (admin_bp, '/api/admin'),
-    (notification_bp, '/api/notifications'),
+    (notification_bp, None),  # blueprint already has /api/notifications prefix
     (vendors_bp, None),  # url_prefix already included in blueprint
     (legal_intel_bp, '/api/legal-intelligence'),
     (upload_bp, None)  # url_prefix already included in blueprint
