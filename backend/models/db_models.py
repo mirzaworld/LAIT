@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Float, String, DateTime, Date, ForeignKey, JSON, Boolean
+from sqlalchemy import Column, Integer, Float, String, DateTime, Date, ForeignKey, JSON, Boolean, Index
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -23,12 +23,17 @@ class User(Base):
 
 class Notification(Base):
     __tablename__ = 'notifications'
+    __table_args__ = (
+        Index('ix_notifications_user_unread', 'user_id', 'read'),
+        Index('ix_notifications_created_at', 'created_at'),
+    )
     
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'))
     type = Column(String(50))
     content = Column(JSON)
     read = Column(Boolean, default=False)
+    read_at = Column(DateTime)  # timestamp when marked read
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
