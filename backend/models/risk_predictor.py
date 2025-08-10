@@ -5,6 +5,7 @@ from sklearn.preprocessing import StandardScaler
 import joblib
 import os
 from db.database import get_db_session
+import re
 
 class RiskPredictor:
     def __init__(self):
@@ -394,7 +395,6 @@ class RiskPredictor:
             # Check for overreliance on expensive resources
             expensive_hours = sum(tk['hours'] for tk in timekeepers.values()
                                 if tk['rate'] >= 500)
-            if expensive_hours / total_hours > 0.6:
                 risk_factors.append({
                     'type': 'expensive_resources',
                     'severity': 'medium',

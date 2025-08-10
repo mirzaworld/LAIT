@@ -715,6 +715,18 @@ def create_app():
             register_routes(app)
             logger.info("✅ Routes registered successfully")
     
+    @app.route('/api/ml/status', methods=['GET'])
+    def ml_status():
+        """Return status of loaded ML models for diagnostics (used in tests)."""
+        models_status = {}
+        for attr in [
+            'enhanced_invoice_analyzer', 'invoice_analyzer',
+            'matter_analyzer', 'risk_predictor', 'vendor_analyzer'
+        ]:
+            obj = getattr(app, attr, None)
+            models_status[attr] = bool(obj)
+        return jsonify({'models': models_status, 'status': 'ok'}), 200
+    
     return app
 
 # Create a .env file if it doesn't exist
