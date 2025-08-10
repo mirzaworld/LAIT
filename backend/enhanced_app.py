@@ -920,9 +920,7 @@ def create_app():
                 date=datetime.utcnow().date(),
                 risk_score=random.uniform(0, 1),
                 matter='General',
-                category=request.form.get('category'),
-                description=request.form.get('description'),
-                line_items=json.dumps([])
+                description=request.form.get('description')
             )
             session.add(new_inv)
             session.commit()

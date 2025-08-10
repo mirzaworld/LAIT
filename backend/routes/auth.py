@@ -30,12 +30,13 @@ def login():
         return jsonify({'message': 'Invalid credentials'}), 401
     try:
         # Include stable claims (email + user_id) so /me can recover correct user even if identity monkeypatched
+        # NOTE: JWT identity must be string
         access_token = create_access_token(
-            identity=user.id,
+            identity=str(user.id),
             additional_claims={'role': user.role, 'email': user.email, 'user_id': user.id},
             expires_delta=timedelta(hours=1)
         )
-        refresh_token = create_refresh_token(identity=user.id)
+        refresh_token = create_refresh_token(identity=str(user.id))
     except Exception as e:
         return jsonify({'message': 'Token generation failed', 'detail': str(e)}), 500
     resp = jsonify({
@@ -97,8 +98,9 @@ def register():
         session.commit()
         
         # Generate JWT token using Flask-JWT-Extended
+        # NOTE: JWT identity must be string
         access_token = create_access_token(
-            identity=new_user.id,
+            identity=str(new_user.id),
             additional_claims={'role': new_user.role}
         )
         
@@ -189,13 +191,18 @@ def get_user():
             pass
     
     if current_app.config.get('TESTING') and not claimed_identity:
-        claimed_identity = 1
+        claimed_identity = "1"  # Use string identity
     
     session = get_db_session()
     try:
         user = None
         if claimed_identity:
-            user = session.query(User).filter_by(id=claimed_identity).first()
+            # Convert string identity to int for database lookup
+            try:
+                user_id = int(claimed_identity)
+                user = session.query(User).filter_by(id=user_id).first()
+            except (ValueError, TypeError):
+                pass  # Invalid identity format
         # If identity resolved to default user but email claim refers to a different user, honor email claim
         if email_claim and (not user or user.email != email_claim):
             user_by_email = session.query(User).filter_by(email=email_claim).first()

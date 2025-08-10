@@ -74,10 +74,14 @@ def get_current_user_id():
     if current_app.config.get('TESTING'):
         try:
             from flask_jwt_extended import get_jwt_identity
-            return get_jwt_identity()
+            identity = get_jwt_identity()
+            # JWT identity is now a string, convert to int for database lookup
+            return int(identity) if identity else 1
         except:
             # Fallback to test user ID
             return 1
     else:
         from flask_jwt_extended import get_jwt_identity
-        return get_jwt_identity()
+        identity = get_jwt_identity()
+        # Convert string identity to int for database lookup
+        return int(identity) if identity else None
