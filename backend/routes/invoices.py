@@ -101,15 +101,25 @@ def list_invoices():
             return jsonify({'invoices': demo_invoices})
         result = []
         for inv in invoices:
+            vendor_name = inv.vendor.name if inv.vendor else 'Unknown Vendor'
+            matter_name = inv.matter.name if hasattr(inv, 'matter') and inv.matter else ''
+            matter_category = inv.matter.category if hasattr(inv, 'matter') and inv.matter else None
             result.append({
-                'id': inv.id,
-                'vendor_name': inv.vendor.name if inv.vendor else 'Unknown Vendor',
+                'id': str(inv.id),
                 'invoice_number': inv.invoice_number,
+                'vendor_name': vendor_name,
+                'vendor': vendor_name,  # frontend compatibility
                 'date': inv.date.isoformat() if inv.date else None,
+                'amount': inv.amount,
                 'total_amount': inv.amount,
+                'status': inv.status or 'processing',
                 'risk_score': inv.risk_score,
+                'riskScore': inv.risk_score,  # frontend expected camelCase
                 'overspend_risk': inv.overspend_risk,
                 'processed': inv.processed,
+                'category': matter_category,
+                'matter': matter_name,
+                'description': inv.description,
                 'pdf_s3_key': inv.pdf_s3_key
             })
         return jsonify({'invoices': result})
@@ -145,15 +155,22 @@ def get_invoice(invoice_id):
         return jsonify({
             'id': inv.id,
             'vendor_name': inv.vendor.name if inv.vendor else 'Unknown Vendor',
+            'vendor': inv.vendor.name if inv.vendor else 'Unknown Vendor',
             'invoice_number': inv.invoice_number,
             'date': inv.date.isoformat() if inv.date else None,
+            'amount': inv.amount,
             'total_amount': inv.amount,
+            'status': inv.status or 'processing',
             'risk_score': inv.risk_score,
+            'riskScore': inv.risk_score,
             'overspend_risk': inv.overspend_risk,
             'processed': inv.processed,
             'pdf_url': file_url,
             'analysis_result': inv.analysis_result,
-            'lines': lines
+            'lines': lines,
+            'matter': inv.matter.name if hasattr(inv, 'matter') and inv.matter else '',
+            'category': inv.matter.category if hasattr(inv, 'matter') and inv.matter else None,
+            'description': inv.description
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -188,14 +205,14 @@ def upload_invoice():
                     pdf_s3_key = s3.upload_file(fobj_seek)
         except Exception:
             pdf_s3_key = None
-        vendor_name = parsed_data.get('vendor_name') or 'Unknown Vendor'
+        vendor_name = parsed_data.get('vendor_name') or request.form.get('vendor') or 'Unknown Vendor'
         vendor = session.query(Vendor).filter_by(name=vendor_name).first()
         if not vendor:
-            vendor = Vendor(name=vendor_name, status='active')
+            vendor = Vendor(name=vendor_name, status='Active')
             session.add(vendor)
             session.flush()
         date_val = None
-        raw_date = parsed_data.get('date')
+        raw_date = parsed_data.get('date') or request.form.get('date')
         if raw_date:
             try:
                 date_val = datetime.strptime(raw_date, '%Y-%m-%d')
@@ -204,18 +221,20 @@ def upload_invoice():
                     date_val = datetime.fromisoformat(raw_date)
                 except Exception:
                     date_val = datetime.utcnow()
-        total_amount = parsed_data.get('total_amount') or parsed_data.get('amount') or 0
-        # ML Analysis integration
+        total_amount = parsed_data.get('total_amount') or parsed_data.get('amount') or request.form.get('amount') or 0
+        try:
+            total_amount = float(total_amount)
+        except Exception:
+            total_amount = 0
         risk_score = None
         analysis_result = None
         try:
             analyzer = getattr(current_app, 'invoice_analyzer', None)
             if analyzer:
-                # Build minimal structure expected by analyzer
                 invoice_input = {
                     'amount': total_amount,
                     'line_items': parsed_data.get('line_items', []),
-                    'description': parsed_data.get('description'),
+                    'description': parsed_data.get('description') or request.form.get('description'),
                     'vendor_name': vendor_name
                 }
                 analysis_result = analyzer.analyze_invoice(invoice_input)
@@ -236,7 +255,8 @@ def upload_invoice():
             uploaded_by=user_id,
             status='uploaded',
             risk_score=risk_score,
-            analysis_result=analysis_result
+            analysis_result=analysis_result,
+            description=parsed_data.get('description') or request.form.get('description')
         )
         session.add(invoice)
         session.flush()
@@ -250,7 +270,13 @@ def upload_invoice():
             )
             session.add(line)
         session.commit()
-        return jsonify({'message': 'Invoice uploaded successfully', 'invoice_id': invoice.id, 'risk_score': risk_score})
+        return jsonify({
+            'message': 'Invoice uploaded successfully',
+            'invoice_id': str(invoice.id),
+            'risk_score': risk_score,
+            'invoice_number': invoice.invoice_number,
+            'vendor': vendor_name
+        })
     except Exception as e:
         session.rollback()
         return jsonify({'message': f'Error processing invoice: {str(e)}'}), 500
