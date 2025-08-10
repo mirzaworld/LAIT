@@ -15,6 +15,7 @@ import ErrorBoundaryWithRetry from '../components/ErrorBoundaryWithRetry';
 import 'react-datepicker/dist/react-datepicker.css';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
+import NotificationsPanel from '../components/NotificationsPanel';
 
 const Dashboard: React.FC = () => {
   return (
@@ -254,6 +255,9 @@ const DashboardContent: React.FC = () => {
         <RecentInvoices />
         <TopVendors />
       </div>
+
+      {/* Notifications Panel */}
+      <NotificationsPanel />
 
       {/* View Details Button */}
       <div className="flex justify-center mt-8">
