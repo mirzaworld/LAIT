@@ -251,6 +251,15 @@ def create_app():
     def _bad_request(e):
         return _json_error(400, 'bad_request', 'Invalid request')
 
+    # Handle JSON decode errors specifically
+    from werkzeug.exceptions import BadRequest
+    @app.errorhandler(BadRequest)
+    def _handle_bad_json(e):
+        # Check if it's a JSON parsing error
+        if 'Failed to decode JSON object' in str(e) or 'Invalid JSON' in str(e) or 'The browser (or proxy) sent a request that this server could not understand' in str(e):
+            return _json_error(400, 'invalid_json', 'Invalid JSON in request body')
+        return _json_error(400, 'bad_request', str(e))
+
     @app.errorhandler(Exception)
     def _unhandled(e):  # catch-all
         logger.exception('Unhandled exception')

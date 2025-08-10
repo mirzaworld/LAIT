@@ -61,7 +61,7 @@ def test_get_invoice_detail(client, admin_token, sample_invoice):
 def test_unauthorized_access(client, regular_token, sample_invoice):
     """Test unauthorized access to admin-only endpoints."""
     response = client.get(
-        '/api/admin/auditlogs',
+        '/api/admin/audit-logs',
         headers={'Authorization': regular_token}
     )
     assert response.status_code == 403
