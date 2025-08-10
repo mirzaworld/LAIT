@@ -188,17 +188,4 @@ def sample_invoice(session, sample_vendor) -> Invoice:
     session.commit()
     return invoice
 
-@pytest.fixture(autouse=True)
-def _auth_bypass(monkeypatch, app):
-    """Minimize auth bypassing to allow real JWT tokens to work in tests."""
-    # Only disable the actual jwt verification errors, but allow JWT context setup
-    def _lenient_verify(*args, **kwargs):
-        try:
-            return _jwt_views.verify_jwt_in_request(*args, **kwargs)
-        except Exception:
-            # Allow expired/invalid tokens to pass in test environment
-            pass
-    
-    # Patch only the verification function, NOT get_jwt_identity or get_jwt
-    monkeypatch.setattr(_jwt_views, 'verify_jwt_in_request', _lenient_verify)
-    yield
+# Removed automatic JWT bypass fixture - using development_jwt_required decorator instead

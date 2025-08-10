@@ -25,8 +25,8 @@ def health():
         "server": "test_server"
     })
 
-@app.route('/api/test')
-def test():
+@app.route('/api/test-endpoint')
+def test_endpoint():
     return jsonify({
         "test": "success",
         "message": "Test endpoint working"
