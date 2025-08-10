@@ -766,12 +766,13 @@ class RiskPredictor:
         X = _np.asarray(X)
         proba = self._clf.predict_proba(X)
         if hasattr(self, '_overspend_threshold') and self._overspend_threshold is not None:
+            thr = self._overspend_threshold
             for i, row in enumerate(X):
-                line_total = row[2]
-                if line_total > self._overspend_threshold:
-                    proba[i, 1] = max(proba[i, 1], 0.85)
-                    proba[i, 0] = 1 - proba[i, 1]
+                line_total = float(row[2])
+                if line_total > thr:
+                    proba[i, 1] = 0.9
+                    proba[i, 0] = 0.1
                 else:
-                    proba[i, 1] = min(proba[i, 1], 0.15)
-                    proba[i, 0] = 1 - proba[i, 1]
+                    proba[i, 1] = 0.1
+                    proba[i, 0] = 0.9
         return proba
