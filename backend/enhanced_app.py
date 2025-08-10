@@ -703,9 +703,17 @@ def create_app():
 
     # Import and register routes
     with app.app_context():
-        from backend.routes import register_routes
-        register_routes(app)
-        logger.info("✅ Routes registered successfully")
+        try:
+            from backend.routes import register_routes  # standard when project root on PYTHONPATH
+        except ImportError:
+            try:
+                from routes import register_routes  # fallback when running tests from backend directory
+            except ImportError as e:
+                logger.error(f"Failed to import route registrar: {e}")
+                register_routes = None
+        if register_routes:
+            register_routes(app)
+            logger.info("✅ Routes registered successfully")
     
     return app
 
