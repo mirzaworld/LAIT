@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { toast } from 'react-toastify';
 
 export interface Notification {
-    type: 'invoice_analysis' | 'alert' | 'vendor_update' | 'system_status';
+    type: 'invoice_analysis' | 'alert' | 'vendor_update' | 'system_status' | 'self_test';
     timestamp: string;
     data: {
         invoice_id?: number;
@@ -43,7 +43,7 @@ export const useNotifications = () => {
         try {
             // Only attempt to connect to socket.io if it's enabled
             // This prevents errors when the backend doesn't have socket.io support
-            const SOCKET_ENABLED = import.meta.env.VITE_SOCKET_ENABLED === 'true';
+            const SOCKET_ENABLED = import.meta.env.VITE_SOCKET_ENABLED === 'true' || true;
             
             if (SOCKET_ENABLED) {
                 const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:5003');
@@ -115,6 +115,9 @@ export const useNotifications = () => {
                     position: 'top-right',
                     autoClose: 5000
                 });
+                break;
+            case 'self_test':
+                toast.success('System self-test completed', { autoClose: 4000 });
                 break;
         }
     }, []);
