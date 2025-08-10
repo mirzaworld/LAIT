@@ -18,64 +18,64 @@ def list_invoices():
     session = get_db_session()
     try:
         invoices = session.query(DbInvoice).all()
-        
-        # If no invoices in database, return demo data
-        if not invoices:
-            demo_invoices = [
-                {
-                    'id': 'INV-2024-001',
-                    'vendor': 'Morrison & Foerster LLP',
-                    'amount': 45750,
-                    'status': 'approved',
-                    'date': '2024-01-15',
-                    'dueDate': '2024-02-14',
-                    'matter': 'IP Litigation - TechCorp vs CompetitorX',
-                    'riskScore': 15,
-                    'category': 'Litigation',
-                    'description': 'Discovery and motion practice for Q4 2024',
-                    'hours': 52.5,
-                    'rate': 950,
-                    'total': 45750
-                },
-                {
-                    'id': 'INV-2024-002',
-                    'vendor': 'Baker McKenzie',
-                    'amount': 23400,
-                    'status': 'pending',
-                    'date': '2024-01-14',
-                    'dueDate': '2024-02-13',
-                    'matter': 'M&A Advisory - Acquisition of StartupY',
-                    'riskScore': 45,
-                    'category': 'Corporate',
-                    'description': 'Due diligence and transaction documentation',
-                    'hours': 28.2,
-                    'rate': 850,
-                    'total': 23400
-                },
-                {
-                    'id': 'INV-2024-003',
-                    'vendor': 'Latham & Watkins',
-                    'amount': 67800,
-                    'status': 'flagged',
-                    'date': '2024-01-13',
-                    'dueDate': '2024-02-12',
-                    'matter': 'Regulatory Compliance - FDA Approval',
-                    'riskScore': 85,
-                    'category': 'Regulatory',
-                    'description': '340% increase from previous billing period',
-                    'hours': 61.6,
-                    'rate': 1100,
-                    'total': 67800
-                },
-                {
-                    'id': 'INV-2024-004',
-                    'vendor': 'Skadden Arps',
-                    'amount': 32500,
-                    'status': 'processing',
-                    'date': '2024-01-12',
-                    'dueDate': '2024-02-11',
-                    'matter': 'Employment Dispute Resolution',
-                    'riskScore': 28,
+        result = []
+        for inv in invoices:
+            vendor_name = inv.vendor.name if inv.vendor else 'Unknown Vendor'
+            # Use legacy compatibility fields if present
+            client_name = getattr(inv, 'client_name', None)
+            matter_text = getattr(inv, 'matter', None)
+            result.append({
+                'id': inv.id,
+                'invoice_number': inv.invoice_number,
+                'vendor': vendor_name,
+                'client_name': client_name,
+                'matter': matter_text,
+                'total_amount': getattr(inv, 'total_amount', inv.amount),
+                'amount': inv.amount,
+                'status': inv.status or 'processing',
+                'risk_score': inv.risk_score,
+                'date': inv.date.isoformat() if inv.date else None
+            })
+        return jsonify({'items': result})
+    except Exception as e:
+        current_app.logger.error(f"List invoices error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
+
+@invoices_bp.route('/<int:invoice_id>', methods=['GET'])
+@jwt_required()
+def get_invoice(invoice_id):
+    current_user = get_jwt_identity()
+    session = get_db_session()
+    try:
+        inv = session.query(DbInvoice).filter_by(id=invoice_id).first()
+        if not inv:
+            return jsonify({"error": "Invoice not found"}), 404
+            
+        s3 = S3Service()
+        file_url = s3.generate_presigned_url(inv.pdf_s3_key) if inv.pdf_s3_key else None
+        # Fix relationship attribute (line_items instead of lines)
+        lines = [
+            {
+                'id': l.id,
+                'description': l.description,
+                'hours': l.hours,
+                'rate': l.rate,
+                'amount': l.amount,
+                'is_flagged': l.is_flagged,
+                'flag_reason': l.flag_reason
+            } for l in inv.line_items
+        ]
+        return jsonify({
+            'id': inv.id,
+            'vendor_name': inv.vendor.name if inv.vendor else 'Unknown Vendor',
+            'vendor': inv.vendor.name if inv.vendor else 'Unknown Vendor',
+            'invoice_number': inv.invoice_number,
+            'date': inv.date.isoformat() if inv.date else None,
+            'amount': inv.amount,
+            'total_amount': inv.amount,
+            'status': inv.status or 'processing',
                     'category': 'Employment',
                     'description': 'Settlement negotiations and documentation',
                     'hours': 31.0,

@@ -1019,12 +1019,7 @@ def create_app():
     #     logger.warning(f"❌ Could not load Celery app: {e}")
 
     # --- NEW: Register notification blueprint (step 1) ---
-    try:
-        from routes.notification import notification_bp  # noqa: WPS433
-        app.register_blueprint(notification_bp)
-        logger.info('✅ Notification blueprint registered')
-    except Exception as e:  # pragma: no cover
-        logger.error(f'❌ Failed to register notification blueprint: {e}')
+    # Removed duplicate direct registration; handled by register_routes
 
     # --- NEW: Register remaining blueprints (auth, invoices, analytics, vendors, legal intelligence, upload) ---
     try:
