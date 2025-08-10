@@ -33,8 +33,9 @@ from sqlalchemy import func, desc
 # Add current directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from db.database import User, Invoice, Vendor, SessionLocal, init_db, get_db_session
-from models.db_models import AuditLog
+# Unified models import (single source of truth)
+from db.database import User, Invoice, Vendor, SessionLocal, init_db, get_db_session  # noqa: F401
+from models.db_models import AuditLog  # noqa: F401
 
 # Import ML models and analyzers
 try:
@@ -295,25 +296,22 @@ def create_app():
                 "analytics": "/api/analytics/*",
                 "documents": "/api/documents/*",
                 "legal_intelligence": "/api/legal-intelligence/*",
-                "workflow": "/api/workflow/*"
+                "workflow": "/api/workflow/*",
+                "legal_search": "/api/legal/search"
             }
         })
 
-    # Advanced Analytics Endpoints
+    # Proper legal case search endpoint (extracted from misplaced block)
+    @app.route('/api/legal/search', methods=['POST'])
+    def legal_case_search():
         """Enhanced legal case search with real-time data integration"""
         try:
-            data = request.get_json()
-            query = data.get('query', '')
+            data = request.get_json() or {}
+            query = data.get('query', '').strip()
             jurisdiction = data.get('jurisdiction', 'all')
-            date_range = data.get('dateRange', {})
-            
             if not query:
                 return jsonify({'error': 'Query is required'}), 400
-            
-            # Use real-time data collector for comprehensive search
             collector = app.data_collector
-            
-            # Search multiple sources simultaneously
             search_results = {
                 'cases': [],
                 'metadata': {
@@ -322,10 +320,8 @@ def create_app():
                     'sources_searched': []
                 }
             }
-            
             start_time = time.time()
-            
-            # 1. Search CourtListener API
+            # CourtListener
             try:
                 courtlistener_results = collector.fetch_courtlistener_data(query, limit=20)
                 if courtlistener_results and 'results' in courtlistener_results:
@@ -333,30 +329,29 @@ def create_app():
                         search_results['cases'].append({
                             'id': case.get('id'),
                             'title': case.get('caseName', case.get('name', 'Unknown Case')),
-                            'court': case.get('court', {}).get('name', 'Unknown Court'),
+                            'court': (case.get('court') or {}).get('name', 'Unknown Court'),
                             'date': case.get('dateFiled'),
                             'citation': case.get('citation', []),
-                            'summary': case.get('summary', '')[:200] + '...' if case.get('summary') else '',
+                            'summary': (case.get('summary') or '')[:200] + ('...' if case.get('summary') else ''),
                             'url': case.get('absolute_url'),
                             'source': 'CourtListener',
-                            'jurisdiction': case.get('court', {}).get('jurisdiction', 'Federal')
+                            'jurisdiction': (case.get('court') or {}).get('jurisdiction', 'Federal')
                         })
                 search_results['metadata']['sources_searched'].append('CourtListener')
             except Exception as e:
                 logger.error(f"CourtListener search error: {e}")
-            
-            # 2. Search Justia
+            # Justia
             try:
                 justia_results = collector.search_justia_cases(query)
                 if justia_results:
-                    for case in justia_results[:10]:  # Limit results
+                    for case in justia_results[:10]:
                         search_results['cases'].append({
                             'id': f"justia_{case.get('id', len(search_results['cases']))}",
                             'title': case.get('title', 'Unknown Case'),
                             'court': case.get('court', 'Unknown Court'),
                             'date': case.get('date'),
                             'citation': case.get('citation', []),
-                            'summary': case.get('summary', '')[:200] + '...' if case.get('summary') else '',
+                            'summary': (case.get('summary') or '')[:200] + ('...' if case.get('summary') else ''),
                             'url': case.get('url'),
                             'source': 'Justia',
                             'jurisdiction': case.get('jurisdiction', 'State')
@@ -364,8 +359,7 @@ def create_app():
                 search_results['metadata']['sources_searched'].append('Justia')
             except Exception as e:
                 logger.error(f"Justia search error: {e}")
-            
-            # 3. Search Google Scholar
+            # Google Scholar
             try:
                 scholar_results = collector.search_google_scholar_cases(query)
                 if scholar_results:
@@ -376,7 +370,7 @@ def create_app():
                             'court': case.get('court', 'Unknown Court'),
                             'date': case.get('date'),
                             'citation': case.get('citations', []),
-                            'summary': case.get('snippet', '')[:200] + '...' if case.get('snippet') else '',
+                            'summary': (case.get('snippet') or '')[:200] + ('...' if case.get('snippet') else ''),
                             'url': case.get('link'),
                             'source': 'Google Scholar',
                             'jurisdiction': case.get('jurisdiction', 'Unknown')
@@ -384,35 +378,17 @@ def create_app():
                 search_results['metadata']['sources_searched'].append('Google Scholar')
             except Exception as e:
                 logger.error(f"Google Scholar search error: {e}")
-            
-            # Apply filters
+            # Filter jurisdiction
             if jurisdiction != 'all':
-                search_results['cases'] = [
-                    case for case in search_results['cases'] 
-                    if case.get('jurisdiction', '').lower() == jurisdiction.lower()
-                ]
-            
-            # Sort by relevance and date
-            search_results['cases'] = sorted(
-                search_results['cases'], 
-                key=lambda x: (x.get('date') or '0000-01-01'), 
-                reverse=True
-            )
-            
+                search_results['cases'] = [c for c in search_results['cases'] if c.get('jurisdiction', '').lower() == jurisdiction.lower()]
+            # Sort by date desc
+            search_results['cases'] = sorted(search_results['cases'], key=lambda x: (x.get('date') or '0000-01-01'), reverse=True)
             search_results['metadata']['total_results'] = len(search_results['cases'])
             search_results['metadata']['search_time'] = round(time.time() - start_time, 2)
-            
             return jsonify(search_results)
-            
         except Exception as e:
             logger.error(f"Legal case search error: {str(e)}")
             return jsonify({'error': f'Search failed: {str(e)}'}), 500
-
-
-
-
-
-
 
     # Advanced Analytics Endpoints
     @app.route('/api/analytics/predictive', methods=['GET'])
@@ -598,7 +574,7 @@ def create_app():
                     'invoice_analyzer': bool(app.invoice_analyzer),
                     'vendor_analyzer': bool(app.vendor_analyzer),
                     'risk_predictor': bool(app.risk_predictor),
-                    'enhanced_analyzer': bool(app.enhanced_analyzer)
+                    'enhanced_invoice_analyzer': bool(app.enhanced_invoice_analyzer)
                 },
                 'features': [
                     'Invoice Analysis',

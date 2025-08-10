@@ -3,13 +3,13 @@ Invoice routes: upload, list, get, file download
 """
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from db.database import get_db_session
-from models.db_models import Invoice as DbInvoice, Vendor
+from db.database import get_db_session, Invoice as DbInvoice, LineItem, Vendor
 from services.s3_service import S3Service
 from services.pdf_parser_service import PDFParserService
 from dev_auth import development_jwt_required
 import tempfile
 import os
+from datetime import datetime
 
 invoices_bp = Blueprint('invoices', __name__, url_prefix='/api/invoices')
 
@@ -114,7 +114,7 @@ def list_invoices():
                 'processed': inv.processed,
                 'pdf_s3_key': inv.pdf_s3_key
             })
-        return jsonify(result)
+        return jsonify({'invoices': result})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
@@ -163,59 +163,85 @@ def get_invoice(invoice_id):
 @jwt_required()
 def upload_invoice():
     """Upload a new invoice (PDF) and save parsed data to the database"""
-    current_user = get_jwt_identity()
-    user_id = current_user.id
+    user_id = get_jwt_identity()
     if 'file' not in request.files:
         return jsonify({'message': 'No file provided'}), 400
-
     file = request.files['file']
     if file.filename == '':
         return jsonify({'message': 'No selected file'}), 400
-
-    # Save file temporarily
-    with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-        file.save(temp_file.name)
-        temp_file_path = temp_file.name
-
-    # Parse PDF
     parser = PDFParserService()
-    parsed_data = parser.parse_pdf(temp_file_path)
-
-    # Save to database
+    s3 = S3Service()
+    temp_file_path = None
     session = get_db_session()
     try:
+        # Save file temporarily
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            file.save(temp_file.name)
+            temp_file_path = temp_file.name
+        # Parse PDF
+        parsed_data = parser.parse_pdf(temp_file_path)
+        # Upload to S3 (optional if bucket configured)
+        pdf_s3_key = None
+        try:
+            if os.getenv('AWS_S3_BUCKET'):
+                with open(temp_file_path, 'rb') as fobj:
+                    from werkzeug.datastructures import FileStorage
+                    fobj_seek = FileStorage(stream=fobj, filename=file.filename, content_type='application/pdf')
+                    pdf_s3_key = s3.upload_file(fobj_seek)
+        except Exception as s3e:
+            # Non-fatal if S3 not configured
+            pdf_s3_key = None
         # Find or create vendor
-        vendor = session.query(Vendor).filter_by(name=parsed_data.get('vendor_name')).first()
+        vendor_name = parsed_data.get('vendor_name') or 'Unknown Vendor'
+        vendor = session.query(Vendor).filter_by(name=vendor_name).first()
         if not vendor:
-            vendor = Vendor(name=parsed_data.get('vendor_name', 'Unknown Vendor'))
+            vendor = Vendor(name=vendor_name, status='active')
             session.add(vendor)
-            session.flush()  # Get the vendor ID
-        
+            session.flush()
+        # Convert date
+        date_val = None
+        raw_date = parsed_data.get('date')
+        if raw_date:
+            try:
+                date_val = datetime.strptime(raw_date, '%Y-%m-%d')
+            except ValueError:
+                date_val = datetime.utcnow()
+        # Basic risk score placeholder (could integrate analyzer)
+        total_amount = parsed_data.get('total_amount') or 0
+        risk_score = min(100, (total_amount / 1000.0)) if total_amount else 0
         invoice = DbInvoice(
             vendor_id=vendor.id,
-            invoice_number=parsed_data['invoice_number'],
-            date=parsed_data['date'],
-            amount=parsed_data.get('total_amount', 0),
-            overspend_risk=parsed_data.get('overspend_risk', 0),
+            invoice_number=parsed_data.get('invoice_number'),
+            date=date_val or datetime.utcnow(),
+            amount=total_amount,
+            overspend_risk=risk_score / 100.0,
             processed=True,
-            pdf_s3_key=parsed_data.get('pdf_s3_key')
+            pdf_s3_key=pdf_s3_key,
+            uploaded_by=user_id,
+            status='uploaded',
+            risk_score=risk_score
         )
         session.add(invoice)
+        session.flush()
+        # Persist line items
+        for li in parsed_data.get('line_items', []):
+            line = LineItem(
+                invoice_id=invoice.id,
+                description=li.get('description'),
+                hours=li.get('hours'),
+                rate=li.get('rate'),
+                amount=li.get('amount')
+            )
+            session.add(line)
         session.commit()
-        invoice_id = invoice.id  # Store ID before closing session
-        session.close()
-        
-        # Clean up temporary file
-        os.remove(temp_file_path)
-        
+        invoice_id = invoice.id
         return jsonify({'message': 'Invoice uploaded successfully', 'invoice_id': invoice_id})
     except Exception as e:
         session.rollback()
-        # Clean up temporary file even if there's an error
-        if os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
         return jsonify({'message': f'Error processing invoice: {str(e)}'}), 500
     finally:
+        if temp_file_path and os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
         session.close()
 
 @invoices_bp.route('/download/<int:invoice_id>', methods=['GET'])

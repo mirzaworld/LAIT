@@ -40,7 +40,11 @@ class PDFParserService:
         except Exception as e:
             logging.error(f"Error parsing PDF: {str(e)}")
             raise
-    
+
+    # Backwards compatible method name used elsewhere
+    def parse_pdf(self, pdf_file):
+        return self.parse_invoice(pdf_file)
+
     def _extract_metadata(self, text):
         """Extract invoice metadata using regex patterns."""
         data = {}
@@ -65,7 +69,10 @@ class PDFParserService:
                 
                 # Clean up amount
                 if field == 'total_amount':
-                    value = float(value.replace(',', ''))
+                    try:
+                        value = float(value.replace(',', ''))
+                    except ValueError:
+                        value = 0.0
                 
                 data[field] = value
         
@@ -82,14 +89,14 @@ class PDFParserService:
         headers = [str(h).lower() if h else '' for h in table[0]]
         
         # Find important column indices
-        desc_col = next((i for i, h in enumerate(headers) if 'description' in str(h)), None)
-        hours_col = next((i for i, h in enumerate(headers) if 'hours' in str(h)), None)
-        rate_col = next((i for i, h in enumerate(headers) if 'rate' in str(h)), None)
-        amount_col = next((i for i, h in enumerate(headers) if 'amount' in str(h) or 'total' in str(h)), None)
+        desc_col = next((i for i, h in enumerate(headers) if 'description' in h), None)
+        hours_col = next((i for i, h in enumerate(headers) if 'hours' in h), None)
+        rate_col = next((i for i, h in enumerate(headers) if 'rate' in h), None)
+        amount_col = next((i for i, h in enumerate(headers) if 'amount' in h or 'total' in h), None)
         
         # Process each row
         for row in table[1:]:
-            if not row or all(cell is None or cell.strip() == '' for cell in row):
+            if not row or all(cell is None or str(cell).strip() == '' for cell in row):
                 continue
                 
             line_item = {}
@@ -99,22 +106,19 @@ class PDFParserService:
             
             if hours_col is not None and len(row) > hours_col:
                 try:
-                    hours = str(row[hours_col]).replace(',', '')
-                    line_item['hours'] = float(hours)
+                    line_item['hours'] = float(str(row[hours_col]).replace(',', ''))
                 except (ValueError, TypeError):
                     line_item['hours'] = 0
             
             if rate_col is not None and len(row) > rate_col:
                 try:
-                    rate = str(row[rate_col]).replace('$', '').replace(',', '')
-                    line_item['rate'] = float(rate)
+                    line_item['rate'] = float(str(row[rate_col]).replace('$', '').replace(',', ''))
                 except (ValueError, TypeError):
                     line_item['rate'] = 0
             
             if amount_col is not None and len(row) > amount_col:
                 try:
-                    amount = str(row[amount_col]).replace('$', '').replace(',', '')
-                    line_item['amount'] = float(amount)
+                    line_item['amount'] = float(str(row[amount_col]).replace('$', '').replace(',', ''))
                 except (ValueError, TypeError):
                     line_item['amount'] = 0
             
