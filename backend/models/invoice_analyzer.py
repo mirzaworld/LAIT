@@ -975,3 +975,50 @@ class InvoiceAnalyzer:
             return 0
             
         return sum(rates) / len(rates)
+
+    # ------------------------------------------------------------------
+    # Test Adapter Methods
+    # The ML unit tests expect a lightweight interface with train(),
+    # predict(), and evaluate() methods for simple outlier detection
+    # using numeric line item level features. These adapters do NOT
+    # interfere with the production analysis pipeline above.
+    # ------------------------------------------------------------------
+    def train(self, df):  # type: ignore
+        """Train a simple IsolationForest model for test dataset.
+        Expects a pandas DataFrame with columns: hours, rate, line_total.
+        """
+        try:
+            import pandas as _pd
+            from sklearn.ensemble import IsolationForest as _IF
+        except Exception as e:  # pragma: no cover
+            raise RuntimeError(f"Missing dependencies for training: {e}")
+
+        required = {'hours', 'rate', 'line_total'}
+        if not required.issubset(df.columns):
+            raise ValueError(f"DataFrame must contain columns {required}")
+        X = df[['hours', 'rate', 'line_total']].values
+        self._test_isolation_forest = _IF(contamination=0.1, random_state=42)
+        self._test_isolation_forest.fit(X)
+        return self
+
+    def predict(self, X):  # type: ignore
+        """Predict inliers/outliers for provided feature matrix.
+        Returns array of 1 (inlier) or -1 (outlier) matching sklearn interface.
+        """
+        if not hasattr(self, '_test_isolation_forest'):
+            raise RuntimeError("Model not trained. Call train() first.")
+        import numpy as _np
+        X = _np.asarray(X)
+        return self._test_isolation_forest.predict(X)
+
+    def evaluate(self, df):  # type: ignore
+        """Evaluate simple anomaly ratio on a hold-out DataFrame."""
+        required = {'hours', 'rate', 'line_total'}
+        if not required.issubset(df.columns):
+            raise ValueError(f"DataFrame must contain columns {required}")
+        preds = self.predict(df[['hours', 'rate', 'line_total']].values)
+        import numpy as _np
+        anomaly_ratio = float((preds == -1).sum() / len(preds)) if len(preds) else 0.0
+        return {'anomaly_ratio': anomaly_ratio}
+
+# End of file

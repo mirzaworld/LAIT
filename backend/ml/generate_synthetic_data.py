@@ -6,6 +6,8 @@ import os
 
 def generate_synthetic_invoices(n_invoices=100):
     """Generate synthetic invoice data for training and testing."""
+    if n_invoices is None or n_invoices <= 0:
+        raise ValueError("n_invoices must be a positive integer")
     
     # Define possible values
     vendors = [

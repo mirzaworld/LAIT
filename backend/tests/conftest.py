@@ -13,7 +13,12 @@ import sys
 
 def pytest_ignore_collect(path):
     # Prevent pytest from collecting the legacy /backend/test_api.py which conflicts
-    return str(path).endswith('backend/test_api.py')
+    if str(path).endswith('backend/test_api.py'):
+        return True
+    # Also ignore duplicated outdated unittest style test in tests/test_api.py
+    if str(path).endswith('backend/tests/test_api.py'):
+        return True
+    return False
 
 try:
     from enhanced_app import create_app

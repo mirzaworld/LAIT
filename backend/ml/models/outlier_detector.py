@@ -32,9 +32,9 @@ class OutlierDetector:
         self.model.fit(X)
     
     def predict(self, data: pd.DataFrame) -> np.ndarray:
-        """Predict outliers (-1 for outliers, 1 for inliers)"""
+        """Predict outliers returning boolean flags (True = outlier)."""
         X = self.preprocess_data(data)
-        return self.model.predict(X) == -1
+        return (self.model.predict(X) == -1)
     
     def get_anomaly_scores(self, data: pd.DataFrame) -> np.ndarray:
         """Get anomaly scores for each data point"""
