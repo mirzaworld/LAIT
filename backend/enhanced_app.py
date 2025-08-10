@@ -13,7 +13,6 @@ import os
 import sys
 import pandas as pd
 import logging
-import random
 import json
 import time
 import math
@@ -22,6 +21,7 @@ import base64
 import uuid
 import warnings
 import subprocess
+import random  # added back
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, send_file, current_app, make_response, Response
 from flask_cors import CORS
@@ -101,13 +101,11 @@ warnings.filterwarnings('ignore', category=FutureWarning, module='sklearn')
 # Initialize Socket.IO
 socketio = SocketIO()
 
-# Central per-endpoint rate limits (path substring -> limit spec)
+# Remove dynamic per-path mapping (we will rely on explicit @limiter.limit decorators)
 RATE_LIMITS = {
-    'auth/login': '5/minute',
-    'auth/register': '3/minute',
+    'self-test': '12/minute',
     'legal/search': '30/minute',
-    'upload-invoice': '10/minute',
-    'self-test': '12/minute'
+    'upload-invoice': '10/minute'
 }
 
 def dynamic_rate_limit():
@@ -126,9 +124,10 @@ limiter = Limiter(key_func=get_remote_address, default_limits=[DEFAULT_RATE])  #
 _metrics = {
     'requests_total': 0,
     'errors_total': 0,
-    'latency_ms': [],  # store recent latencies
+    'latency_ms': [],
     'model_inferences': 0,
     'start_time': time.time(),
+    'status_counts': {}
 }
 _LATENCY_WINDOW = 500  # keep last N latencies
 
@@ -169,6 +168,13 @@ class DriftTracker:
             'tracked_features': list(self.feature_stats.keys())
         }
 
+    def heartbeat(self):
+        return {
+            'uptime_sec': int(time.time() - _metrics['start_time']),
+            'last_update': self.last_update.isoformat() + 'Z' if self.last_update else None,
+            'tracked': len(self.feature_stats)
+        }
+
 drift_tracker = DriftTracker()
 
 def create_app():
@@ -193,18 +199,10 @@ def create_app():
         request.start_time = time.time()
         req_id = request.headers.get('X-Request-ID') or str(uuid.uuid4())
         request.request_id = req_id
-        # Dynamic rate limit enforcement (manual) if specified
-        limit = dynamic_rate_limit()
-        if limit:
-            try:
-                # Use limiter directly
-                limiter.limit(limit)(lambda: None)()
-            except Exception:
-                pass
         _metrics['requests_total'] += 1
 
     @app.after_request
-    def _add_security_headers(resp):  # security hardening + metrics
+    def _add_security_headers(resp):
         duration_ms = None
         if hasattr(request, 'start_time'):
             duration_ms = int((time.time() - request.start_time) * 1000)
@@ -220,6 +218,13 @@ def create_app():
         csp = "default-src 'self'; connect-src 'self' http://localhost:5173 ws://localhost:5173 http://localhost:5003 ws://localhost:5003; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;"
         resp.headers.setdefault('Content-Security-Policy', csp)
         resp.headers.setdefault('Cache-Control', 'no-store')
+        # Metrics per status
+        _metrics['status_counts'][resp.status_code] = _metrics['status_counts'].get(resp.status_code, 0) + 1
+        # Structured access log (formatter will wrap message)
+        try:
+            logger.info(f"access method={request.method} path={request.path} status={resp.status_code} latency_ms={duration_ms} req_id={getattr(request,'request_id',None)}")
+        except Exception:
+            pass
         return resp
 
     # Unified JSON error response helper
@@ -362,9 +367,44 @@ def create_app():
     @app.route('/api/health')
     def health_check():
         return jsonify({"status": "healthy", "timestamp": datetime.utcnow()})
-    
+
+    # --- NEW: Readiness endpoint (step 3) ---
+    @app.route('/api/readiness')
+    def readiness():
+        ok = True
+        details = {}
+        # DB check
+        try:
+            session = get_db_session()
+            session.execute('SELECT 1')
+            session.close()
+            details['database'] = {'status': 'ok'}
+        except Exception as e:
+            details['database'] = {'status': 'error', 'error': str(e)}
+            ok = False
+        # Model load check (at least invoice_analyzer present)
+        model_obj = getattr(app, 'invoice_analyzer', None)
+        details['ml_models'] = {'invoice_analyzer': 'loaded' if model_obj else 'missing'}
+        if not model_obj:
+            ok = False
+        # Drift tracker heartbeat freshness (< 10 min if any update ever happened)
+        drift = getattr(app, 'drift_tracker', None)
+        heartbeat_fresh = True
+        if drift and drift.last_update:
+            heartbeat_fresh = (datetime.utcnow() - drift.last_update) < timedelta(minutes=10)
+        details['drift'] = {
+            'last_update': drift.last_update.isoformat() + 'Z' if (drift and drift.last_update) else None,
+            'fresh': heartbeat_fresh
+        }
+        if drift and drift.last_update and not heartbeat_fresh:
+            ok = False
+        status = 'ready' if ok else 'degraded'
+        code = 200 if ok else 503
+        return jsonify({'status': status, 'components': details, 'timestamp': datetime.utcnow().isoformat() + 'Z'}), code
+
     # --- NEW: Comprehensive backend self-test / diagnostics endpoint ---
     @app.route('/api/self-test', methods=['GET'])
+    @limiter.limit(RATE_LIMITS['self-test'])
     def self_test():
         """Run lightweight diagnostics across core subsystems.
         Returns JSON summarizing status so frontend & tests can validate deployment health.
@@ -540,7 +580,7 @@ def create_app():
         })
 
     # Proper legal case search endpoint (extracted from misplaced block)
-    @limiter.limit("30 per minute")
+    @limiter.limit(RATE_LIMITS['legal/search'])
     @app.route('/api/legal/search', methods=['POST'])
     def legal_case_search():
         """Enhanced legal case search with real-time data integration"""
@@ -822,6 +862,11 @@ def create_app():
                 }
             inv.analysis = json.dumps(analysis)
             session.commit()
+            # Drift tracker update with latest invoice stats
+            try:
+                current_app.drift_tracker.update(pd.DataFrame([{'amount': float(inv.amount or 0), 'risk_score': float(inv.risk_score or 0)}]))
+            except Exception:
+                pass
             socketio.emit('notification', {
                 'type': 'invoice_analysis',
                 'timestamp': datetime.utcnow().isoformat() + 'Z',
@@ -839,7 +884,7 @@ def create_app():
             logger.error(f"Analyze invoice error: {e}")
             return jsonify({'error': str(e)}), 500
 
-    @limiter.limit("10/minute")
+    @limiter.limit(RATE_LIMITS['upload-invoice'])
     @app.route('/api/upload-invoice', methods=['POST'])
     @jwt_required(optional=True)
     def upload_invoice():
@@ -871,6 +916,11 @@ def create_app():
             )
             session.add(new_inv)
             session.commit()
+            # Drift tracker update
+            try:
+                current_app.drift_tracker.update(pd.DataFrame([{'amount': float(new_inv.amount or 0), 'risk_score': float(new_inv.risk_score or 0)}]))
+            except Exception:
+                pass
             socketio.emit('notification', {
                 'type': 'invoice_analysis',
                 'timestamp': datetime.utcnow().isoformat() + 'Z',
@@ -929,32 +979,33 @@ def create_app():
     # (We will search/replace later if needed)
     @app.route('/api/ml/status', methods=['GET'])
     def ml_status():
-        """Return extended status of loaded ML models with version & drift info."""
         models_status = {}
         model_manager = getattr(app, 'model_manager', None)
-        for attr in [
-            'enhanced_invoice_analyzer', 'invoice_analyzer',
-            'matter_analyzer', 'risk_predictor', 'vendor_analyzer'
+        meta_source = model_manager.metadata if model_manager else {'models': {}}
+        for attr, key in [
+            ('enhanced_invoice_analyzer', 'outlier_detector'),
+            ('invoice_analyzer', 'outlier_detector'),
+            ('matter_analyzer', 'outlier_detector'),
+            ('risk_predictor', 'risk_predictor'),
+            ('vendor_analyzer', 'vendor_cluster')
         ]:
             obj = getattr(app, attr, None)
-            meta = {
+            m = {
                 'loaded': bool(obj),
                 'class': obj.__class__.__name__ if obj else None,
+                'version': meta_source['models'].get(key, {}).get('current_version'),
+                'versions': len(meta_source['models'].get(key, {}).get('versions', []))
             }
-            # Attempt to add version info if manager available
-            if model_manager:
-                key = None
-                if 'risk' in attr:
-                    key = 'risk_predictor'
-                elif 'vendor' in attr:
-                    key = 'vendor_cluster'
-                elif 'invoice' in attr:
-                    key = 'outlier_detector'
-                if key and model_manager.metadata['models'].get(key):
-                    meta['version'] = model_manager.metadata['models'][key]['current_version']
-            models_status[attr] = meta
+            # Add metrics if available
+            try:
+                if model_manager and meta_source['models'].get(key, {}).get('current_version'):
+                    m['metrics'] = model_manager.get_model_metrics(key)
+            except Exception:
+                pass
+            models_status[attr] = m
         drift = app.drift_tracker.summary() if getattr(app, 'drift_tracker', None) else {}
-        return jsonify({'models': models_status, 'drift': drift, 'status': 'ok'}), 200
+        heartbeat = app.drift_tracker.heartbeat() if getattr(app, 'drift_tracker', None) else {}
+        return jsonify({'models': models_status, 'drift': drift, 'heartbeat': heartbeat, 'status': 'ok'}), 200
 
     # ================== BACKGROUND TASKS (CELERY) ==================
     # (Disabled: worker module not present in this deployment flavor)
@@ -964,6 +1015,22 @@ def create_app():
     #     logger.info("✅ Celery app loaded")
     # except Exception as e:
     #     logger.warning(f"❌ Could not load Celery app: {e}")
+
+    # --- NEW: Register notification blueprint (step 1) ---
+    try:
+        from routes.notification import notification_bp  # noqa: WPS433
+        app.register_blueprint(notification_bp)
+        logger.info('✅ Notification blueprint registered')
+    except Exception as e:  # pragma: no cover
+        logger.error(f'❌ Failed to register notification blueprint: {e}')
+
+    # --- NEW: Register remaining blueprints (auth, invoices, analytics, vendors, legal intelligence, upload) ---
+    try:
+        from routes import register_routes
+        register_routes(app)
+        logger.info('✅ All application blueprints registered via routes.register_routes')
+    except Exception as e:  # pragma: no cover
+        logger.error(f'❌ Failed to register full route set: {e}')
 
     return app
 

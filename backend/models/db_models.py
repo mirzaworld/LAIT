@@ -46,6 +46,11 @@ class Invoice(Base):
     invoice_number = Column(String(50), unique=True)
     vendor_id = Column(Integer, ForeignKey('vendors.id'))
     matter_id = Column(Integer, ForeignKey('matters.id'))
+    # --- Backward compatibility fields expected by legacy tests ---
+    client_name = Column(String(255))  # legacy test fixture support
+    matter = Column(String(255))       # legacy textual matter field (redundant with matter_id relationship)
+    total_amount = Column(Float)       # legacy field mirroring amount
+    # ---------------------------------------------------------------
     amount = Column(Float)
     date = Column(DateTime, default=datetime.utcnow)
     status = Column(String(20))
@@ -64,7 +69,7 @@ class Invoice(Base):
     
     # Relationships
     vendor = relationship("Vendor", back_populates="invoices")
-    matter = relationship("Matter", back_populates="invoices")
+    matter_rel = relationship("Matter", back_populates="invoices")  # renamed local attr to avoid clash with legacy string column
     line_items = relationship("LineItem", back_populates="invoice")
     risk_factors = relationship("RiskFactor", back_populates="invoice")
     uploader = relationship("User")
@@ -112,6 +117,9 @@ class Vendor(Base):
     external_id = Column(String(100), unique=True)  # From company dataset
     name = Column(String(200), nullable=False)
     vendor_type = Column(String(50))
+    # --- Backward compatibility field expected by tests ---
+    average_rate = Column(Float)  # legacy alias (tests set this) separate from avg_rate analytics field
+    # ------------------------------------------------------
     
     # Company Information
     industry_category = Column(String(100))

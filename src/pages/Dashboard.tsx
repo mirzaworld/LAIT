@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DollarSign, FileText, Users, Calendar, Download, Loader2, AlertTriangle, Activity } from 'lucide-react';
+import { DollarSign, FileText, Users, Calendar, Download, Loader2, AlertTriangle, Activity, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MetricCard from '../components/MetricCard';
 import SpendChart from '../components/SpendChart';
@@ -36,6 +36,7 @@ const DashboardContent: React.FC = () => {
   const [generatingReport, setGeneratingReport] = useState(false);
   const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
   const [startDate, endDate] = dateRange;
+  const [showNotifications, setShowNotifications] = useState(false);
 
   if (loading) {
     return (
@@ -167,7 +168,7 @@ const DashboardContent: React.FC = () => {
             Real-time insights into your legal spending and performance metrics
           </p>
         </div>
-        <div className="mt-4 sm:mt-0">
+        <div className="mt-4 sm:mt-0 flex items-center gap-3">
           <button 
             onClick={handleGenerateReport}
             disabled={generatingReport || loading}
@@ -184,6 +185,13 @@ const DashboardContent: React.FC = () => {
                 Generate Report
               </>
             )}
+          </button>
+          <button
+            aria-label="Notifications"
+            onClick={() => setShowNotifications(v => !v)}
+            className="relative p-2 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600"
+          >
+            <Bell className="w-5 h-5" />
           </button>
         </div>
       </div>
@@ -257,7 +265,11 @@ const DashboardContent: React.FC = () => {
       </div>
 
       {/* Notifications Panel */}
-      <NotificationsPanel />
+      {showNotifications && (
+        <div className="fixed top-20 right-6 w-96 z-50">
+          <NotificationsPanel open={showNotifications} onOpen={() => {}} />
+        </div>
+      )}
 
       {/* View Details Button */}
       <div className="flex justify-center mt-8">

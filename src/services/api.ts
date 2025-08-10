@@ -856,3 +856,39 @@ export const runSelfTest = async (): Promise<any> => {
   if (!response.ok) throw new Error('Self test failed');
   return response.json();
 };
+
+// ================= Notifications =================
+export interface RawNotification {
+  id?: number;
+  type: string;
+  message?: string; // DB stored notification_manager style
+  metadata?: any;
+  timestamp: string;
+  read?: boolean;
+  readAt?: string | null;
+  data?: any; // legacy in-memory style (invoice_analysis, alert, etc.)
+}
+
+export const getNotifications = async (limit: number = 50): Promise<RawNotification[]> => {
+  const response = await fetch(apiUrl(`/api/notifications?limit=${limit}`), { headers: getAuthHeaders() });
+  if (!response.ok) throw new Error('Failed to fetch notifications');
+  return await response.json();
+};
+
+export const getUnreadNotificationCount = async (): Promise<number> => {
+  const response = await fetch(apiUrl('/api/notifications/unread-count'), { headers: getAuthHeaders() });
+  if (!response.ok) throw new Error('Failed to fetch unread count');
+  const data = await response.json();
+  return data.unread || 0;
+};
+
+export const ackNotification = async (id: number): Promise<{ unread: number } > => {
+  const response = await fetch(apiUrl(`/api/notifications/${id}/ack`), { method: 'POST', headers: getAuthHeaders() });
+  if (!response.ok) throw new Error('Failed to acknowledge notification');
+  return await response.json();
+};
+
+export const markAllNotificationsRead = async (): Promise<void> => {
+  const response = await fetch(apiUrl('/api/notifications/read-all'), { method: 'POST', headers: getAuthHeaders() });
+  if (!response.ok) throw new Error('Failed to mark all notifications read');
+};
