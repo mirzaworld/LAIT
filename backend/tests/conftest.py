@@ -86,8 +86,9 @@ def app():
 def client(app):
     """Create a test client with automatic auth header injection (real JWT)."""
     # Generate a real JWT token tied to default user (id=1) so @jwt_required passes
+    # NOTE: JWT subject must be a string, not integer
     with app.app_context():
-        token = create_access_token(identity=1)
+        token = create_access_token(identity="1")
     real_header = {'Authorization': f'Bearer {token}'}
 
     class AutoAuthClient(FlaskClient):
@@ -151,7 +152,7 @@ def regular_token(app: Flask) -> str:
 def auto_auth_headers(app):  # keep for backward compatibility
     """Headers using real JWT token for authenticated requests."""
     with app.app_context():
-        token = create_access_token(identity=1)
+        token = create_access_token(identity="1")  # Fix: use string identity
     return {'Authorization': f'Bearer {token}'}
 
 @pytest.fixture

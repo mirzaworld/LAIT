@@ -43,7 +43,7 @@ def development_jwt_required(f):
             # Auto inject only if none provided
             if not auth_header:
                 try:
-                    token = create_access_token(identity=1)
+                    token = create_access_token(identity="1")  # Fix: use string identity
                     # Mutate the WSGI environ so downstream sees header
                     request.headers.environ['HTTP_AUTHORIZATION'] = f'Bearer {token}'
                 except Exception:
