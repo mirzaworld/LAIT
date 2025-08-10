@@ -664,6 +664,7 @@ class RiskPredictor:
                 raise ValueError("Invoices DataFrame missing required columns for pipeline training")
             # Feature extraction similar to ml/models variant
             feats = _pd.DataFrame()
+            feats['invoice_id'] = df_invoices['invoice_id']
             feats['total_amount'] = df_invoices['total_amount']
             feats['is_pending'] = (df_invoices['status'] == 'pending').astype(int)
             li = line_items.copy()
@@ -674,8 +675,9 @@ class RiskPredictor:
                     'amount': ['sum', 'mean', 'std']
                 }).fillna(0)
                 agg.columns = [f"{c[0]}_{c[1]}" for c in agg.columns]
-                feats = feats.join(agg, on='invoice_id') if 'invoice_id' in feats.columns else feats.join(agg, how='left')
+                feats = feats.merge(agg, left_on='invoice_id', right_index=True, how='left')
             feats = feats.fillna(0)
+            self._feature_columns = [col for col in feats.columns if col != 'invoice_id']
             # Target risk proxy
             risk_scores = _pd.Series(0.0, index=df_invoices.index)
             amount_threshold = df_invoices['total_amount'].quantile(0.9)
@@ -690,10 +692,10 @@ class RiskPredictor:
             else:
                 y = risk_scores.fillna(0).values
             self.scaler = _SS()
-            X_scaled = self.scaler.fit_transform(feats.values)
+            X_scaled = self.scaler.fit_transform(feats[self._feature_columns].values)
             self.model = _RFR(n_estimators=100, random_state=42)
             self.model.fit(X_scaled, y)
-            self.feature_importance = dict(zip(feats.columns, self.model.feature_importances_))
+            self.feature_importance = dict(zip(self._feature_columns, self.model.feature_importances_))
             return self
 
         # Classification overspend mode (original unit test)
@@ -727,20 +729,24 @@ class RiskPredictor:
         return self
 
     def predict(self, invoice_df, line_items_df=None):  # type: ignore
-        """Predict risk score (0-1) for pipeline mode, or overspend prob if classifier only."""
         import pandas as _pd, numpy as _np
         if hasattr(self, 'model') and self.model is not None and isinstance(invoice_df, _pd.DataFrame) and (line_items_df is not None or hasattr(self, 'feature_importance')):
-            # Pipeline mode
             feats = _pd.DataFrame()
+            feats['invoice_id'] = invoice_df['invoice_id']
             feats['total_amount'] = invoice_df['total_amount']
             feats['is_pending'] = (invoice_df['status'] == 'pending').astype(int)
             if line_items_df is not None and 'invoice_id' in line_items_df.columns:
                 li = line_items_df
                 agg = li.groupby('invoice_id').agg({'hours': ['sum','mean','std'],'rate':['mean','std'],'amount':['sum','mean','std']}).fillna(0)
                 agg.columns = [f"{c[0]}_{c[1]}" for c in agg.columns]
-                feats = feats.join(agg, on='invoice_id')
+                feats = feats.merge(agg, left_on='invoice_id', right_index=True, how='left')
             feats = feats.fillna(0)
-            X_scaled = self.scaler.transform(feats.values)
+            # Ensure all training columns exist
+            for col in getattr(self, '_feature_columns', []):
+                if col not in feats.columns:
+                    feats[col] = 0
+            X = feats[self._feature_columns].values
+            X_scaled = self.scaler.transform(X)
             return float(self.model.predict(X_scaled)[0])
         # Fallback to classifier probability
         if hasattr(self, '_clf'):
@@ -750,11 +756,11 @@ class RiskPredictor:
         raise RuntimeError("Model not trained in any mode")
 
     def explain_risk(self, invoice_df):  # type: ignore
-        """Explain risk using feature importances (pipeline mode)."""
         import pandas as _pd
         if not hasattr(self, 'feature_importance') or not self.feature_importance:
             return []
         feats = _pd.DataFrame()
+        feats['invoice_id'] = invoice_df['invoice_id']
         feats['total_amount'] = invoice_df['total_amount']
         feats['is_pending'] = (invoice_df['status'] == 'pending').astype(int)
         explanations = []
