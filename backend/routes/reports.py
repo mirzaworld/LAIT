@@ -5,6 +5,7 @@ Generates comprehensive legal spend and performance reports using real ML models
 
 from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from dev_auth import development_jwt_required
 from datetime import datetime, timedelta
 import tempfile
 import os
@@ -24,7 +25,7 @@ logger = logging.getLogger(__name__)
 reports_bp = Blueprint('reports', __name__)
 
 @reports_bp.route('/templates', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 def get_report_templates():
     """Get available report templates with real-time capabilities"""
     templates = [
@@ -91,7 +92,7 @@ def get_report_templates():
     })
 
 @reports_bp.route('/generate', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def generate_real_time_report():
     """Generate real-time report using ML models and live data"""
     current_user = get_jwt_identity()
@@ -886,7 +887,7 @@ def _generate_market_intelligence_report(session, start_date, end_date, paramete
     }
 
 @reports_bp.route('/export/<report_id>', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 def export_report(report_id):
     """Export report to PDF or Excel format"""
     format_type = request.args.get('format', 'pdf').lower()
@@ -905,7 +906,7 @@ def export_report(report_id):
         return jsonify({'error': f'Error exporting report: {str(e)}'}), 500
 
 @reports_bp.route('/status/<report_id>', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 def get_report_status(report_id):
     """Get report generation status"""
     # In a real implementation, you would track report generation status

@@ -5,6 +5,7 @@ Provides endpoints for legal research and competitive intelligence using CourtLi
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from dev_auth import development_jwt_required
 from services.courtlistener_service import LegalIntelligenceService
 from db.database import get_db_session
 from models.db_models import Vendor, Invoice, Matter
@@ -25,7 +26,7 @@ COURTLISTENER_API_TOKEN = os.getenv('COURTLISTENER_API_TOKEN')
 legal_service = LegalIntelligenceService(COURTLISTENER_API_TOKEN)
 
 @legal_intel_bp.route('/test', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 def test_legal_intelligence():
     """Test endpoint for legal intelligence service"""
     try:
@@ -45,7 +46,7 @@ def test_legal_intelligence():
         return jsonify({'error': f'Test failed: {str(e)}'}), 500
 
 @legal_intel_bp.route('/verify-attorney', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def verify_attorney():
     """Verify attorney credentials using trained attorney database and CourtListener"""
     try:
@@ -205,7 +206,7 @@ def verify_bar_number(bar_number: str, attorney_name: str, state: str) -> dict:
         }
 
 @legal_intel_bp.route('/analyze-opposing-counsel', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def analyze_opposing_counsel():
     """Analyze opposing counsel for strategic insights"""
     try:
@@ -248,7 +249,7 @@ def analyze_opposing_counsel():
         return jsonify({'error': f'Error analyzing opposing counsel: {str(e)}'}), 500
 
 @legal_intel_bp.route('/estimate-case-complexity', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def estimate_case_complexity():
     """Estimate case complexity based on similar cases"""
     try:
@@ -300,7 +301,7 @@ def estimate_case_complexity():
         return jsonify({'error': f'Error estimating case complexity: {str(e)}'}), 500
 
 @legal_intel_bp.route('/judge-insights', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def get_judge_insights():
     """Get insights about a judge for case strategy"""
     try:
@@ -340,7 +341,7 @@ def get_judge_insights():
         return jsonify({'error': f'Error getting judge insights: {str(e)}'}), 500
 
 @legal_intel_bp.route('/vendor-verification', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def verify_vendor_attorneys():
     """Verify attorneys at a vendor law firm"""
     try:
@@ -404,7 +405,7 @@ def verify_vendor_attorneys():
         return jsonify({'error': f'Vendor verification failed: {str(e)}'}), 500
 
 @legal_intel_bp.route('/competitive-landscape', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 def get_competitive_landscape():
     """Get competitive landscape analysis for a practice area"""
     try:
@@ -474,7 +475,7 @@ def get_competitive_landscape():
         return jsonify({'error': f'Error getting competitive landscape: {str(e)}'}), 500
 
 @legal_intel_bp.route('/matter-research', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def research_matter():
     """Comprehensive research for a matter using multiple CourtListener endpoints"""
     try:
@@ -530,7 +531,7 @@ def research_matter():
         return jsonify({'error': f'Error researching matter: {str(e)}'}), 500
 
 @legal_intel_bp.route('/search-precedents', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def search_precedents():
     """Search for legal precedents and highly cited cases"""
     try:
@@ -600,7 +601,7 @@ def generate_search_suggestions(query: str) -> list:
     return suggestions[:5]  # Return top 5 suggestions
 
 @legal_intel_bp.route('/market-insights', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 def get_market_insights():
     """Get legal market insights and trends"""
     try:
@@ -620,7 +621,7 @@ def get_market_insights():
         return jsonify({'error': 'Market insights service temporarily unavailable'}), 500
 
 @legal_intel_bp.route('/rate-benchmarks', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 def get_rate_benchmarks():
     """Get hourly rate benchmarks by practice area and location"""
     try:
@@ -642,7 +643,7 @@ def get_rate_benchmarks():
         return jsonify({'error': 'Rate benchmarks service temporarily unavailable'}), 500
 
 @legal_intel_bp.route('/citations/<int:opinion_id>', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 def get_citation_network():
     """Get citation network for a specific opinion"""
     try:
@@ -664,7 +665,7 @@ def get_citation_network():
         return jsonify({'error': f'Error getting citation network: {str(e)}'}), 500
 
 @legal_intel_bp.route('/firm-analysis', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def analyze_law_firm():
     """Analyze a law firm's performance and track record"""
     try:
@@ -697,7 +698,7 @@ def analyze_law_firm():
 # Add the missing endpoints that the frontend expects
 
 @legal_intel_bp.route('/search-cases', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def search_cases():
     """Search for legal cases using real case database and CourtListener API"""
     try:
@@ -778,7 +779,7 @@ def search_local_case_database(query: str, court: str = None) -> list:
     return sample_cases
 
 @legal_intel_bp.route('/attorney-search', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def search_attorneys():
     """Search for attorneys by name or firm"""
     try:
@@ -813,7 +814,7 @@ def search_attorneys():
         return jsonify({'error': f'Attorney search failed: {str(e)}'}), 500
 
 @legal_intel_bp.route('/vendor-risk-assessment', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def vendor_risk_assessment():
     """Assess vendor risk based on legal intelligence"""
     try:
@@ -895,7 +896,7 @@ def vendor_risk_assessment():
         return jsonify({'error': f'Error assessing vendor risk: {str(e)}'}), 500
 
 @legal_intel_bp.route('/case-details/<string:case_id>', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 def get_case_details(case_id):
     """Get detailed information about a specific legal case"""
     try:

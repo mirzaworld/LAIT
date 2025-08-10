@@ -15,6 +15,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from dev_auth import development_jwt_required
 
 invoice_bp = Blueprint('invoice', __name__)
 
@@ -174,7 +175,7 @@ def generate_report_pdf(report_data):
     return buffer
 
 @invoice_bp.route('/api/invoices/analyze', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def analyze_invoice():
     current_user = get_jwt_identity()
     if 'file' not in request.files:
@@ -198,7 +199,7 @@ def analyze_invoice():
             return jsonify({'error': str(e)}), 500
 
 @invoice_bp.route('/api/invoices/<invoice_id>/report', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 def get_invoice_report(invoice_id):
     current_user = get_jwt_identity()
     # In a real app, this would fetch the invoice data from a database
@@ -269,7 +270,7 @@ def get_invoice_report(invoice_id):
     return jsonify(mock_report)
 
 @invoice_bp.route('/api/reports/generate', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def generate_report():
     current_user = get_jwt_identity()
     report_data = request.json.get('report')

@@ -25,6 +25,9 @@ def pytest_ignore_collect(path):
     # Also ignore duplicated outdated unittest style test in tests/test_api.py
     if str(path).endswith('backend/tests/test_api.py'):
         return True
+    # Ignore test_server.py which is a Flask server, not a test file
+    if str(path).endswith('backend/test_server.py'):
+        return True
     return False
 
 try:

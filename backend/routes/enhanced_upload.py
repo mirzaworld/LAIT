@@ -5,6 +5,7 @@ Uses real trained ML models for PDF analysis
 
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from dev_auth import development_jwt_required
 from services.enhanced_pdf_upload_service import EnhancedPDFUploadService
 import logging
 
@@ -13,7 +14,7 @@ logger = logging.getLogger(__name__)
 upload_bp = Blueprint('upload', __name__, url_prefix='/api')
 
 @upload_bp.route('/upload-invoice', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def upload_invoice():
     """Enhanced invoice upload with real ML analysis"""
     try:
@@ -100,7 +101,7 @@ def upload_invoice():
         }), 500
 
 @upload_bp.route('/upload-invoice/analyze', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def analyze_uploaded_invoice():
     """Analyze an uploaded invoice without saving"""
     try:

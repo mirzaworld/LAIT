@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from db.database import get_db_session
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from dev_auth import development_jwt_required
 from auth import role_required
 # from backend.tasks import retrain_models  # Comment out for now
 import json
@@ -57,7 +58,7 @@ def save_settings(settings):
         return False
 
 @admin_bp.route('/settings', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 @role_required(['admin'])
 def get_app_settings():
     """Get application settings"""
@@ -65,7 +66,7 @@ def get_app_settings():
     return jsonify(settings)
 
 @admin_bp.route('/settings', methods=['PUT'])
-@jwt_required()
+@development_jwt_required
 @role_required(['admin'])
 def update_app_settings():
     """Update application settings"""
@@ -91,7 +92,7 @@ def update_app_settings():
         return jsonify({'error': 'Failed to save settings'}), 500
 
 @admin_bp.route('/retrain', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 @role_required(['admin'])
 def trigger_model_retrain():
     """Trigger ML model retraining"""
@@ -111,7 +112,7 @@ def trigger_model_retrain():
         return jsonify({'error': f'Failed to start retraining: {str(e)}'}), 500
 
 @admin_bp.route('/audit-logs', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 @role_required(['admin'])
 def get_audit_logs():
     """Get system audit logs"""
@@ -183,7 +184,7 @@ def get_audit_logs():
     })
 
 @admin_bp.route('/dashboard', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 @role_required(['admin'])
 def get_admin_dashboard():
     """Get admin dashboard statistics"""
@@ -236,7 +237,7 @@ def get_admin_dashboard():
         session.close()
 
 @admin_bp.route('/settings', methods=['GET', 'POST'])
-@jwt_required()
+@development_jwt_required
 @role_required(['admin'])
 def manage_settings():
     """Get or update application settings"""
@@ -250,7 +251,7 @@ def manage_settings():
         return jsonify({'message': 'Settings updated successfully'})
 
 @admin_bp.route('/audit-logs/report', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 @role_required(['admin'])
 def audit_logs():
     """Fetch audit logs"""

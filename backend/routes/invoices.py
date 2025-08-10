@@ -3,6 +3,7 @@ Invoice routes: upload, list, get, file download
 """
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from dev_auth import development_jwt_required
 from db.database import get_db_session, Invoice as DbInvoice, LineItem, Vendor
 from services.s3_service import S3Service
 from services.pdf_parser_service import PDFParserService
@@ -13,7 +14,7 @@ from datetime import datetime
 invoices_bp = Blueprint('invoices', __name__, url_prefix='/api/invoices')
 
 @invoices_bp.route('', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 def list_invoices():
     session = get_db_session()
     try:
@@ -44,7 +45,7 @@ def list_invoices():
         session.close()
 
 @invoices_bp.route('/<int:invoice_id>', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 def get_invoice(invoice_id):
     current_user = get_jwt_identity()
     session = get_db_session()
@@ -93,12 +94,12 @@ def get_invoice(invoice_id):
         session.close()
 
 @invoices_bp.route('', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def create_invoice_legacy():
     return upload_invoice()
 
 @invoices_bp.route('/upload', methods=['POST'])
-@jwt_required()
+@development_jwt_required
 def upload_invoice():
     """Upload a new invoice (PDF) and save parsed data to the database with ML analysis"""
     user_id = get_jwt_identity()
@@ -206,7 +207,7 @@ def upload_invoice():
         session.close()
 
 @invoices_bp.route('/download/<int:invoice_id>', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 def download_invoice(invoice_id):
     """Download invoice PDF from S3"""
     current_user = get_jwt_identity()

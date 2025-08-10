@@ -8,6 +8,7 @@ from sqlalchemy import func, desc, asc, and_, or_, text
 from backend.db.database import get_db_session
 from backend.models.db_models import Vendor, VendorMarketInsight, VendorBenchmark, Invoice, LineItem
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from dev_auth import development_jwt_required
 from datetime import datetime, timedelta
 import pandas as pd
 from typing import Dict, List, Optional
@@ -15,7 +16,7 @@ from typing import Dict, List, Optional
 vendor_mgmt_bp = Blueprint('vendor_management', __name__)
 
 @vendor_mgmt_bp.route('/search', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 def search_vendors():
     """Advanced vendor search with filters"""
     session = get_db_session()
@@ -94,7 +95,7 @@ def search_vendors():
         session.close()
 
 @vendor_mgmt_bp.route('/market-insights', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 def get_market_insights():
     """Get market insights for vendor landscape analysis"""
     session = get_db_session()
@@ -139,7 +140,7 @@ def get_market_insights():
         session.close()
 
 @vendor_mgmt_bp.route('/<int:vendor_id>/benchmark', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 def get_vendor_benchmark(vendor_id):
     """Get comprehensive benchmarking data for a vendor"""
     session = get_db_session()
@@ -190,7 +191,7 @@ def get_vendor_benchmark(vendor_id):
         session.close()
 
 @vendor_mgmt_bp.route('/discovery', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 def vendor_discovery():
     """Discover new potential vendors based on requirements"""
     session = get_db_session()
@@ -273,7 +274,7 @@ def vendor_discovery():
         session.close()
 
 @vendor_mgmt_bp.route('/analytics/summary', methods=['GET'])
-@jwt_required()
+@development_jwt_required
 def vendor_analytics_summary():
     """Get summary analytics for vendor portfolio"""
     session = get_db_session()
