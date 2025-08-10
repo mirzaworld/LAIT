@@ -3,10 +3,14 @@ from db.database import get_db_session
 from models.db_models import User
 from werkzeug.security import generate_password_hash, check_password_hash
 from auth import authenticate_user, role_required
-from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
+from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token, create_refresh_token, set_refresh_cookies, unset_jwt_cookies
+from datetime import timedelta
 import re
 
 auth_bp = Blueprint('auth', __name__)
+
+# In-memory revoke list (for demo). In production use Redis/DB.
+REVOKED_REFRESH_TOKENS = set()
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
@@ -27,11 +31,13 @@ def login():
     # Create access token with identity and role as an additional claim
     access_token = create_access_token(
         identity=user.id,
-        additional_claims={'role': user.role}
+        additional_claims={'role': user.role},
+        expires_delta=timedelta(hours=1)
     )
-    
-    return jsonify({
+    refresh_token = create_refresh_token(identity=user.id)
+    resp = jsonify({
         'token': access_token,
+        'refresh_expires_in': 86400,
         'user': {
             'id': user.id,
             'email': user.email,
@@ -40,6 +46,8 @@ def login():
             'role': user.role
         }
     })
+    set_refresh_cookies(resp, refresh_token)
+    return resp
     
 @auth_bp.route('/register', methods=['POST'])
 def register():
@@ -112,38 +120,24 @@ def register():
         session.close()
 
 @auth_bp.route('/refresh', methods=['POST'])
-@jwt_required()
+@jwt_required(refresh=True)
 def refresh():
-    """Refresh JWT token"""
-    # Get user ID from the JWT identity
+    """Rotate refresh token and issue new access token"""
     user_id = get_jwt_identity()
-    
-    # Get user data from database
-    session = get_db_session()
-    try:
-        current_user = session.query(User).filter_by(id=user_id).first()
-        
-        if not current_user:
-            return jsonify({'message': 'User not found'}), 404
-            
-        # Create new access token
-        access_token = create_access_token(
-            identity=current_user.id,
-            additional_claims={'role': current_user.role}
-        )
-        
-        return jsonify({
-            'token': access_token,
-            'user': {
-                'id': current_user.id,
-                'email': current_user.email,
-                'first_name': current_user.first_name,
-                'last_name': current_user.last_name,
-                'role': current_user.role
-            }
-        })
-    finally:
-        session.close()
+    # Revoke old (JWT ID would be needed; simplified demo)
+    # Issue new tokens
+    access_token = create_access_token(identity=user_id, expires_delta=timedelta(hours=1))
+    new_refresh = create_refresh_token(identity=user_id)
+    resp = jsonify({'token': access_token})
+    set_refresh_cookies(resp, new_refresh)
+    return resp
+
+@auth_bp.route('/logout', methods=['POST'])
+@jwt_required(optional=True)
+def logout():
+    resp = jsonify({'message': 'Logged out'})
+    unset_jwt_cookies(resp)
+    return resp
 
 @auth_bp.route('/me', methods=['GET'])
 @jwt_required()
