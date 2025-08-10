@@ -15,6 +15,7 @@ def synthetic_data():
     """Generate synthetic data for testing"""
     return generate_synthetic_invoices(n_invoices=50)
 
+@pytest.mark.ml
 def test_synthetic_data_generation():
     """Test synthetic data generation"""
     invoices, line_items = generate_synthetic_invoices(n_invoices=10)
@@ -33,6 +34,7 @@ def test_synthetic_data_generation():
         'line_item_id', 'invoice_id', 'description', 'hours', 'rate', 'amount'
     ])
 
+@pytest.mark.ml
 def test_outlier_detection(synthetic_data):
     """Test outlier detection model"""
     invoices, line_items = synthetic_data
@@ -51,6 +53,7 @@ def test_outlier_detection(synthetic_data):
     assert len(scores) == len(line_items)
     assert all(isinstance(x, float) for x in scores)
 
+@pytest.mark.ml
 def test_risk_prediction(synthetic_data):
     """Test risk prediction model"""
     invoices, line_items = synthetic_data
@@ -70,6 +73,7 @@ def test_risk_prediction(synthetic_data):
     assert isinstance(risk_factors, list)
     assert all(isinstance(x, dict) for x in risk_factors)
 
+@pytest.mark.ml
 def test_vendor_analysis(synthetic_data):
     """Test vendor analysis"""
     invoices, line_items = synthetic_data
@@ -88,6 +92,7 @@ def test_vendor_analysis(synthetic_data):
     assert isinstance(metrics, dict)
     assert all(isinstance(v, dict) for v in metrics.values())
     
+@pytest.mark.ml
 def test_data_validation(synthetic_data):
     """Test data validation functions"""
     invoices, line_items = synthetic_data
@@ -102,6 +107,7 @@ def test_data_validation(synthetic_data):
     assert all(line_items['rate'] > 0)
     assert all(abs(line_items['amount'] - line_items['hours'] * line_items['rate']) < 0.01)
 
+@pytest.mark.ml
 def test_edge_cases():
     """Test edge cases and error handling"""
     # Test with empty data

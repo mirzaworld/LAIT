@@ -20,6 +20,8 @@ import math
 import io
 import base64
 import uuid
+import warnings
+import subprocess
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, send_file, current_app, make_response, Response
 from flask_cors import CORS
@@ -30,6 +32,8 @@ from flask_limiter.util import get_remote_address
 from dotenv import load_dotenv
 from werkzeug.security import check_password_hash
 from sqlalchemy import func, desc
+import threading
+from flask_limiter.errors import RateLimitExceeded
 
 # Add current directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -51,59 +55,164 @@ except ImportError as e:
 # Load environment variables
 load_dotenv()
 
-# Configure more robust logging with file output
-log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
-os.makedirs(log_dir, exist_ok=True)
-log_file = os.path.join(log_dir, 'lait_api.log')
+# ---------------- Structured JSON Logging Setup (backend polish) ----------------
+class JsonRequestFormatter(logging.Formatter):
+    def format(self, record):
+        base = {
+            'timestamp': datetime.utcnow().isoformat() + 'Z',
+            'level': record.levelname,
+            'logger': record.name,
+            'message': record.getMessage(),
+        }
+        # Attach request context if available
+        try:
+            if request:
+                base.update({
+                    'method': request.method,
+                    'path': request.path,
+                    'remote_addr': request.remote_addr,
+                    'request_id': getattr(request, 'request_id', None)
+                })
+        except Exception:
+            pass
+        if record.exc_info:
+            base['exc_info'] = self.formatException(record.exc_info)
+        return json.dumps(base)
 
-# Configure logging to both console and file
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
-    handlers=[
-        logging.FileHandler(log_file),
-        logging.StreamHandler()
-    ]
-)
+# Reconfigure root logger handlers only once
+if not logging.getLogger().handlers or not any(isinstance(h, logging.FileHandler) for h in logging.getLogger().handlers):
+    log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
+    os.makedirs(log_dir, exist_ok=True)
+    _file = logging.FileHandler(os.path.join(log_dir, 'lait_api.jsonl'))
+    _stream = logging.StreamHandler()
+    formatter = JsonRequestFormatter()
+    _file.setFormatter(formatter)
+    _stream.setFormatter(formatter)
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+    root.handlers = [_file, _stream]
 
 logger = logging.getLogger(__name__)
+
+# Silence benign sklearn / urllib3 warnings (polish step)
+warnings.filterwarnings('ignore', category=UserWarning, module='sklearn')
+warnings.filterwarnings('ignore', category=FutureWarning, module='sklearn')
 
 # Initialize Socket.IO
 socketio = SocketIO()
 
-# Configure rate limiter globally
-limiter = Limiter(key_func=get_remote_address, default_limits=["200 per minute"])  # Adjust as needed
+# Central per-endpoint rate limits (path substring -> limit spec)
+RATE_LIMITS = {
+    'auth/login': '5/minute',
+    'auth/register': '3/minute',
+    'legal/search': '30/minute',
+    'upload-invoice': '10/minute',
+    'self-test': '12/minute'
+}
+
+def dynamic_rate_limit():
+    # Find first matching pattern
+    path = request.path.strip('/')
+    for fragment, limit in RATE_LIMITS.items():
+        if fragment in path:
+            return limit
+    return None
+
+# Configure rate limiter globally (env override)
+DEFAULT_RATE = os.getenv('GLOBAL_RATE_LIMIT', '200 per minute')
+limiter = Limiter(key_func=get_remote_address, default_limits=[DEFAULT_RATE])  # Adjust as needed
+
+# ---------------- In-memory metrics store ----------------
+_metrics = {
+    'requests_total': 0,
+    'errors_total': 0,
+    'latency_ms': [],  # store recent latencies
+    'model_inferences': 0,
+    'start_time': time.time(),
+}
+_LATENCY_WINDOW = 500  # keep last N latencies
+
+def _record_latency(ms):
+    arr = _metrics['latency_ms']
+    arr.append(ms)
+    if len(arr) > _LATENCY_WINDOW:
+        del arr[0:len(arr)-_LATENCY_WINDOW]
+
+# ---------------- Drift / heartbeat scaffold ----------------
+class DriftTracker:
+    def __init__(self):
+        self.feature_stats = {}  # feature -> {mean, std}
+        self.last_update = None
+        self.drift_flags = {}
+
+    def update(self, frame: pd.DataFrame):
+        if frame is None or frame.empty:
+            return
+        for col in frame.columns:
+            if pd.api.types.is_numeric_dtype(frame[col]):
+                series = frame[col].dropna()
+                if not len(series):
+                    continue
+                mean = float(series.mean())
+                std = float(series.std() or 0)
+                prev = self.feature_stats.get(col)
+                if prev and prev['std']:
+                    z = abs(mean - prev['mean']) / (prev['std'] or 1)
+                    self.drift_flags[col] = z > 3
+                self.feature_stats[col] = {'mean': mean, 'std': std}
+        self.last_update = datetime.utcnow()
+
+    def summary(self):
+        return {
+            'last_update': self.last_update.isoformat() + 'Z' if self.last_update else None,
+            'drift_flags': self.drift_flags,
+            'tracked_features': list(self.feature_stats.keys())
+        }
+
+drift_tracker = DriftTracker()
 
 def create_app():
     """
     Application factory function that creates and configures the Flask app.
     """
     app = Flask(__name__)
-    
+    # Attach model manager & drift tracker placeholders
+    try:
+        from ml.model_manager import ModelManager
+        app.model_manager = ModelManager(model_dir=os.getenv('MODEL_DIR', 'models'))
+    except Exception as e:
+        logger.warning(f"ModelManager init failed: {e}")
+        app.model_manager = None
+    app.drift_tracker = drift_tracker
+
     # --------------------------------------------------
-    # Request correlation & timing middleware (backend polish step 1)
+    # Request correlation & timing middleware + dynamic rate limit
     # --------------------------------------------------
     @app.before_request
     def _request_instrumentation():
         request.start_time = time.time()
         req_id = request.headers.get('X-Request-ID') or str(uuid.uuid4())
         request.request_id = req_id
-        # Attach to g for potential downstream usage
-        try:
-            from flask import g
-            g.request_id = req_id
-        except Exception:
-            pass
+        # Dynamic rate limit enforcement (manual) if specified
+        limit = dynamic_rate_limit()
+        if limit:
+            try:
+                # Use limiter directly
+                limiter.limit(limit)(lambda: None)()
+            except Exception:
+                pass
+        _metrics['requests_total'] += 1
 
     @app.after_request
-    def _add_security_headers(resp):  # security hardening headers
+    def _add_security_headers(resp):  # security hardening + metrics
         duration_ms = None
         if hasattr(request, 'start_time'):
             duration_ms = int((time.time() - request.start_time) * 1000)
             resp.headers['X-Response-Time-ms'] = str(duration_ms)
+            _record_latency(duration_ms)
         if hasattr(request, 'request_id'):
             resp.headers['X-Request-ID'] = request.request_id
-        # Security headers (minimal CSP allowing frontend dev host & APIs)
+        # Security headers
         resp.headers.setdefault('X-Content-Type-Options', 'nosniff')
         resp.headers.setdefault('X-Frame-Options', 'DENY')
         resp.headers.setdefault('X-XSS-Protection', '1; mode=block')
@@ -140,11 +249,16 @@ def create_app():
     @app.errorhandler(Exception)
     def _unhandled(e):  # catch-all
         logger.exception('Unhandled exception')
+        _metrics['errors_total'] += 1
         debug = app.config.get('DEBUG', False)
         details = None
         if debug:
             details = {'type': e.__class__.__name__, 'str': str(e)}
         return _json_error(500, 'internal_error', 'Internal server error', details)
+
+    @app.errorhandler(RateLimitExceeded)
+    def _rate_limited(e):  # type: ignore
+        return _json_error(429, 'rate_limited', 'Rate limit exceeded', {'limit': str(e.limit)})
 
     # --------------------------------------------------
     # Existing configuration continues below
@@ -153,23 +267,18 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@localhost/legalspend')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-change-in-prod')
-    
+
+    # Dynamic CORS origins from env
+    allowed_origins = os.getenv('CORS_ALLOWED_ORIGINS')
+    if allowed_origins:
+        origins_list = [o.strip() for o in allowed_origins.split(',') if o.strip()]
+    else:
+        origins_list = [
+            'http://localhost:5173', 'http://localhost:4173', 'http://127.0.0.1:5173', 'http://127.0.0.1:4173',
+            os.getenv('FRONTEND_URL', 'http://localhost:5173')
+        ]
     # Configure CORS to accept requests from frontend
-    CORS(app, resources={
-        r"/api/*": {
-            "origins": [
-                "http://localhost:5173",  # Vite dev server
-                "http://localhost:4173",  # Vite preview
-                "http://127.0.0.1:5173",
-                "http://127.0.0.1:4173",
-                os.getenv("FRONTEND_URL", "http://localhost:5173")
-            ],
-            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],
-            "allow_headers": ["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
-            "supports_credentials": True,
-            "expose_headers": ["Content-Type", "Authorization"]
-        }
-    })
+    CORS(app, resources={r"/api/*": {"origins": origins_list, "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"], "allow_headers": ["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"], "supports_credentials": True, "expose_headers": ["Content-Type", "Authorization"]}})
     limiter.init_app(app)
     # Add an OPTIONS handler for preflight requests
     @app.before_request
@@ -223,6 +332,13 @@ def create_app():
         app.risk_predictor = RiskPredictor()
         app.matter_analyzer = MatterAnalyzer()
         app.enhanced_invoice_analyzer = EnhancedInvoiceAnalyzer()
+        # Model manager for version metadata
+        try:
+            from ml.model_manager import ModelManager
+            app.model_manager = ModelManager(model_dir=os.path.join(os.path.dirname(__file__), 'ml', 'models'))
+        except Exception as mm_e:
+            logger.warning(f"ModelManager init failed: {mm_e}")
+            app.model_manager = None
         logger.info("✅ ML models initialized successfully")
     except Exception as e:
         logger.error(f"❌ Failed to initialize ML models: {e}")
@@ -231,6 +347,7 @@ def create_app():
         app.risk_predictor = None
         app.matter_analyzer = None
         app.enhanced_invoice_analyzer = None
+        app.model_manager = None
 
     # Import real-time data collector
     from services.real_time_data_collector import RealTimeLegalDataCollector
@@ -771,55 +888,82 @@ def create_app():
             logger.error(f"Upload invoice error: {e}")
             return jsonify({'error': str(e)}), 500
 
-    # Import and register routes
-    with app.app_context():
+    # ---------------- Version & Metrics Endpoints ----------------
+    @app.route('/api/version')
+    def version_info():
+        git_sha = None
         try:
-            from backend.routes import register_routes  # standard when project root on PYTHONPATH
-        except ImportError:
+            git_sha = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'], stderr=subprocess.DEVNULL).decode().strip()
+        except Exception:
+            pass
+        model_meta = None
+        if getattr(app, 'model_manager', None):
             try:
-                from routes import register_routes  # fallback when running tests from backend directory
-            except ImportError as e:
-                logger.error(f"Failed to import route registrar: {e}")
-                register_routes = None
-        if register_routes:
-            register_routes(app)
-            logger.info("✅ Routes registered successfully")
-    
+                model_meta = app.model_manager.metadata
+            except Exception:
+                model_meta = None
+        return jsonify({
+            'service': 'LAIT API',
+            'version': '2.1.0',
+            'git_sha': git_sha,
+            'models': model_meta,
+            'start_time': datetime.utcfromtimestamp(_metrics['start_time']).isoformat() + 'Z'
+        })
+
+    @app.route('/api/metrics')
+    def metrics_endpoint():
+        # Basic Prometheus-style exposition
+        lat = _metrics['latency_ms']
+        avg = (sum(lat)/len(lat)) if lat else 0
+        p95 = sorted(lat)[int(0.95*len(lat))-1] if lat else 0
+        lines = [
+            f"lait_requests_total {_metrics['requests_total']}",
+            f"lait_errors_total {_metrics['errors_total']}",
+            f"lait_model_inferences_total {_metrics['model_inferences']}",
+            f"lait_request_latency_ms_avg {avg}",
+            f"lait_request_latency_ms_p95 {p95}",
+        ]
+        return Response('\n'.join(lines) + '\n', mimetype='text/plain')
+
+    # Existing ml_status definition will be replaced below by editing near original definition
+    # (We will search/replace later if needed)
     @app.route('/api/ml/status', methods=['GET'])
     def ml_status():
-        """Return status of loaded ML models for diagnostics (used in tests)."""
+        """Return extended status of loaded ML models with version & drift info."""
         models_status = {}
+        model_manager = getattr(app, 'model_manager', None)
         for attr in [
             'enhanced_invoice_analyzer', 'invoice_analyzer',
             'matter_analyzer', 'risk_predictor', 'vendor_analyzer'
         ]:
             obj = getattr(app, attr, None)
-            models_status[attr] = bool(obj)
-        return jsonify({'models': models_status, 'status': 'ok'}), 200
-    
-    # Readiness endpoint (deep health incl. DB + ML models)
-    @app.route('/api/ready')
-    def readiness():
-        db_ok = True
-        db_error = None
-        try:
-            session = get_db_session()
-            session.execute('SELECT 1')
-            session.close()
-        except Exception as e:
-            db_ok = False
-            db_error = str(e)
-        ml_status = {}
-        for name in ['invoice_analyzer', 'vendor_analyzer', 'risk_predictor']:
-            ml_status[name] = bool(getattr(app, name, None))
-        ready = db_ok and all(ml_status.values())
-        return jsonify({
-            'status': 'ready' if ready else 'degraded',
-            'database': 'ok' if db_ok else 'error',
-            'database_error': db_error,
-            'ml_models': ml_status,
-            'timestamp': datetime.utcnow().isoformat() + 'Z'
-        }), (200 if ready else 503)
+            meta = {
+                'loaded': bool(obj),
+                'class': obj.__class__.__name__ if obj else None,
+            }
+            # Attempt to add version info if manager available
+            if model_manager:
+                key = None
+                if 'risk' in attr:
+                    key = 'risk_predictor'
+                elif 'vendor' in attr:
+                    key = 'vendor_cluster'
+                elif 'invoice' in attr:
+                    key = 'outlier_detector'
+                if key and model_manager.metadata['models'].get(key):
+                    meta['version'] = model_manager.metadata['models'][key]['current_version']
+            models_status[attr] = meta
+        drift = app.drift_tracker.summary() if getattr(app, 'drift_tracker', None) else {}
+        return jsonify({'models': models_status, 'drift': drift, 'status': 'ok'}), 200
+
+    # ================== BACKGROUND TASKS (CELERY) ==================
+    # (Disabled: worker module not present in this deployment flavor)
+    # try:
+    #     from worker import celery_app
+    #     celery_app.conf.update(task_track_started=True)
+    #     logger.info("✅ Celery app loaded")
+    # except Exception as e:
+    #     logger.warning(f"❌ Could not load Celery app: {e}")
 
     return app
 

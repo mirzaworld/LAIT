@@ -47,6 +47,10 @@ class NotificationManager:
             session.commit()
             payload = self._serialize(notif)
             socketio.emit('notification', payload)
+            # emit updated unread count for user if provided
+            if user_id:
+                unread = self.unread_count(user_id)
+                socketio.emit('notification_unread_count', {'user_id': user_id, 'unread': unread})
             return payload
         finally:
             session.close()
@@ -69,6 +73,8 @@ class NotificationManager:
             notif.read = True
             notif.read_at = datetime.utcnow()
             session.commit()
+            unread = self.unread_count(user_id)
+            socketio.emit('notification_unread_count', {'user_id': user_id, 'unread': unread})
             return True
         finally:
             session.close()
@@ -83,6 +89,7 @@ class NotificationManager:
                 notif.read_at = datetime.utcnow()
                 count += 1
             session.commit()
+            socketio.emit('notification_unread_count', {'user_id': user_id, 'unread': 0})
             return count
         finally:
             session.close()
@@ -188,6 +195,14 @@ def add_test_notification():
     for type_, message in zip(notification_types, test_messages):
         created.append(notification_manager.add_notification(int(user_id), type_, message))
     return jsonify({'created': created})
+
+@notification_bp.route('/api/notifications/<int:notification_id>/ack', methods=['POST'])
+@jwt_required()
+def ack_notification(notification_id):
+    """Alias for mark-as-read returning unread count for optimistic UI."""
+    user_id = get_jwt_identity()
+    success = notification_manager.mark_as_read(int(user_id), notification_id)
+    return jsonify({'success': success, 'unread': notification_manager.unread_count(int(user_id))})
 
 @socketio.on('connect')
 def handle_connect():

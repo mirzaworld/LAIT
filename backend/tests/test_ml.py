@@ -30,6 +30,7 @@ def sample_vendor_data():
         'total_spend': [100000.0, 500000.0, 300000.0, 400000.0, 200000.0]
     })
 
+@pytest.mark.ml
 def test_outlier_detection(sample_invoice_data):
     """Test that the outlier detection model correctly identifies anomalies."""
     analyzer = InvoiceAnalyzer()
@@ -43,6 +44,7 @@ def test_outlier_detection(sample_invoice_data):
     outlier_entry = np.array([[100.0, 1000.0, 100000.0]])
     assert analyzer.predict(outlier_entry)[0] == -1  # -1 means outlier
 
+@pytest.mark.ml
 def test_risk_prediction(sample_invoice_data):
     """Test the overspend risk prediction model."""
     predictor = RiskPredictor()
@@ -60,6 +62,7 @@ def test_risk_prediction(sample_invoice_data):
     high_risk = np.array([[20.0, 500.0, 10000.0]])
     assert predictor.predict_proba(high_risk)[0][1] > 0.5
 
+@pytest.mark.ml
 def test_vendor_clustering(sample_vendor_data):
     """Test vendor clustering model."""
     analyzer = VendorAnalyzer()
@@ -69,6 +72,7 @@ def test_vendor_clustering(sample_vendor_data):
     n_clusters = len(set(analyzer.predict(sample_vendor_data)))
     assert 2 <= n_clusters <= 5  # We expect 2-5 clusters of vendors
 
+@pytest.mark.ml
 def test_model_versioning(tmp_path):
     """Test model versioning system."""
     model_dir = tmp_path / "models"
@@ -93,6 +97,7 @@ def test_model_versioning(tmp_path):
     stored_metrics = manager.get_model_metrics('outlier_detector')
     assert stored_metrics == metrics
 
+@pytest.mark.ml
 def test_model_evaluation(sample_invoice_data):
     """Test model evaluation metrics."""
     analyzer = InvoiceAnalyzer()
