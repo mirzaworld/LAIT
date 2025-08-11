@@ -12,6 +12,7 @@ import { useDashboardMetrics } from '../hooks/useApi';
 import { pdfService } from '../services/pdfService';
 import DatePicker from 'react-datepicker';
 import ErrorBoundaryWithRetry from '../components/ErrorBoundaryWithRetry';
+import VendorsDebugComponent from '../components/VendorsDebugComponent';
 import 'react-datepicker/dist/react-datepicker.css';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
@@ -263,6 +264,8 @@ const DashboardContent: React.FC = () => {
         <RecentInvoices />
         <TopVendors />
       </div>
+
+      <VendorsDebugComponent />
 
       {/* Notifications Panel */}
       {showNotifications && (
