@@ -1,0 +1,7 @@
+Legal Services Invoice
+Vendor: Baker & McKenzie LLP
+Amount: ,250.00
+Date: March 15, 2024
+Services: Contract review and negotiation
+Client: LAIT Corp
+Description: Reviewed software licensing agreement, negotiated terms

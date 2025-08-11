@@ -4,9 +4,35 @@ import { uploadInvoice } from '../services/api';
 import { Upload, FileText, AlertCircle, CheckCircle, Loader2, X } from 'lucide-react';
 
 interface UploadResult {
-  id: string;
+  id?: string;
+  invoice_id?: number;
   filename: string;
-  status: string;
+  status?: string;
+  message?: string;
+  amount?: number;
+  vendor_name?: string;
+  ai_analysis?: {
+    confidence_score: number;
+    ai_insights: string[];
+    extracted_data: {
+      amount: number;
+      category: string;
+      vendor_name: string;
+      due_date: string;
+      line_items: Array<{
+        description: string;
+        amount: number;
+        quantity: number;
+        rate: number;
+      }>;
+    };
+    risk_flags: Array<{
+      level: string;
+      message: string;
+      action: string;
+    }>;
+    recommendations: string[];
+  };
 }
 
 const BackendUploadInvoice: React.FC = () => {
@@ -21,8 +47,10 @@ const BackendUploadInvoice: React.FC = () => {
     if (!file) return;
 
     // Validate file type
-    if (!file.name.toLowerCase().endsWith('.pdf')) {
-      setError('Please select a PDF file');
+    const allowedTypes = ['.pdf', '.txt', '.doc', '.docx', '.jpg', '.jpeg', '.png'];
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    if (!allowedTypes.includes(fileExtension)) {
+      setError('Please select a valid file (PDF, TXT, DOC, DOCX, JPG, PNG)');
       return;
     }
 
@@ -79,19 +107,130 @@ const BackendUploadInvoice: React.FC = () => {
 
   if (uploadResult) {
     return (
-      <div className="max-w-md mx-auto mt-8 p-6 bg-green-50 border border-green-200 rounded-lg">
-        <div className="text-center">
-          <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-4" />
-          <h3 className="text-lg font-semibold text-green-800 mb-2">Upload Successful!</h3>
-          <p className="text-green-600 mb-4">
-            Your invoice "{uploadResult.filename}" has been uploaded and is being processed.
-          </p>
-          <p className="text-sm text-green-500">
-            Invoice ID: {uploadResult.id}
-          </p>
-          <p className="text-sm text-gray-500 mt-2">
-            Redirecting to invoices page...
-          </p>
+      <div className="max-w-4xl mx-auto mt-8 space-y-6">
+        {/* Success Header */}
+        <div className="p-6 bg-green-50 border border-green-200 rounded-lg">
+          <div className="text-center">
+            <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-4" />
+            <h3 className="text-lg font-semibold text-green-800 mb-2">Upload Successful!</h3>
+            <p className="text-green-600 mb-4">
+              Your invoice "{uploadResult.filename}" has been uploaded and analyzed.
+            </p>
+            <p className="text-sm text-green-500">
+              Invoice ID: {uploadResult.invoice_id}
+            </p>
+          </div>
+        </div>
+
+        {/* AI Analysis Results */}
+        {uploadResult.ai_analysis && (
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+              <FileText className="mr-2 h-5 w-5" />
+              AI Analysis Results
+            </h3>
+
+            {/* Confidence Score */}
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-blue-800">Analysis Confidence</span>
+                <span className="text-lg font-bold text-blue-600">
+                  {(uploadResult.ai_analysis.confidence_score * 100).toFixed(1)}%
+                </span>
+              </div>
+              <div className="w-full bg-blue-200 rounded-full h-2 mt-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full" 
+                  style={{ width: `${uploadResult.ai_analysis.confidence_score * 100}%` }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Extracted Data */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-semibold text-gray-700 mb-3">Extracted Information</h4>
+                <div className="space-y-2 text-sm">
+                  <div><strong>Vendor:</strong> {uploadResult.ai_analysis.extracted_data.vendor_name}</div>
+                  <div><strong>Amount:</strong> ${uploadResult.ai_analysis.extracted_data.amount.toFixed(2)}</div>
+                  <div><strong>Category:</strong> {uploadResult.ai_analysis.extracted_data.category.replace('_', ' ').toUpperCase()}</div>
+                  <div><strong>Due Date:</strong> {uploadResult.ai_analysis.extracted_data.due_date}</div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-semibold text-gray-700 mb-3">Line Items</h4>
+                <div className="space-y-2 text-sm">
+                  {uploadResult.ai_analysis.extracted_data.line_items.slice(0, 3).map((item, index) => (
+                    <div key={index} className="border-b border-gray-200 pb-1">
+                      <div className="font-medium">{item.description}</div>
+                      <div className="text-gray-600">${item.amount.toFixed(2)} ({item.quantity} × ${item.rate.toFixed(2)})</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* AI Insights */}
+            <div className="mb-6 p-4 bg-indigo-50 rounded-lg">
+              <h4 className="font-semibold text-indigo-800 mb-3">AI Insights</h4>
+              <ul className="space-y-1">
+                {uploadResult.ai_analysis.ai_insights.map((insight, index) => (
+                  <li key={index} className="text-sm text-indigo-700 flex items-start">
+                    <span className="mr-2">•</span>
+                    {insight}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Risk Flags */}
+            {uploadResult.ai_analysis.risk_flags.length > 0 && (
+              <div className="mb-6 p-4 bg-yellow-50 rounded-lg">
+                <h4 className="font-semibold text-yellow-800 mb-3 flex items-center">
+                  <AlertCircle className="mr-1 h-4 w-4" />
+                  Risk Flags
+                </h4>
+                <ul className="space-y-2">
+                  {uploadResult.ai_analysis.risk_flags.map((flag, index) => (
+                    <li key={index} className="text-sm">
+                      <div className="font-medium text-yellow-700">{flag.message}</div>
+                      <div className="text-yellow-600">{flag.action}</div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Recommendations */}
+            <div className="p-4 bg-emerald-50 rounded-lg">
+              <h4 className="font-semibold text-emerald-800 mb-3">Recommendations</h4>
+              <ul className="space-y-1">
+                {uploadResult.ai_analysis.recommendations.map((recommendation, index) => (
+                  <li key={index} className="text-sm text-emerald-700 flex items-start">
+                    <span className="mr-2">•</span>
+                    {recommendation}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex justify-center space-x-4">
+          <button
+            onClick={() => navigate('/invoices')}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            View All Invoices
+          </button>
+          <button
+            onClick={() => setUploadResult(null)}
+            className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            Upload Another
+          </button>
         </div>
       </div>
     );
@@ -155,13 +294,13 @@ const BackendUploadInvoice: React.FC = () => {
               <input
                 type="file"
                 className="hidden"
-                accept=".pdf"
+                accept=".pdf,.txt,.doc,.docx,.jpg,.jpeg,.png"
                 onChange={handleFileSelect}
                 disabled={uploading}
               />
             </label>
             <p className="text-xs text-gray-400 mt-2">
-              Only PDF files are supported
+              Supports PDF, TXT, DOC, DOCX, JPG, PNG files
             </p>
           </div>
         )}
