@@ -386,29 +386,40 @@ export const getVendorPerformance = async (vendorId: string): Promise<VendorPerf
  */
 export const getDashboardMetrics = async (): Promise<DashboardMetrics> => {
   try {
-    console.log('Fetching dashboard metrics from:', `/api/dashboard/metrics`);
+    const url = apiUrl('/api/dashboard/metrics');
+    console.log('🔍 Fetching dashboard metrics from:', url);
+    console.log('🔍 Environment check:', {
+      DEV: import.meta.env.DEV,
+      VITE_API_URL: import.meta.env.VITE_API_URL,
+      MODE: import.meta.env.MODE
+    });
     
-    const response = await fetch(apiUrl('/api/dashboard/metrics'), {
-      headers: getAuthHeaders(),
+    const headers = getAuthHeaders();
+    console.log('🔍 Request headers:', headers);
+    
+    const response = await fetch(url, {
+      headers,
       mode: 'cors',
       credentials: 'omit'
     });
     
-    console.log('Metrics response status:', response.status);
+    console.log('🔍 Response status:', response.status);
+    console.log('🔍 Response ok:', response.ok);
+    console.log('🔍 Response headers:', Object.fromEntries(response.headers.entries()));
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Metrics API error response:', errorText);
+      console.error('🚨 Metrics API error response:', errorText);
       throw new Error(`Metrics API error (${response.status}): ${response.statusText} - ${errorText}`);
     }
     
     const data = await response.json();
-    console.log('Metrics data received:', data);
+    console.log('✅ Metrics data received:', data);
     return data;
   } catch (error) {
-    console.error('Error fetching dashboard metrics:', error);
+    console.error('💥 Error fetching dashboard metrics:', error);
     if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error(`Unable to connect to the API server. Please ensure the backend is running on ${API_URL}`);
+      throw new Error(`Unable to connect to the API server. Please ensure the backend is running.`);
     }
     throw error;
   }
