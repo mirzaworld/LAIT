@@ -39,13 +39,24 @@ def development_jwt_required(f):
             auth_header = request.headers.get('Authorization')
             # Honor explicit mock token
             if auth_header and 'mock-jwt-token-for-development' in auth_header:
+                try:
+                    verify_jwt_in_request()
+                except Exception:
+                    # If verification fails in dev mode, create a test token
+                    try:
+                        token = create_access_token(identity="1")
+                        request.environ['HTTP_AUTHORIZATION'] = f'Bearer {token}'
+                        verify_jwt_in_request()
+                    except Exception:
+                        pass
                 return f(*args, **kwargs)
             # Auto inject only if none provided
             if not auth_header:
                 try:
                     token = create_access_token(identity="1")  # Fix: use string identity
                     # Mutate the WSGI environ so downstream sees header
-                    request.headers.environ['HTTP_AUTHORIZATION'] = f'Bearer {token}'
+                    request.environ['HTTP_AUTHORIZATION'] = f'Bearer {token}'
+                    verify_jwt_in_request()  # Verify the token we just created
                 except Exception:
                     # If JWT not initialized yet, just proceed without token
                     pass

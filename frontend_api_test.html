@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LAIT Frontend API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ddd; }
+        .pass { background-color: #d4edda; border-color: #c3e6cb; }
+        .fail { background-color: #f8d7da; border-color: #f5c6cb; }
+        .loading { background-color: #fff3cd; border-color: #ffeaa7; }
+        #results { margin-top: 20px; }
+        button { padding: 10px 20px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🚀 LAIT Frontend API Test</h1>
+    <p>Testing communication between frontend and backend...</p>
+    
+    <button onclick="runTests()">Run All Tests</button>
+    <button onclick="clearResults()">Clear Results</button>
+    
+    <div id="results"></div>
+    
+    <script>
+        const API_BASE = 'http://localhost:5003';
+        const resultsDiv = document.getElementById('results');
+        
+        function addResult(testName, status, message, data = null) {
+            const div = document.createElement('div');
+            div.className = `test ${status}`;
+            
+            const statusEmoji = status === 'pass' ? '✅' : status === 'fail' ? '❌' : '⏳';
+            div.innerHTML = `
+                <strong>${statusEmoji} ${testName}</strong><br>
+                <span>${message}</span>
+                ${data ? `<br><pre style="font-size: 12px; margin-top: 5px;">${JSON.stringify(data, null, 2).substring(0, 200)}...</pre>` : ''}
+            `;
+            resultsDiv.appendChild(div);
+        }
+        
+        async function testEndpoint(name, url, options = {}) {
+            try {
+                addResult(name, 'loading', 'Testing...');
+                const response = await fetch(url, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult(name, 'pass', `Status: ${response.status}`, data);
+                    return { success: true, data };
+                } else {
+                    addResult(name, 'fail', `Status: ${response.status}`, data);
+                    return { success: false, data };
+                }
+            } catch (error) {
+                addResult(name, 'fail', `Error: ${error.message}`);
+                return { success: false, error: error.message };
+            }
+        }
+        
+        async function runTests() {
+            clearResults();
+            addResult('Starting Tests', 'loading', 'Beginning comprehensive API test...');
+            
+            const tests = [
+                { name: 'Health Check', url: `${API_BASE}/api/health` },
+                { name: 'Dashboard Metrics', url: `${API_BASE}/api/dashboard/metrics` },
+                { name: 'Notifications List', url: `${API_BASE}/api/notifications` },
+                { name: 'Unread Count', url: `${API_BASE}/api/notifications/unread-count` },
+            ];
+            
+            let passed = 0;
+            let total = tests.length;
+            
+            for (const test of tests) {
+                const result = await testEndpoint(test.name, test.url, test.options);
+                if (result.success) passed++;
+                
+                // Small delay between tests
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            // Summary
+            addResult(
+                'Test Summary', 
+                passed === total ? 'pass' : 'fail',
+                `Passed: ${passed}/${total} tests (${(passed/total*100).toFixed(1)}%)`
+            );
+            
+            if (passed === total) {
+                addResult('🎉 All Tests Passed!', 'pass', 'Frontend-Backend communication is working correctly!');
+            }
+        }
+        
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+        }
+        
+        // Auto-run tests when page loads
+        window.addEventListener('load', () => {
+            setTimeout(runTests, 1000);
+        });
+    </script>
+</body>
+</html>
