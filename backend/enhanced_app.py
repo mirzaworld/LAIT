@@ -14,6 +14,10 @@ import sys
 import pandas as pd
 import logging
 import json
+from datetime import datetime, timedelta, timezone
+from typing import Dict, Any, Optional, List
+from flask import Flask, request, jsonify, redirect, url_for
+import json
 import time
 import math
 import io
@@ -59,7 +63,7 @@ load_dotenv()
 class JsonRequestFormatter(logging.Formatter):
     def format(self, record):
         base = {
-            'timestamp': datetime.utcnow().isoformat() + 'Z',
+            'timestamp': datetime.now(timezone.utc).isoformat() + 'Z',
             'level': record.levelname,
             'logger': record.name,
             'message': record.getMessage(),
@@ -159,7 +163,7 @@ class DriftTracker:
                     z = abs(mean - prev['mean']) / (prev['std'] or 1)
                     self.drift_flags[col] = z > 3
                 self.feature_stats[col] = {'mean': mean, 'std': std}
-        self.last_update = datetime.utcnow()
+        self.last_update = datetime.now(timezone.utc)
 
     def summary(self):
         return {
@@ -235,7 +239,7 @@ def create_app():
                 'message': message,
                 'status': status_code,
                 'request_id': getattr(request, 'request_id', None),
-                'timestamp': datetime.utcnow().isoformat() + 'Z'
+                'timestamp': datetime.now(timezone.utc).isoformat() + 'Z'
             }
         }
         if details is not None:
@@ -385,7 +389,7 @@ def create_app():
     # API Routes
     @app.route('/api/health')
     def health_check():
-        return jsonify({"status": "healthy", "timestamp": datetime.utcnow()})
+        return jsonify({"status": "healthy", "timestamp": datetime.now(timezone.utc)})
 
     # --- NEW: Readiness endpoint (step 3) ---
     @app.route('/api/readiness')
@@ -410,7 +414,7 @@ def create_app():
         drift = getattr(app, 'drift_tracker', None)
         heartbeat_fresh = True
         if drift and drift.last_update:
-            heartbeat_fresh = (datetime.utcnow() - drift.last_update) < timedelta(minutes=10)
+            heartbeat_fresh = (datetime.now(timezone.utc) - drift.last_update) < timedelta(minutes=10)
         details['drift'] = {
             'last_update': drift.last_update.isoformat() + 'Z' if (drift and drift.last_update) else None,
             'fresh': heartbeat_fresh
@@ -419,7 +423,7 @@ def create_app():
             ok = False
         status = 'ready' if ok else 'degraded'
         code = 200 if ok else 503
-        return jsonify({'status': status, 'components': details, 'timestamp': datetime.utcnow().isoformat() + 'Z'}), code
+        return jsonify({'status': status, 'components': details, 'timestamp': datetime.now(timezone.utc).isoformat() + 'Z'}), code
 
     # --- NEW: Comprehensive backend self-test / diagnostics endpoint ---
     @app.route('/api/self-test', methods=['GET'])
@@ -466,7 +470,7 @@ def create_app():
             'status': status,
             'elapsed_ms': int(duration * 1000),
             'checks': checks,
-            'timestamp': datetime.utcnow().isoformat() + 'Z'
+            'timestamp': datetime.now(timezone.utc).isoformat() + 'Z'
         })
 
     # Dashboard metrics endpoint
@@ -701,7 +705,7 @@ def create_app():
                     {'category': 'Risk Factors', 'current': 15, 'predicted': 12, 'confidence': 0.82}
                 ],
                 'confidence': 0.82,
-                'generated_at': datetime.utcnow().isoformat()
+                'generated_at': datetime.now(timezone.utc).isoformat()
             }
             return jsonify(predictions)
         except Exception as e:
@@ -721,7 +725,7 @@ def create_app():
                 ],
                 'overall_performance': 0.86,
                 'period': 'last_quarter',
-                'generated_at': datetime.utcnow().isoformat()
+                'generated_at': datetime.now(timezone.utc).isoformat()
             }
             return jsonify(performance)
         except Exception as e:
@@ -750,7 +754,7 @@ def create_app():
                     {'factor': 'Rate inflation', 'impact': 'medium'},
                     {'factor': 'New regulatory requirements', 'impact': 'medium'}
                 ],
-                'generated_at': datetime.utcnow().isoformat()
+                'generated_at': datetime.now(timezone.utc).isoformat()
             }
             return jsonify(forecast)
         except Exception as e:
@@ -781,7 +785,7 @@ def create_app():
                     'total_variance': 23000,
                     'average_monthly': 93833
                 },
-                'generated_at': datetime.utcnow().isoformat()
+                'generated_at': datetime.now(timezone.utc).isoformat()
             }
             return jsonify(trends)
         except Exception as e:
@@ -810,14 +814,14 @@ def create_app():
                     'dueDate': (inv.date + timedelta(days=30)).isoformat() if inv.date else None,
                     'matter': inv.matter or 'General',
                     'riskScore': float(inv.risk_score or 0) * 100 if (inv.risk_score and inv.risk_score <= 1) else float(inv.risk_score or 0),
-                    'category': inv.category or 'Uncategorized',
+                    # Remove category - Invoice model doesn't have this field
                     'description': inv.description or '',
                     'hours': float(inv.hours or 0),
                     'rate': float(inv.rate or 0),
                     'total': float(inv.amount or 0)
                 })
             session.close()
-            return jsonify(invoices)
+            return jsonify({'items': invoices})
         except Exception as e:
             logger.error(f"List invoices error: {e}")
             return jsonify({'error': str(e)}), 500
@@ -840,8 +844,9 @@ def create_app():
                 'dueDate': (inv.date + timedelta(days=30)).isoformat() if inv.date else None,
                 'matter': inv.matter or 'General',
                 'riskScore': float(inv.risk_score or 0) * 100 if (inv.risk_score and inv.risk_score <= 1) else float(inv.risk_score or 0),
-                'lineItems': json.loads(inv.line_items or '[]'),
-                'analysis': json.loads(inv.analysis or '{}')
+                # Use safe field access - the Invoice model might not have these fields
+                'lineItems': json.loads(getattr(inv, 'line_items', None) or '[]') if hasattr(inv, 'line_items') else [],
+                'analysis': json.loads(getattr(inv, 'analysis', None) or '{}') if hasattr(inv, 'analysis') else {}
             }
             session.close()
             return jsonify(data)
@@ -888,7 +893,7 @@ def create_app():
                 pass
             socketio.emit('notification', {
                 'type': 'invoice_analysis',
-                'timestamp': datetime.utcnow().isoformat() + 'Z',
+                'timestamp': datetime.now(timezone.utc).isoformat() + 'Z',
                 'data': {
                     'invoice_id': inv.id,
                     'invoice_number': inv.id,
@@ -926,7 +931,7 @@ def create_app():
                 vendor_id=vendor.id,
                 amount=amount or random.uniform(1000, 5000),
                 status='processing',
-                date=datetime.utcnow().date(),
+                date=datetime.now(timezone.utc).date(),
                 risk_score=random.uniform(0, 1),
                 matter='General',
                 description=request.form.get('description')
@@ -940,7 +945,7 @@ def create_app():
                 pass
             socketio.emit('notification', {
                 'type': 'invoice_analysis',
-                'timestamp': datetime.utcnow().isoformat() + 'Z',
+                'timestamp': datetime.now(timezone.utc).isoformat() + 'Z',
                 'data': {
                     'invoice_id': new_inv.id,
                     'invoice_number': new_inv.id,

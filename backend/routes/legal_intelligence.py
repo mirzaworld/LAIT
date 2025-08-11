@@ -33,7 +33,7 @@ def test_legal_intelligence():
         return jsonify({
             'status': 'success',
             'message': 'Legal Intelligence API is working',
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now(timezone.utc).isoformat(),
             'services': {
                 'courtlistener': 'available',
                 'attorney_verification': 'active',
@@ -50,7 +50,13 @@ def test_legal_intelligence():
 def verify_attorney():
     """Verify attorney credentials using trained attorney database and CourtListener"""
     try:
-        data = request.get_json()
+        try:
+            data = request.get_json()
+            if data is None:
+                return jsonify({'error': 'Invalid JSON payload'}), 400
+        except Exception:
+            return jsonify({'error': 'Invalid JSON payload'}), 400
+            
         attorney_name = data.get('attorney_name')
         law_firm = data.get('law_firm')
         bar_number = data.get('bar_number')
@@ -81,7 +87,7 @@ def verify_attorney():
             'verification_sources': ['CourtListener API'],
             'attorney_info': courtlistener_result.get('attorney_info', {}),
             'confidence': 'medium' if courtlistener_result.get('verified') else 'low',
-            'verification_date': datetime.utcnow().isoformat()
+            'verification_date': datetime.now(timezone.utc).isoformat()
         }
         
         # Add bar verification if bar number provided
@@ -179,7 +185,7 @@ def verify_bar_number(bar_number: str, attorney_name: str, state: str) -> dict:
                 'standing': 'Good',
                 'disciplinary_history': [],
                 'verification_source': f'{state} State Bar',
-                'verified_at': datetime.utcnow().isoformat()
+                'verified_at': datetime.now(timezone.utc).isoformat()
             }
             
             # Add some realistic verification logic
@@ -234,7 +240,7 @@ def analyze_opposing_counsel():
                         'attorney_name': attorney_name,
                         'law_firm': law_firm,
                         'analysis': analysis,
-                        'analyzed_at': datetime.utcnow().isoformat()
+                        'analyzed_at': datetime.now(timezone.utc).isoformat()
                     }
                     session.commit()
             except Exception as e:
@@ -278,7 +284,7 @@ def estimate_case_complexity():
                         'case_description': case_description,
                         'court': court,
                         'analysis': complexity_analysis,
-                        'analyzed_at': datetime.utcnow().isoformat()
+                        'analyzed_at': datetime.now(timezone.utc).isoformat()
                     }
                     
                     # Update matter risk score based on complexity
@@ -326,7 +332,7 @@ def get_judge_insights():
                     matter.additional_info['judge_insights'] = {
                         'judge_name': judge_name,
                         'insights': judge_insights,
-                        'analyzed_at': datetime.utcnow().isoformat()
+                        'analyzed_at': datetime.now(timezone.utc).isoformat()
                     }
                     session.commit()
             except Exception as e:
@@ -385,7 +391,7 @@ def verify_vendor_attorneys():
                     'practice_areas': firm_analysis.practice_areas,
                     'success_metrics': firm_analysis.success_metrics
                 },
-                'verified_at': datetime.utcnow().isoformat()
+                'verified_at': datetime.now(timezone.utc).isoformat()
             }
             
             session.commit()
@@ -496,7 +502,7 @@ def research_matter():
                 'matter_id': matter_id,
                 'matter_name': matter.name,
                 'research_type': research_type,
-                'research_timestamp': datetime.utcnow().isoformat(),
+                'research_timestamp': datetime.now(timezone.utc).isoformat(),
                 'results': {}
             }
             
@@ -613,7 +619,7 @@ def get_market_insights():
             'trending_practice_areas': market_data.get('trending_areas', []),
             'rate_benchmarks': market_data.get('rate_benchmarks', {}),
             'market_trends': market_data.get('trends', {}),
-            'generated_at': datetime.utcnow().isoformat()
+            'generated_at': datetime.now(timezone.utc).isoformat()
         })
         
     except Exception as e:
@@ -635,7 +641,7 @@ def get_rate_benchmarks():
             'practice_area': practice_area,
             'location': location,
             'benchmarks': benchmarks,
-            'generated_at': datetime.utcnow().isoformat()
+            'generated_at': datetime.now(timezone.utc).isoformat()
         })
         
     except Exception as e:
@@ -688,7 +694,7 @@ def analyze_law_firm():
                 'recent_cases': firm_analysis.recent_cases[:10],
                 'key_attorneys': firm_analysis.attorneys[:5]
             },
-            'generated_at': datetime.utcnow().isoformat()
+            'generated_at': datetime.now(timezone.utc).isoformat()
         })
         
     except Exception as e:
@@ -879,7 +885,7 @@ def vendor_risk_assessment():
                 'score': risk_score,
                 'factors': risk_factors,
                 'details': risk_assessment,
-                'assessed_at': datetime.utcnow().isoformat()
+                'assessed_at': datetime.now(timezone.utc).isoformat()
             }
             
             return jsonify({

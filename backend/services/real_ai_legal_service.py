@@ -150,7 +150,7 @@ class RealAILegalService:
             return {
                 'success': True,
                 'analysis': results,
-                'timestamp': datetime.utcnow().isoformat(),
+                'timestamp': datetime.now(timezone.utc).isoformat(),
                 'model_source': 'huggingface_api'
             }
             
@@ -192,7 +192,7 @@ class RealAILegalService:
                 'success': True,
                 'extracted_text': extracted_text[:1000] + "..." if len(extracted_text) > 1000 else extracted_text,
                 'analysis': analysis_results,
-                'timestamp': datetime.utcnow().isoformat()
+                'timestamp': datetime.now(timezone.utc).isoformat()
             }
             
         except Exception as e:
@@ -242,7 +242,7 @@ class RealAILegalService:
                 'success': True,
                 'insights': simulated_insights,
                 'source': 'rapidapi_simulation',
-                'timestamp': datetime.utcnow().isoformat()
+                'timestamp': datetime.now(timezone.utc).isoformat()
             }
             
         except Exception as e:
@@ -280,7 +280,7 @@ class RealAILegalService:
                     'success': True,
                     'tools': tools,
                     'total_found': data.get('total_count', 0),
-                    'timestamp': datetime.utcnow().isoformat()
+                    'timestamp': datetime.now(timezone.utc).isoformat()
                 }
             
         except Exception as e:
@@ -306,7 +306,7 @@ class RealAILegalService:
                 }
             ],
             'source': 'curated_fallback',
-            'timestamp': datetime.utcnow().isoformat()
+            'timestamp': datetime.now(timezone.utc).isoformat()
         }
     
     def _extract_pdf_text(self, pdf_path: str) -> str:
@@ -567,7 +567,7 @@ class RealAILegalService:
         return {
             'success': True,
             'analysis': analysis,
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now(timezone.utc).isoformat(),
             'model_source': 'fallback'
         }
     

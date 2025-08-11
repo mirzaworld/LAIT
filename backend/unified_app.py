@@ -161,7 +161,7 @@ def create_app():
         """Health check endpoint"""
         return jsonify({
             "status": "healthy", 
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "database": "connected" if User else "disconnected",
             "ml_models": "loaded" if app.invoice_analyzer else "unavailable"
         })
@@ -459,7 +459,7 @@ def create_app():
                     'total_variance': 23000,
                     'average_monthly': 93833
                 },
-                'generated_at': datetime.utcnow().isoformat()
+                'generated_at': datetime.now(timezone.utc).isoformat()
             }
             return jsonify(trends)
         except Exception as e:
@@ -480,7 +480,7 @@ def create_app():
                 ],
                 'overall_performance': 0.86,
                 'period': 'last_quarter',
-                'generated_at': datetime.utcnow().isoformat()
+                'generated_at': datetime.now(timezone.utc).isoformat()
             }
             return jsonify(performance)
         except Exception as e:

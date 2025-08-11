@@ -134,7 +134,7 @@ def health_check():
     """Comprehensive health check"""
     return jsonify({
         'status': 'healthy',
-        'timestamp': datetime.utcnow().isoformat(),
+        'timestamp': datetime.now(timezone.utc).isoformat(),
         'version': '1.0.0-production',
         'database': 'connected',
         'features': {
@@ -181,7 +181,7 @@ def dashboard_metrics():
         
         # Get recent invoices for trends
         recent_invoices = Invoice.query.filter(
-            Invoice.created_at >= datetime.utcnow() - timedelta(days=30)
+            Invoice.created_at >= datetime.now(timezone.utc) - timedelta(days=30)
         ).all()
         
         recent_spend = sum(inv.amount for inv in recent_invoices)
@@ -223,7 +223,7 @@ def spend_trends():
         spend_data = []
         
         for i in range(12):
-            month_start = datetime.utcnow().replace(day=1) - timedelta(days=30*i)
+            month_start = datetime.now(timezone.utc).replace(day=1) - timedelta(days=30*i)
             month_invoices = Invoice.query.filter(
                 Invoice.invoice_date >= month_start.date(),
                 Invoice.invoice_date < (month_start + timedelta(days=30)).date()
@@ -375,7 +375,7 @@ def live_data_insights():
             'Market rate surveys',
             'Vendor performance data'
         ],
-        'last_updated': datetime.utcnow().isoformat()
+        'last_updated': datetime.now(timezone.utc).isoformat()
     })
 
 # ============ AI/ML ENDPOINTS ============
@@ -411,7 +411,7 @@ def generate_report():
     # Simulate report generation
     report = {
         'type': report_type,
-        'generated_at': datetime.utcnow().isoformat(),
+        'generated_at': datetime.now(timezone.utc).isoformat(),
         'summary': {
             'total_spend': 2500000,
             'vendor_count': 8,
@@ -444,7 +444,7 @@ def diagnostics():
             'uptime': '99.9%',
             'throughput': 'optimal'
         },
-        'last_check': datetime.utcnow().isoformat()
+        'last_check': datetime.now(timezone.utc).isoformat()
     })
 
 # ============ INITIALIZE DATABASE ============
@@ -491,8 +491,8 @@ def init_db():
                 invoice = Invoice(
                     vendor_id=vendor.id,
                     invoice_number=f'INV-2025-{i+1:03d}',
-                    invoice_date=datetime.utcnow().date() - timedelta(days=random.randint(1, 365)),
-                    due_date=datetime.utcnow().date() + timedelta(days=30),
+                    invoice_date=datetime.now(timezone.utc).date() - timedelta(days=random.randint(1, 365)),
+                    due_date=datetime.now(timezone.utc).date() + timedelta(days=30),
                     amount=random.uniform(5000, 50000),
                     status=random.choice(['pending', 'approved', 'paid']),
                     practice_area=vendor.practice_area,

@@ -127,6 +127,22 @@ class InvoiceAnalyzer:
             'anomalies': risk_factors
         }
     
+    def _extract_features(self, processed_data):
+        """Extract features for ML analysis from processed invoice data"""
+        try:
+            # Use the imported extract_invoice_features function
+            features, _ = extract_invoice_features(processed_data)
+            return features
+        except Exception as e:
+            # Fallback to basic feature extraction if the imported function fails
+            return [
+                processed_data.get('total_amount', 0),
+                processed_data.get('line_count', 0),
+                len(processed_data.get('vendor_name', '')),
+                len(processed_data.get('invoice_number', '')),
+                1 if processed_data.get('date') else 0
+            ]
+    
     def _calculate_risk_score(self, anomaly_score, processed_data):
         """Calculate final risk score using multiple factors"""
         base_score = 50 - (anomaly_score * 20)  # Convert to 0-100 scale

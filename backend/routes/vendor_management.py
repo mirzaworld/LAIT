@@ -156,7 +156,7 @@ def get_vendor_benchmark(vendor_id):
             .all()
         
         # Generate fresh benchmarks if none exist or outdated
-        if not benchmarks or (datetime.utcnow() - benchmarks[0].created_at).days > 30:
+        if not benchmarks or (datetime.now(timezone.utc) - benchmarks[0].created_at).days > 30:
             benchmarks = generate_vendor_benchmarks(session, vendor)
         
         # Format benchmark data

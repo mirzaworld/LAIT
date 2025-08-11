@@ -123,29 +123,27 @@ def session(app):
 @pytest.fixture
 def admin_token(app: Flask) -> str:
     """Create a JWT token for an admin user."""
-    token = jwt.encode(
-        {
-            'user_id': 1,
-            'role': 'admin',
-            'exp': datetime.utcnow() + timedelta(days=1)
-        },
-        app.config['JWT_SECRET_KEY'],
-        algorithm='HS256'
-    )
+    with app.app_context():
+        from flask_jwt_extended import create_access_token
+        # Use create_access_token for consistency with Flask-JWT-Extended
+        # Identity must be string, not int
+        token = create_access_token(
+            identity='1',
+            additional_claims={'role': 'admin'}
+        )
     return f'Bearer {token}'
 
 @pytest.fixture
 def regular_token(app: Flask) -> str:
     """Create a JWT token for a regular user."""
-    token = jwt.encode(
-        {
-            'user_id': 2,
-            'role': 'user',
-            'exp': datetime.utcnow() + timedelta(days=1)
-        },
-        app.config['JWT_SECRET_KEY'],
-        algorithm='HS256'
-    )
+    with app.app_context():
+        from flask_jwt_extended import create_access_token
+        # Use create_access_token for consistency with Flask-JWT-Extended
+        # Identity must be string, not int
+        token = create_access_token(
+            identity='2', 
+            additional_claims={'role': 'user'}
+        )
     return f'Bearer {token}'
 
 @pytest.fixture

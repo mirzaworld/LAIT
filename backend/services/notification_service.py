@@ -20,7 +20,7 @@ class NotificationService:
             
             notification = {
                 'type': 'invoice_analysis',
-                'timestamp': datetime.utcnow().isoformat(),
+                'timestamp': datetime.now(timezone.utc).isoformat(),
                 'data': {
                     'invoice_id': invoice.id,
                     'invoice_number': invoice.invoice_number,
@@ -48,7 +48,7 @@ class NotificationService:
         """Send a general alert notification"""
         notification = {
             'type': 'alert',
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now(timezone.utc).isoformat(),
             'data': {
                 'alert_type': alert_type,
                 'message': message,
@@ -69,7 +69,7 @@ class NotificationService:
                 
             notification = {
                 'type': 'vendor_update',
-                'timestamp': datetime.utcnow().isoformat(),
+                'timestamp': datetime.now(timezone.utc).isoformat(),
                 'data': {
                     'vendor_id': vendor.id,
                     'name': vendor.name,
@@ -88,7 +88,7 @@ class NotificationService:
         """Broadcast system status updates"""
         notification = {
             'type': 'system_status',
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now(timezone.utc).isoformat(),
             'data': status
         }
         

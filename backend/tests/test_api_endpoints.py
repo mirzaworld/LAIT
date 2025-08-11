@@ -150,7 +150,8 @@ class TestInvoiceEndpoints:
         response = client.get('/api/invoices')
         assert response.status_code == 200
         data = json.loads(response.data)
-        assert isinstance(data, list) or 'invoices' in data
+        # Response can have 'items' or 'invoices' key
+        assert isinstance(data, list) or 'invoices' in data or 'items' in data
 
 class TestAdminEndpoints:
     """Test admin endpoints."""

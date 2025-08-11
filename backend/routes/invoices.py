@@ -47,7 +47,7 @@ def list_invoices():
 @invoices_bp.route('/<int:invoice_id>', methods=['GET'])
 @development_jwt_required
 def get_invoice(invoice_id):
-    current_user = get_current_user_id()
+    # Remove user ID requirement - invoice detail doesn't need user context for basic retrieval
     session = get_db_session()
     try:
         inv = session.query(DbInvoice).filter_by(id=invoice_id).first()
@@ -84,11 +84,14 @@ def get_invoice(invoice_id):
             'pdf_url': file_url,
             'analysis_result': inv.analysis_result,
             'lines': lines,
-            'matter': inv.matter.name if hasattr(inv, 'matter') and inv.matter else '',
-            'category': inv.matter.category if hasattr(inv, 'matter') and inv.matter else None,
+            'matter': inv.matter if hasattr(inv, 'matter') and inv.matter else '',
+            'category': inv.matter.category if hasattr(inv, 'matter') and hasattr(inv.matter, 'category') and inv.matter else None,
             'description': inv.description
         })
     except Exception as e:
+        import traceback
+        current_app.logger.error(f"Invoice detail error: {str(e)}")
+        current_app.logger.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({"error": str(e)}), 500
     finally:
         session.close()
@@ -141,7 +144,7 @@ def upload_invoice():
                 try:
                     date_val = datetime.fromisoformat(raw_date)
                 except Exception:
-                    date_val = datetime.utcnow()
+                    date_val = datetime.now(timezone.utc)
         total_amount = parsed_data.get('total_amount') or parsed_data.get('amount') or request.form.get('amount') or 0
         try:
             total_amount = float(total_amount)
@@ -168,7 +171,7 @@ def upload_invoice():
         invoice = DbInvoice(
             vendor_id=vendor.id,
             invoice_number=parsed_data.get('invoice_number'),
-            date=date_val or datetime.utcnow(),
+            date=date_val or datetime.now(timezone.utc),
             amount=total_amount,
             overspend_risk=(float(risk_score) / 100.0) if risk_score else 0,
             processed=True,

@@ -645,7 +645,7 @@ class LegalIntelligenceService:
             research_results = {
                 'case_description': case_description,
                 'court': court,
-                'research_timestamp': datetime.utcnow().isoformat(),
+                'research_timestamp': datetime.now(timezone.utc).isoformat(),
                 'findings': {}
             }
             
@@ -776,7 +776,7 @@ class LegalIntelligenceService:
             comparison_results = {
                 'practice_area': practice_area,
                 'firms_analyzed': len(firm_names),
-                'analysis_timestamp': datetime.utcnow().isoformat(),
+                'analysis_timestamp': datetime.now(timezone.utc).isoformat(),
                 'firm_profiles': {},
                 'comparative_metrics': {}
             }
@@ -829,7 +829,7 @@ class LegalIntelligenceService:
             research_results = {
                 'legal_issue': legal_issue,
                 'jurisdiction': jurisdiction,
-                'research_timestamp': datetime.utcnow().isoformat(),
+                'research_timestamp': datetime.now(timezone.utc).isoformat(),
                 'precedents': [],
                 'citation_network': {}
             }

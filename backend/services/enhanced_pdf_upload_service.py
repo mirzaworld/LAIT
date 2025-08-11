@@ -585,7 +585,7 @@ class EnhancedPDFUploadService:
                     contact_email=parsed_invoice.get('vendor_email', ''),
                     phone=parsed_invoice.get('vendor_phone', ''),
                     address=parsed_invoice.get('vendor_address', ''),
-                    created_at=datetime.utcnow()
+                    created_at=datetime.now(timezone.utc)
                 )
                 session.add(vendor)
                 session.flush()  # Get the vendor ID
@@ -602,8 +602,8 @@ class EnhancedPDFUploadService:
                 attorney_name=parsed_invoice.get('attorney_name', ''),
                 total_hours=float(parsed_invoice.get('total_hours', 0)),
                 risk_score=float(analysis.get('risk_score', 0)),
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow()
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc)
             )
             
             session.add(invoice)
@@ -621,7 +621,7 @@ class EnhancedPDFUploadService:
                     date=datetime.strptime(item.get('date', datetime.now().strftime('%Y-%m-%d')), '%Y-%m-%d') if isinstance(item.get('date'), str) else datetime.now(),
                     attorney_name=item.get('attorney_name', ''),
                     practice_area=item.get('practice_area', ''),
-                    created_at=datetime.utcnow()
+                    created_at=datetime.now(timezone.utc)
                 )
                 session.add(line_item)
             

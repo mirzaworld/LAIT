@@ -211,7 +211,7 @@ def create_app():
         try:
             status = {
                 "status": "healthy", 
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "database": "connected" if database_available else "unavailable",
                 "ml_models": "loaded" if ml_available else "unavailable",
                 "live_data": "connected" if live_data_available else "unavailable",
@@ -240,7 +240,7 @@ def create_app():
             return jsonify({
                 "status": "error",
                 "error": str(e),
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }), 500
     
     # ============ AUTHENTICATION ROUTES ============
@@ -654,7 +654,7 @@ def create_app():
                     'periods': len(labels),
                     'average_per_period': sum(data) / len(data) if data else 0
                 },
-                'generated_at': datetime.utcnow().isoformat()
+                'generated_at': datetime.now(timezone.utc).isoformat()
             })
             
         except Exception as e:
@@ -678,7 +678,7 @@ def create_app():
                 ],
                 'overall_performance': 0.88,
                 'period': 'last_quarter',
-                'generated_at': datetime.utcnow().isoformat()
+                'generated_at': datetime.now(timezone.utc).isoformat()
             }
             return jsonify(performance)
         except Exception as e:
@@ -697,7 +697,7 @@ def create_app():
                 ],
                 'confidence': 0.85,
                 'ml_models_used': ml_available,
-                'generated_at': datetime.utcnow().isoformat()
+                'generated_at': datetime.now(timezone.utc).isoformat()
             }
             return jsonify(predictions)
         except Exception as e:
@@ -1172,7 +1172,7 @@ def create_app():
                     'data_processor': hasattr(app, 'invoice_processor') and app.invoice_processor is not None
                 },
                 'status': 'operational' if ml_available else 'unavailable',
-                'timestamp': datetime.utcnow().isoformat()
+                'timestamp': datetime.now(timezone.utc).isoformat()
             }
             return jsonify(ml_status)
         except Exception as e:
@@ -1203,7 +1203,7 @@ def create_app():
                 ],
                 'anomaly_rate': 12.5,
                 'total_invoices_analyzed': 150,
-                'timestamp': datetime.utcnow().isoformat()
+                'timestamp': datetime.now(timezone.utc).isoformat()
             }
             return jsonify(anomalies)
         except Exception as e:
@@ -1229,7 +1229,7 @@ def create_app():
                     'avg_processing_time': 3.2
                 },
                 'status': 'operational',
-                'timestamp': datetime.utcnow().isoformat()
+                'timestamp': datetime.now(timezone.utc).isoformat()
             }
             return jsonify(workflow_status)
         except Exception as e:
@@ -1312,7 +1312,7 @@ def create_app():
             return jsonify({
                 'data': data,
                 'source': source_name,
-                'timestamp': datetime.utcnow().isoformat()
+                'timestamp': datetime.now(timezone.utc).isoformat()
             })
         except Exception as e:
             logger.error(f"Live data feed error: {str(e)}")

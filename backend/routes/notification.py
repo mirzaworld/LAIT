@@ -116,7 +116,7 @@ class NotificationManager:
             if notif.read:  # idempotent
                 return True
             notif.read = True
-            notif.read_at = datetime.utcnow()
+            notif.read_at = datetime.now(timezone.utc)
             session.commit()
             unread = self.unread_count(user_id)
             socketio.emit('notification_unread_count', {'user_id': user_id, 'unread': unread})
@@ -131,7 +131,7 @@ class NotificationManager:
             count = 0
             for notif in q:
                 notif.read = True
-                notif.read_at = datetime.utcnow()
+                notif.read_at = datetime.now(timezone.utc)
                 count += 1
             session.commit()
             socketio.emit('notification_unread_count', {'user_id': user_id, 'unread': 0})
@@ -175,7 +175,7 @@ class NotificationManager:
             'type': notif.type,
             'message': (notif.content or {}).get('message'),
             'metadata': (notif.content or {}).get('metadata', {}),
-            'timestamp': (notif.created_at or datetime.utcnow()).isoformat() + 'Z',
+            'timestamp': (notif.created_at or datetime.now(timezone.utc)).isoformat() + 'Z',
             'read': bool(notif.read),
             'readAt': notif.read_at.isoformat() + 'Z' if notif.read_at else None
         }

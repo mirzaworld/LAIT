@@ -43,7 +43,7 @@ class AuditLogger:
                 ip_address=request.remote_addr,
                 user_agent=request.user_agent.string,
                 status=status,
-                timestamp=datetime.utcnow()
+                timestamp=datetime.now(timezone.utc)
             )
             
             # Save to database
@@ -93,7 +93,7 @@ class AuditLogger:
                 ip_address=request.remote_addr,
                 user_agent=request.user_agent.string,
                 severity=severity,
-                timestamp=datetime.utcnow()
+                timestamp=datetime.now(timezone.utc)
             )
             
             db.session.add(audit_log)

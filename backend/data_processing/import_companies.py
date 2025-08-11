@@ -144,7 +144,7 @@ def import_legal_companies():
                     linkedin_url=row.get('linkedin_url') if not pd.isna(row.get('linkedin_url')) else None,
                     status='Prospect',
                     data_source='Company Dataset',
-                    created_at=datetime.utcnow()
+                    created_at=datetime.now(timezone.utc)
                 )
                 
                 session.add(vendor)

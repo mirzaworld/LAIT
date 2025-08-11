@@ -49,7 +49,7 @@ class CloudWatchHandler:
                     'message': json.dumps({
                         'level': level,
                         'message': message,
-                        'timestamp': datetime.utcnow().isoformat()
+                        'timestamp': datetime.now(timezone.utc).isoformat()
                     })
                 }]
             )
