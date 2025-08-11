@@ -54,11 +54,12 @@ const getAuthHeaders = (): HeadersInit => {
     'Accept': 'application/json',
   };
   
-  // In development, always use the mock token for testing
-  if (import.meta.env.DEV) {
-    headers['Authorization'] = 'Bearer mock-jwt-token-for-development';
-  } else if (token) {
+  // Use actual token if available, otherwise fallback to mock token for development
+  if (token && token !== 'mock-jwt-token-for-development') {
     headers['Authorization'] = `Bearer ${token}`;
+  } else if (import.meta.env.DEV) {
+    // Only use mock token if no real token is available
+    headers['Authorization'] = 'Bearer mock-jwt-token-for-development';
   }
   
   return headers;
@@ -67,20 +68,7 @@ const getAuthHeaders = (): HeadersInit => {
 // Authentication functions
 export const login = async (email: string, password: string): Promise<{ token: string; user: any }> => {
   try {
-    // For development, create a mock token
-    if (email === 'admin@lait.demo' && password === 'demo123') {
-      const mockToken = 'mock-jwt-token-for-development';
-      localStorage.setItem('lait_token', mockToken);
-      return {
-        token: mockToken,
-        user: {
-          id: '1',
-          email: 'admin@lait.demo',
-          name: 'Admin User',
-          role: 'admin'
-        }
-      };
-    }
+    console.log('Attempting login for:', email);
     
     const response = await fetch(apiUrl('/api/auth/login'), {
       method: 'POST',
@@ -90,15 +78,58 @@ export const login = async (email: string, password: string): Promise<{ token: s
       body: JSON.stringify({ email, password })
     });
     
+    console.log('Login response status:', response.status);
+    
     if (!response.ok) {
-      throw new Error('Invalid credentials');
+      const errorText = await response.text();
+      console.error('Login error response:', errorText);
+      throw new Error(`Login failed: ${errorText}`);
     }
     
     const data = await response.json();
-    localStorage.setItem('lait_token', data.token);
+    console.log('Login successful:', data);
+    
+    if (data.token) {
+      localStorage.setItem('lait_token', data.token);
+    }
+    
     return data;
   } catch (error) {
     console.error('Login error:', error);
+    throw error;
+  }
+};
+
+export const register = async (userData: {
+  email: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+  company?: string;
+}): Promise<{ message: string; user_id?: string }> => {
+  try {
+    console.log('Attempting registration for:', userData.email);
+    
+    const response = await fetch(apiUrl('/api/auth/register'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(userData)
+    });
+    
+    console.log('Registration response status:', response.status);
+    
+    const data = await response.json();
+    console.log('Registration response:', data);
+    
+    if (!response.ok) {
+      throw new Error(data.error || `Registration failed: ${response.statusText}`);
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Registration error:', error);
     throw error;
   }
 };
