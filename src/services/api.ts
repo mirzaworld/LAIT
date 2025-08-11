@@ -54,12 +54,9 @@ const getAuthHeaders = (): HeadersInit => {
     'Accept': 'application/json',
   };
   
-  // Use actual token if available, otherwise fallback to mock token for development
+  // Only use real JWT tokens
   if (token && token !== 'mock-jwt-token-for-development') {
     headers['Authorization'] = `Bearer ${token}`;
-  } else if (import.meta.env.DEV) {
-    // Only use mock token if no real token is available
-    headers['Authorization'] = 'Bearer mock-jwt-token-for-development';
   }
   
   return headers;

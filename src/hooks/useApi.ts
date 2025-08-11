@@ -131,21 +131,38 @@ export function useDashboardMetrics() {
       if (USE_MOCK_DATA) {
         data = { ...mockDashboardMetrics };
       } else {
-        // Use retry logic for API call
-        data = await withRetry(() => getDashboardMetrics());
-        
-        // Store as fallback data
-        fallbackDataManager.set('dashboard_metrics', data);
+        try {
+          // Use retry logic for API call
+          data = await withRetry(() => getDashboardMetrics());
+          
+          // Store as fallback data
+          fallbackDataManager.set('dashboard_metrics', data);
+        } catch (apiError: any) {
+          // If API fails due to auth, try to use fallback data
+          const fallbackData = fallbackDataManager.get<DashboardMetrics>('dashboard_metrics');
+          
+          if (fallbackData) {
+            console.log('API failed, using fallback dashboard metrics');
+            setMetrics(fallbackData);
+            setError(new Error('Using cached data - please refresh'));
+            return;
+          } else {
+            // If no fallback and API fails, use mock data as last resort
+            console.log('No fallback data available, using mock data');
+            data = { ...mockDashboardMetrics };
+          }
+        }
       }
       
       setMetrics(data);
     } catch (err) {
+      console.error('Dashboard metrics error:', err);
       setError(err instanceof Error ? err : new Error('Failed to fetch dashboard metrics'));
       
-      // Try to use fallback data
+      // Try to use fallback data one more time
       const fallbackData = fallbackDataManager.get<DashboardMetrics>('dashboard_metrics');
       if (fallbackData) {
-        console.log('Using fallback dashboard metrics');
+        console.log('Using fallback dashboard metrics after error');
         setMetrics(fallbackData);
       }
     } finally {

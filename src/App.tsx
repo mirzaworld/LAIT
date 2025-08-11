@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, createBrowserRouter, RouterProvider } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider } from './context/BackendAuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { setupAPIMonitoring } from './utils/apiUtils';
 import ErrorBoundaryWithRetry from './components/ErrorBoundaryWithRetry';
@@ -10,11 +10,11 @@ import UnifiedAnalytics from './pages/UnifiedAnalytics';
 import Invoices from './pages/Invoices';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
-import Login from './pages/Login';
-import SignUp from './pages/SignUp';
+import BackendLogin from './pages/BackendLogin';
+import BackendRegister from './pages/BackendRegister';
 import Landing from './pages/Landing';
 import Contact from './pages/Contact';
-import UploadInvoice from './pages/UploadInvoice';
+import BackendUploadInvoice from './pages/BackendUploadInvoice';
 import InvoiceList from './pages/InvoiceList';
 import VendorPerformance from './pages/VendorPerformance';
 import RecommendationsAlerts from './pages/RecommendationsAlerts';
@@ -22,25 +22,22 @@ import LegalIntelligence from './pages/LegalIntelligence';
 import DiagnosticsPage from './pages/DiagnosticsPage';
 import SettingsIntegrations from './pages/SettingsIntegrations';
 import VendorAnalyticsPage from './pages/VendorAnalyticsPage';
-import { AppProvider, useApp } from './context/AppContext';
+import { useAuth } from './context/BackendAuthContext';
 import 'react-toastify/dist/ReactToastify.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 
-// Set mock token for development and auto-authenticate
-const setDevelopmentToken = () => {
-  if (!localStorage.getItem('lait_token') && !localStorage.getItem('token')) {
-    console.log('Setting development token for LAIT demo');
-    localStorage.setItem('lait_token', 'mock-jwt-token-for-development');
-    
-    // Also trigger a state update by dispatching a storage event
-    window.dispatchEvent(new Event('storage'));
-  }
+// Set real authentication for development - remove mock token
+const setupRealAuthentication = () => {
+  // Remove any mock tokens
+  localStorage.removeItem('lait_token');
+  localStorage.removeItem('token');
+  console.log('Cleared mock tokens - using real authentication');
 };
 
 // Route guard component to handle authentication
 const ProtectedRoute: React.FC<{element: React.ReactNode}> = ({ element }) => {
-  const { isAuthenticated } = useApp();
+  const { isAuthenticated } = useAuth();
   
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -51,7 +48,7 @@ const ProtectedRoute: React.FC<{element: React.ReactNode}> = ({ element }) => {
 
 // Auth route component to prevent authenticated users from accessing login/signup
 const AuthRoute: React.FC<{element: React.ReactNode}> = ({ element }) => {
-  const { isAuthenticated } = useApp();
+  const { isAuthenticated } = useAuth();
   
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
@@ -62,7 +59,7 @@ const AuthRoute: React.FC<{element: React.ReactNode}> = ({ element }) => {
 
 // Home route component to redirect authenticated users to dashboard
 const HomeRoute: React.FC = () => {
-  const { isAuthenticated } = useApp();
+  const { isAuthenticated } = useAuth();
   
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
@@ -94,8 +91,8 @@ const AppContent = () => {
     // Initialize API monitoring
     setupAPIMonitoring();
     
-    // Set development token if needed
-    setDevelopmentToken();
+    // Remove mock tokens and use real authentication
+    setupRealAuthentication();
     
     // Add error event listener for unhandled errors
     const handleError = (event: ErrorEvent) => {
@@ -147,15 +144,14 @@ const AppContent = () => {
       >
         <NotificationProvider>
           <AuthProvider>
-            <AppProvider>
               <Router>
                 <div className="min-h-screen bg-gray-50">
                   <Routes>
                     {/* Public Routes */}
                     <Route path="/" element={<HomeRoute />} />
                     <Route path="/landing" element={<Landing />} />
-                    <Route path="/login" element={<AuthRoute element={<Login />} />} />
-                    <Route path="/signup" element={<AuthRoute element={<SignUp />} />} />
+                    <Route path="/login" element={<AuthRoute element={<BackendLogin />} />} />
+                    <Route path="/signup" element={<AuthRoute element={<BackendRegister />} />} />
                     <Route path="/contact" element={<Contact />} />
                     
                     {/* Protected Routes */}
@@ -210,7 +206,7 @@ const AppContent = () => {
                     <Route path="/invoices/upload" element={
                       <ProtectedRoute element={
                         <Layout>
-                          <UploadInvoice />
+                          <BackendUploadInvoice />
                         </Layout>
                       } />
                     } />
@@ -280,7 +276,6 @@ const AppContent = () => {
                   />
                 </div>
               </Router>
-            </AppProvider>
           </AuthProvider>
         </NotificationProvider>
       </ErrorBoundaryWithRetry>

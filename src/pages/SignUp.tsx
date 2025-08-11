@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { DollarSign, Mail, Lock, Phone, User, Calendar, Building, Loader2, AlertTriangle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { auth } from '../services/firebase';
 
 const organizationTypes = [
   { value: 'company', label: 'Company' },

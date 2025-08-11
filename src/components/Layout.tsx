@@ -17,8 +17,7 @@ import {
   Scale,
   Brain
 } from 'lucide-react';
-import { useApp } from '../context/AppContext';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/BackendAuthContext';
 import { useNotificationContext } from '../context/NotificationContext';
 import { NotificationItem } from './NotificationItem';
 import ApiHealthIndicator from './ApiHealthIndicator';
@@ -29,11 +28,31 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem('darkMode') === 'true';
+  });
+
+  // Toggle dark mode
+  const toggleDarkMode = () => {
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    localStorage.setItem('darkMode', newDarkMode.toString());
+  };
+
+  // Apply dark mode class to document
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      document.body.classList.add('dark:bg-gray-900');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.body.classList.remove('dark:bg-gray-900');
+    }
+  }, [darkMode]);
 
   const location = useLocation();
   const navigate = useNavigate();
-  const { darkMode, toggleDarkMode, logout, userProfile } = useApp();
-  const { user, logout: authLogout } = useAuth();
+  const { user, logout } = useAuth();
   const { notifications, hasUnread, markAllRead, clearNotifications } = useNotificationContext();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -241,15 +260,15 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 </div>
 
                 {/* User Profile */}
-                {userProfile && (
+                {user && (
                   <div className={`hidden md:block text-right ${
                     darkMode ? 'text-white' : 'text-gray-900'
                   }`}>
                     <p className="text-sm font-medium">
-                      {`${userProfile.prefix} ${userProfile.firstName} ${userProfile.lastName}`}
+                      {`${user.first_name} ${user.last_name}`}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {userProfile.organizationType}
+                      {user.company || 'Legal Professional'}
                     </p>
                   </div>
                 )}

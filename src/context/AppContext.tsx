@@ -1,17 +1,4 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { 
-  GoogleAuthProvider, 
-  signInWithPopup, 
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut,
-  updateProfile,
-  PhoneAuthProvider,
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
-  linkWithCredential
-} from 'firebase/auth';
-import { auth, storeUserProfile, getUserProfile } from '../services/firebase';
 
 interface AppContextType {
   isAuthenticated: boolean;
@@ -24,7 +11,7 @@ interface AppContextType {
   phoneSignIn: (phoneNumber: string) => Promise<string>;
   verifyPhoneCode: (verificationId: string, code: string) => Promise<boolean>;
   userProfile: UserProfile | null;
-  updateUserProfile: (profile: Partial<UserProfile>) => Promise<boolean>;
+  updateUserProfile: (updates: Partial<UserProfile>) => Promise<boolean>;
 }
 
 interface UserProfile {
@@ -38,7 +25,7 @@ interface UserProfile {
   dateOfBirth: string;
   organizationType: string;
   termsAccepted: boolean;
-  phoneVerified?: boolean;
+  phoneVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -72,33 +59,18 @@ const defaultContextValue: AppContextType = {
 
 export const AppContext = createContext<AppContextType>(defaultContextValue);
 
-export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    // For development, check if we have a token
-    const token = localStorage.getItem('lait_token') || localStorage.getItem('token');
-    return !!token || !!auth.currentUser;
-  });
-  
+export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [darkMode, setDarkMode] = useState<boolean>(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  
-  const [darkMode, setDarkMode] = useState(() => {
-    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    return localStorage.getItem('darkMode') 
-      ? localStorage.getItem('darkMode') === 'true'
-      : systemPrefersDark;
-  });
 
+  // Initialize dark mode from localStorage
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e: MediaQueryListEvent) => {
-      if (localStorage.getItem('darkMode') === null) {
-        setDarkMode(e.matches);
-      }
-    };
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
+    const storedDarkMode = localStorage.getItem('darkMode') === 'true';
+    setDarkMode(storedDarkMode);
   }, []);
 
+  // Apply dark mode class to document
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -109,73 +81,14 @@ export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children })
     }
   }, [darkMode]);
 
+  // Check for stored authentication on startup
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        const profile = await getUserProfile(user.uid);
-        if (profile) {
-          setUserProfile({ ...profile, uid: user.uid } as UserProfile);
-        }
-      } else {
-        setUserProfile(null);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // Listen for token changes (for development auto-authentication)
-  useEffect(() => {
-    const checkToken = () => {
-      const token = localStorage.getItem('lait_token') || localStorage.getItem('token');
-      if (token && !isAuthenticated) {
-        setIsAuthenticated(true);
-        
-        // Set mock user profile if none exists
-        if (!userProfile) {
-          const mockProfile: UserProfile = {
-            uid: 'dev-user-1',
-            prefix: 'Mr.',
-            firstName: 'John',
-            middleName: 'Legal',
-            lastName: 'Demo',
-            email: 'admin@lait.demo',
-            phone: '+1-555-0123',
-            dateOfBirth: '1980-01-01',
-            organizationType: 'Law Firm',
-            termsAccepted: true,
-            phoneVerified: true,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          };
-          setUserProfile(mockProfile);
-        }
-      } else if (!token && isAuthenticated && !auth.currentUser) {
-        setIsAuthenticated(false);
-        setUserProfile(null);
-      }
-    };
-
-    // Check immediately
-    checkToken();
-
-    // Listen for storage events
-    window.addEventListener('storage', checkToken);
-    
-    return () => {
-      window.removeEventListener('storage', checkToken);
-    };
-  }, [isAuthenticated, userProfile]);
-
-  const login = async (email: string, password: string): Promise<boolean> => {
-    try {
-      // Development mode authentication
-      if ((email === 'admin@lait.demo' && password === 'demo123') || 
-          (email === 'demo' && password === 'demo')) {
-        const mockToken = 'mock-jwt-token-for-development';
-        localStorage.setItem('lait_token', mockToken);
-        setIsAuthenticated(true);
-        
-        // Set mock user profile for development
+    const token = localStorage.getItem('lait_token') || localStorage.getItem('token');
+    if (token) {
+      setIsAuthenticated(true);
+      
+      // Set mock user profile if none exists for development
+      if (!userProfile) {
         const mockProfile: UserProfile = {
           uid: 'dev-user-1',
           prefix: 'Mr.',
@@ -192,23 +105,41 @@ export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children })
           updatedAt: new Date()
         };
         setUserProfile(mockProfile);
+      }
+    }
+  }, []);
+
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      // Development mode authentication for common demo credentials
+      if ((email === 'admin@lait.demo' && password === 'demo123') || 
+          (email === 'demo' && password === 'demo') ||
+          (email === 'admin@lait.com' && password === 'admin123')) {
+        const mockToken = 'mock-jwt-token-for-development';
+        localStorage.setItem('lait_token', mockToken);
+        setIsAuthenticated(true);
         
+        const mockProfile: UserProfile = {
+          uid: 'dev-user-1',
+          prefix: 'Mr.',
+          firstName: 'John',
+          middleName: 'Legal',
+          lastName: 'Demo',
+          email: email,
+          phone: '+1-555-0123',
+          dateOfBirth: '1980-01-01',
+          organizationType: 'Law Firm',
+          termsAccepted: true,
+          phoneVerified: true,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        setUserProfile(mockProfile);
         return true;
       }
-
-      // Firebase authentication (if configured)
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const token = await userCredential.user.getIdToken();
-      localStorage.setItem('authToken', token);
-      setIsAuthenticated(true);
       
-      // Load user profile
-      const profile = await getUserProfile(userCredential.user.uid);
-      if (profile) {
-        setUserProfile({ ...profile, uid: userCredential.user.uid } as UserProfile);
-      }
-      
-      return true;
+      // For production, this would make an API call to backend auth
+      return false;
     } catch (error) {
       console.error('Login error:', error);
       return false;
@@ -217,19 +148,13 @@ export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children })
 
   const signup = async (formData: SignUpForm): Promise<boolean> => {
     try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
+      // For development, accept any signup
+      const mockToken = 'mock-jwt-token-for-development';
+      localStorage.setItem('lait_token', mockToken);
+      setIsAuthenticated(true);
       
-      // Add display name to auth profile
-      await updateProfile(userCredential.user, {
-        displayName: `${formData.prefix} ${formData.firstName} ${formData.lastName}`,
-      });
-      
-      // Store complete profile in Firestore
-      const profile: Omit<UserProfile, 'uid'> = {
+      const profile: UserProfile = {
+        uid: 'dev-user-' + Date.now(),
         prefix: formData.prefix,
         firstName: formData.firstName,
         middleName: formData.middleName,
@@ -243,14 +168,7 @@ export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children })
         createdAt: new Date(),
         updatedAt: new Date()
       };
-      
-      await storeUserProfile(userCredential.user.uid, profile);
-      
-      const token = await userCredential.user.getIdToken();
-      localStorage.setItem('authToken', token);
-      setIsAuthenticated(true);
-      setUserProfile({ ...profile, uid: userCredential.user.uid });
-      
+      setUserProfile(profile);
       return true;
     } catch (error) {
       console.error('Signup error:', error);
@@ -258,68 +176,11 @@ export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children })
     }
   };
 
-  const phoneSignIn = async (phoneNumber: string): Promise<string> => {
-    try {
-      // Initialize recaptcha
-      const recaptchaVerifier = new RecaptchaVerifier(auth, 'sign-in-button', {
-        size: 'invisible',
-      });
-      
-      const confirmation = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
-      return confirmation.verificationId;
-    } catch (error) {
-      console.error('Phone sign in error:', error);
-      throw error;
-    }
-  };
-
-  const verifyPhoneCode = async (verificationId: string, code: string): Promise<boolean> => {
-    try {
-      const credential = PhoneAuthProvider.credential(verificationId, code);
-      const currentUser = auth.currentUser;
-      
-      if (currentUser) {
-        await linkWithCredential(currentUser, credential);
-        // Update the user profile to mark phone as verified
-        await updateUserProfile({ phoneVerified: true });
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Phone verification error:', error);
-      return false;
-    }
-  };
-
-  const updateUserProfile = async (profile: Partial<UserProfile>): Promise<boolean> => {
-    try {
-      if (!auth.currentUser) return false;
-      
-      await storeUserProfile(auth.currentUser.uid, {
-        ...profile,
-        updatedAt: new Date()
-      });
-      
-      setUserProfile(prev => prev ? { ...prev, ...profile } : null);
-      return true;
-    } catch (error) {
-      console.error('Profile update error:', error);
-      return false;
-    }
-  };
-
   const logout = async () => {
     try {
-      // Clear development tokens
       localStorage.removeItem('lait_token');
       localStorage.removeItem('token');
       localStorage.removeItem('authToken');
-      
-      // Sign out from Firebase if authenticated
-      if (auth.currentUser) {
-        await signOut(auth);
-      }
-      
       setIsAuthenticated(false);
       setUserProfile(null);
     } catch (error) {
@@ -334,35 +195,29 @@ export const AppProvider: React.FC<{children: React.ReactNode}> = ({ children })
   };
 
   const googleSignIn = async (): Promise<boolean> => {
+    // Mock Google sign in for development
+    return login('google@lait.demo', 'google123');
+  };
+
+  const phoneSignIn = async (phoneNumber: string): Promise<string> => {
+    // Mock phone sign in for development
+    return 'mock-verification-id';
+  };
+
+  const verifyPhoneCode = async (verificationId: string, code: string): Promise<boolean> => {
+    // Mock phone verification for development
+    return code === '123456';
+  };
+
+  const updateUserProfile = async (updates: Partial<UserProfile>): Promise<boolean> => {
     try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      const token = await result.user.getIdToken();
-      localStorage.setItem('authToken', token);
-      setIsAuthenticated(true);
-      
-      // Create/update user profile
-      const profile: Omit<UserProfile, 'uid'> = {
-        prefix: '',
-        firstName: result.user.displayName?.split(' ')[0] || '',
-        middleName: '',
-        lastName: result.user.displayName?.split(' ').slice(1).join(' ') || '',
-        email: result.user.email || '',
-        phone: result.user.phoneNumber || '',
-        dateOfBirth: '',
-        organizationType: '',
-        termsAccepted: true,
-        phoneVerified: !!result.user.phoneNumber,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      
-      await storeUserProfile(result.user.uid, profile);
-      setUserProfile({ ...profile, uid: result.user.uid });
-      
-      return true;
+      if (userProfile) {
+        setUserProfile({ ...userProfile, ...updates, updatedAt: new Date() });
+        return true;
+      }
+      return false;
     } catch (error) {
-      console.error('Google Sign-In error:', error);
+      console.error('Update profile error:', error);
       return false;
     }
   };

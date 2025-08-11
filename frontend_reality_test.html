@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAIT Frontend Reality Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        input, select { padding: 8px; margin: 5px; width: 200px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
+        .iframe-container { width: 100%; height: 600px; border: 2px solid #007bff; margin: 10px 0; }
+        iframe { width: 100%; height: 100%; border: none; }
+    </style>
+</head>
+<body>
+    <h1>🔍 LAIT Frontend Reality Check</h1>
+    <p><strong>This test verifies if the frontend actually connects to the backend and works for real users.</strong></p>
+
+    <div class="test-section">
+        <h2>Frontend Status</h2>
+        <button onclick="checkFrontend()">Test Frontend Connection</button>
+        <div id="frontend-status"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Backend API Connection</h2>
+        <button onclick="testBackendFromFrontend()">Test API from Frontend Perspective</button>
+        <div id="backend-test"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Authentication Flow</h2>
+        <div>
+            <input type="email" id="testEmail" placeholder="Email" value="test@example.com">
+            <input type="password" id="testPassword" placeholder="Password" value="testpass123">
+            <button onclick="testLogin()">Test Login</button>
+        </div>
+        <div id="auth-test"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Live Frontend Preview</h2>
+        <p>This shows what users actually see when they visit the application:</p>
+        <div class="iframe-container">
+            <iframe src="http://localhost:5173" title="LAIT Frontend"></iframe>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Upload Test</h2>
+        <input type="file" id="testFile" accept=".pdf">
+        <button onclick="testUpload()">Test Upload</button>
+        <div id="upload-test"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Dashboard Data Test</h2>
+        <button onclick="testDashboard()">Test Dashboard Data Loading</button>
+        <div id="dashboard-test"></div>
+    </div>
+
+    <script>
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info';
+            const timestamp = new Date().toLocaleTimeString();
+            element.innerHTML = `<div class="${className}"><strong>[${timestamp}]</strong><pre>${message}</pre></div>`;
+        }
+
+        async function checkFrontend() {
+            try {
+                // Test if frontend is serving content
+                const response = await fetch('http://localhost:5173');
+                const html = await response.text();
+                
+                if (response.ok && html.includes('html')) {
+                    log('frontend-status', 'Frontend is running and serving content ✅', 'success');
+                } else {
+                    log('frontend-status', 'Frontend is not working properly ❌', 'error');
+                }
+            } catch (error) {
+                log('frontend-status', `Frontend connection failed: ${error.message} ❌`, 'error');
+            }
+        }
+
+        async function testBackendFromFrontend() {
+            try {
+                // Test API connection through Vite proxy (how frontend actually connects)
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                
+                if (response.ok && data.status === 'healthy') {
+                    log('backend-test', `API Connection working ✅\nResponse: ${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    log('backend-test', `API Connection failed ❌\nStatus: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                log('backend-test', `Backend connection error: ${error.message} ❌\n\nThis means the frontend cannot connect to the backend API.`, 'error');
+            }
+        }
+
+        async function testLogin() {
+            try {
+                const email = document.getElementById('testEmail').value;
+                const password = document.getElementById('testPassword').value;
+                
+                // Test login through frontend API (using Vite proxy)
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.token) {
+                    log('auth-test', `Login working ✅\nToken received: ${data.token.substring(0, 50)}...\nUser: ${JSON.stringify(data.user, null, 2)}`, 'success');
+                    
+                    // Store token for other tests
+                    localStorage.setItem('test_token', data.token);
+                } else {
+                    log('auth-test', `Login failed ❌\nStatus: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                log('auth-test', `Login error: ${error.message} ❌`, 'error');
+            }
+        }
+
+        async function testUpload() {
+            try {
+                const fileInput = document.getElementById('testFile');
+                const file = fileInput.files[0];
+                
+                if (!file) {
+                    log('upload-test', 'Please select a file first ⚠️', 'warning');
+                    return;
+                }
+                
+                const token = localStorage.getItem('test_token');
+                if (!token) {
+                    log('upload-test', 'Please login first to get authentication token ⚠️', 'warning');
+                    return;
+                }
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const response = await fetch('/api/upload-invoice', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log('upload-test', `Upload working ✅\nResponse: ${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    log('upload-test', `Upload failed ❌\nStatus: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                log('upload-test', `Upload error: ${error.message} ❌`, 'error');
+            }
+        }
+
+        async function testDashboard() {
+            try {
+                const token = localStorage.getItem('test_token');
+                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+                
+                const response = await fetch('/api/dashboard/metrics', { headers });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log('dashboard-test', `Dashboard data loading ✅\nMetrics: ${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    log('dashboard-test', `Dashboard failed ❌\nStatus: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                log('dashboard-test', `Dashboard error: ${error.message} ❌`, 'error');
+            }
+        }
+
+        // Auto-run initial tests
+        window.onload = function() {
+            checkFrontend();
+            setTimeout(() => testBackendFromFrontend(), 1000);
+        };
+    </script>
+</body>
+</html>
