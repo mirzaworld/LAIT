@@ -12,7 +12,6 @@ import { useDashboardMetrics } from '../hooks/useApi';
 import { pdfService } from '../services/pdfService';
 import DatePicker from 'react-datepicker';
 import ErrorBoundaryWithRetry from '../components/ErrorBoundaryWithRetry';
-import VendorsDebugComponent from '../components/VendorsDebugComponent';
 import 'react-datepicker/dist/react-datepicker.css';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
@@ -265,8 +264,6 @@ const DashboardContent: React.FC = () => {
         <TopVendors />
       </div>
 
-      <VendorsDebugComponent />
-
       {/* Notifications Panel */}
       {showNotifications && (
         <div className="fixed top-20 right-6 w-96 z-50">
@@ -288,8 +285,8 @@ const DashboardContent: React.FC = () => {
       <div className="flex justify-center mt-6">
         <div className="flex flex-wrap gap-3 justify-center">
           <ApiStatus url="/api/health" label="API Status" />
-          <ApiStatus url="/api/ml/test" label="ML Service" />
-          <ApiStatus url="/api/workflow/electronic-billing" label="Workflow" />
+          <ApiStatus url="/api/ml/status" label="ML Service" />
+          <ApiStatus url="/api/dashboard/metrics" label="Dashboard" />
           <button 
             onClick={() => navigate('/diagnostics')}
             className="text-sm text-blue-600 hover:underline"

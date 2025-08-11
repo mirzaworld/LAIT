@@ -46,7 +46,7 @@ const TopVendors: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {Array.isArray(vendors) && vendors.slice(0, 5).map((vendor, index) => {
+          {Array.isArray(vendors) && vendors.length > 0 ? vendors.slice(0, 5).map((vendor, index) => {
             const changePercent = getChangePercent(vendor.performance_score);
             
             return (
@@ -91,7 +91,11 @@ const TopVendors: React.FC = () => {
                 </div>
               </div>
             );
-          })}
+          }) : (
+            <div className="p-4 text-center text-gray-500">
+              <p>No vendor data available</p>
+            </div>
+          )}
         </div>
       )}
     </div>

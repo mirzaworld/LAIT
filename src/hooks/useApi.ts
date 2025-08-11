@@ -87,12 +87,23 @@ export function useVendors() {
         data = [...mockVendors];
         await new Promise(resolve => setTimeout(resolve, 500));
       } else {
-        data = await getVendors();
+        // Use retry logic for API call like other hooks
+        data = await withRetry(() => getVendors());
+        
+        // Store as fallback data
+        fallbackDataManager.set('vendors', data);
       }
       
       setVendors(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch vendors');
+      
+      // Try to use fallback data
+      const fallbackData = fallbackDataManager.get<Vendor[]>('vendors');
+      if (fallbackData) {
+        console.log('Using fallback vendors data');
+        setVendors(fallbackData);
+      }
     } finally {
       setLoading(false);
     }

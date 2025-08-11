@@ -1,6 +1,9 @@
 """Route registration and blueprints"""
 from flask import jsonify
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Import all routes for easy importing
 from .auth import auth_bp
@@ -64,10 +67,13 @@ def register_routes(app):
     # except ImportError:
     #     pass
 
-    # try:
-    #     from .workflow_routes import register_workflow_routes
-    #     register_workflow_routes(app)
-    # except ImportError:
-    #     pass
+    try:
+        from .workflow_routes import register_workflow_routes
+        register_workflow_routes(app)
+        logger.info('✅ Workflow routes registered')
+    except ImportError as e:
+        logger.warning(f'❌ Failed to import workflow routes: {e}')
+    except Exception as e:
+        logger.warning(f'❌ Failed to register workflow routes: {e}')
 
     return app  # Return the app for chaining
