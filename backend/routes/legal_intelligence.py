@@ -9,7 +9,7 @@ from dev_auth import development_jwt_required
 from services.courtlistener_service import LegalIntelligenceService
 from db.database import get_db_session
 from models.db_models import Vendor, Invoice, Matter
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 import logging
 import json
