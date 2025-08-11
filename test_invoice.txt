@@ -1,9 +1,1 @@
-Test Invoice
-Law Firm: Johnson & Associates
-Date: 2025-01-15
-Client: ABC Corp
-Attorney: John Smith
-Hours: 15.5
-Rate: /hour
-Total: ,975.00
-Description: Contract review and negotiation
+Test file content for invoice analysis

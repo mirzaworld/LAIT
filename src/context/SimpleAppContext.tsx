@@ -46,7 +46,7 @@ export const SimpleAppProvider: React.FC<{children: React.ReactNode}> = ({ child
     try {
       console.log('Attempting login with:', email);
       
-      const response = await fetch('http://localhost:8000/api/auth/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
