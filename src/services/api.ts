@@ -4,14 +4,21 @@ const API_URL = import.meta.env.VITE_API_URL || '';
 
 // Helper function to construct API URLs
 const apiUrl = (path: string) => {
-  // If we have a full API_URL (like in production), use it directly with the path
-  // The path should start with /api, so we don't need to add it again
+  // In development, always use the Vite proxy (relative paths)
+  // In production, use the full API_URL if provided
+  if (import.meta.env.DEV || !API_URL) {
+    // Use Vite's proxy in development
+    return path;
+  }
+  
+  // Production: use full API URL
   if (API_URL) {
     // Remove /api from API_URL if it exists to avoid duplication
     const baseUrl = API_URL.replace(/\/api$/, '');
     return `${baseUrl}${path}`;
   }
-  // Otherwise, use relative paths that work with Vite's proxy
+  
+  // Fallback to relative paths
   return path;
 };
 

@@ -8,6 +8,7 @@ import TopVendors from '../components/TopVendors';
 import AlertsPanel from '../components/AlertsPanel';
 import ApiStatus from '../components/ApiStatus';
 import LiveDashboardPanel from '../components/LiveDashboardPanel';
+import ApiDebugComponent from '../components/ApiDebugComponent';
 import { useDashboardMetrics } from '../hooks/useApi';
 import { pdfService } from '../services/pdfService';
 import DatePicker from 'react-datepicker';
@@ -26,6 +27,7 @@ const Dashboard: React.FC = () => {
       maxRetries={3}
     >
       <DashboardContent />
+      <ApiDebugComponent />
     </ErrorBoundaryWithRetry>
   );
 };
