@@ -286,7 +286,7 @@ const DashboardContent: React.FC = () => {
         <div className="flex flex-wrap gap-3 justify-center">
           <ApiStatus url="/api/health" label="API Status" />
           <ApiStatus url="/api/ml/status" label="ML Service" />
-          <ApiStatus url="/api/dashboard/metrics" label="Dashboard" />
+          <ApiStatus url="/api/workflow/electronic-billing" label="Workflow" />
           <button 
             onClick={() => navigate('/diagnostics')}
             className="text-sm text-blue-600 hover:underline"
