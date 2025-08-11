@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LAIT Authentication System Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-8 text-gray-900">
+            🚀 LAIT Authentication System Test
+        </h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
+            <!-- Registration Section -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">User Registration</h2>
+                <form id="registerForm" class="space-y-4">
+                    <input type="email" id="regEmail" placeholder="Email" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600">
+                    <input type="password" id="regPassword" placeholder="Password" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600">
+                    <input type="text" id="regFirstName" placeholder="First Name" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600">
+                    <input type="text" id="regLastName" placeholder="Last Name" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600">
+                    <input type="text" id="regCompany" placeholder="Company (Optional)" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600">
+                    <button type="submit" class="w-full bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-600">
+                        Register
+                    </button>
+                </form>
+                <div id="registerResult" class="mt-4"></div>
+            </div>
+            
+            <!-- Login Section -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">User Login</h2>
+                <form id="loginForm" class="space-y-4">
+                    <input type="email" id="loginEmail" placeholder="Email" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600">
+                    <input type="password" id="loginPassword" placeholder="Password" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600">
+                    <button type="submit" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-600">
+                        Login
+                    </button>
+                </form>
+                <div id="loginResult" class="mt-4"></div>
+            </div>
+            
+            <!-- Profile Section -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">User Profile</h2>
+                <button id="getProfileBtn" class="mb-4 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600">
+                    Get Profile
+                </button>
+                <div id="profileResult" class="mt-4"></div>
+                
+                <h3 class="text-lg font-medium mt-6 mb-2 text-gray-800">Update Profile</h3>
+                <form id="updateProfileForm" class="space-y-4">
+                    <input type="text" id="updateFirstName" placeholder="First Name" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600">
+                    <input type="text" id="updateLastName" placeholder="Last Name" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600">
+                    <input type="text" id="updateCompany" placeholder="Company" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600">
+                    <button type="submit" class="w-full bg-yellow-600 text-white py-2 px-4 rounded-md hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-600">
+                        Update Profile
+                    </button>
+                </form>
+                <div id="updateProfileResult" class="mt-4"></div>
+            </div>
+            
+            <!-- Password Management Section -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">Password Management</h2>
+                
+                <h3 class="text-lg font-medium mb-2 text-gray-800">Change Password</h3>
+                <form id="changePasswordForm" class="space-y-4 mb-6">
+                    <input type="password" id="currentPassword" placeholder="Current Password" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600">
+                    <input type="password" id="newPassword" placeholder="New Password" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600">
+                    <button type="submit" class="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-600">
+                        Change Password
+                    </button>
+                </form>
+                <div id="changePasswordResult" class="mb-4"></div>
+                
+                <h3 class="text-lg font-medium mb-2 text-gray-800">Forgot Password</h3>
+                <form id="forgotPasswordForm" class="space-y-4">
+                    <input type="email" id="forgotEmail" placeholder="Email" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600">
+                    <button type="submit" class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600">
+                        Send Reset Link
+                    </button>
+                </form>
+                <div id="forgotPasswordResult" class="mt-4"></div>
+            </div>
+        </div>
+        
+        <!-- API Status Section -->
+        <div class="bg-white rounded-lg shadow-md p-6 mt-6 max-w-6xl mx-auto">
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">API Status & Testing</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button id="testHealthBtn" class="bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700">
+                    Test Health Endpoint
+                </button>
+                <button id="testAuthHealthBtn" class="bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700">
+                    Test Auth Health
+                </button>
+                <button id="logoutBtn" class="bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700">
+                    Logout
+                </button>
+            </div>
+            <div id="statusResult" class="mt-4 p-4 bg-gray-100 rounded-md overflow-auto max-h-96"></div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = 'http://localhost:5003';
+        let authToken = localStorage.getItem('authToken') || '';
+        
+        // Helper functions
+        function displayResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            const colorClass = isError ? 'text-red-600' : 'text-green-600';
+            element.innerHTML = `<div class="${colorClass}"><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+        }
+        
+        function displayError(elementId, error) {
+            displayResult(elementId, { error: error.message || error }, true);
+        }
+        
+        async function makeRequest(url, options = {}) {
+            try {
+                const response = await fetch(`${BASE_URL}${url}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(authToken && { 'Authorization': `Bearer ${authToken}` }),
+                        ...options.headers
+                    },
+                    ...options
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || data.message || `HTTP ${response.status}`);
+                }
+                
+                return data;
+            } catch (error) {
+                console.error('Request failed:', error);
+                throw error;
+            }
+        }
+        
+        // Registration
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const data = await makeRequest('/api/auth/register', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        email: document.getElementById('regEmail').value,
+                        password: document.getElementById('regPassword').value,
+                        first_name: document.getElementById('regFirstName').value,
+                        last_name: document.getElementById('regLastName').value,
+                        company: document.getElementById('regCompany').value
+                    })
+                });
+                
+                displayResult('registerResult', data);
+                
+                if (data.user_id) {
+                    document.getElementById('registerForm').reset();
+                }
+            } catch (error) {
+                displayError('registerResult', error);
+            }
+        });
+        
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const data = await makeRequest('/api/auth/login', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        email: document.getElementById('loginEmail').value,
+                        password: document.getElementById('loginPassword').value
+                    })
+                });
+                
+                displayResult('loginResult', data);
+                
+                if (data.token) {
+                    authToken = data.token;
+                    localStorage.setItem('authToken', authToken);
+                    document.getElementById('loginForm').reset();
+                }
+            } catch (error) {
+                displayError('loginResult', error);
+            }
+        });
+        
+        // Get Profile
+        document.getElementById('getProfileBtn').addEventListener('click', async () => {
+            try {
+                const data = await makeRequest('/api/auth/profile');
+                displayResult('profileResult', data);
+            } catch (error) {
+                displayError('profileResult', error);
+            }
+        });
+        
+        // Update Profile
+        document.getElementById('updateProfileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const updateData = {};
+                const firstName = document.getElementById('updateFirstName').value;
+                const lastName = document.getElementById('updateLastName').value;
+                const company = document.getElementById('updateCompany').value;
+                
+                if (firstName) updateData.first_name = firstName;
+                if (lastName) updateData.last_name = lastName;
+                if (company) updateData.company = company;
+                
+                const data = await makeRequest('/api/auth/profile', {
+                    method: 'PUT',
+                    body: JSON.stringify(updateData)
+                });
+                
+                displayResult('updateProfileResult', data);
+                document.getElementById('updateProfileForm').reset();
+            } catch (error) {
+                displayError('updateProfileResult', error);
+            }
+        });
+        
+        // Change Password
+        document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const data = await makeRequest('/api/auth/change-password', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        current_password: document.getElementById('currentPassword').value,
+                        new_password: document.getElementById('newPassword').value
+                    })
+                });
+                
+                displayResult('changePasswordResult', data);
+                document.getElementById('changePasswordForm').reset();
+            } catch (error) {
+                displayError('changePasswordResult', error);
+            }
+        });
+        
+        // Forgot Password
+        document.getElementById('forgotPasswordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const data = await makeRequest('/api/auth/forgot-password', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        email: document.getElementById('forgotEmail').value
+                    })
+                });
+                
+                displayResult('forgotPasswordResult', data);
+                document.getElementById('forgotPasswordForm').reset();
+            } catch (error) {
+                displayError('forgotPasswordResult', error);
+            }
+        });
+        
+        // Test Health
+        document.getElementById('testHealthBtn').addEventListener('click', async () => {
+            try {
+                const data = await makeRequest('/api/health');
+                displayResult('statusResult', { health: data });
+            } catch (error) {
+                displayError('statusResult', error);
+            }
+        });
+        
+        // Test Auth Health
+        document.getElementById('testAuthHealthBtn').addEventListener('click', async () => {
+            try {
+                const data = await makeRequest('/api/auth/health');
+                displayResult('statusResult', { authHealth: data });
+            } catch (error) {
+                displayError('statusResult', error);
+            }
+        });
+        
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            try {
+                await makeRequest('/api/auth/logout', { method: 'POST' });
+                authToken = '';
+                localStorage.removeItem('authToken');
+                displayResult('statusResult', { message: 'Logged out successfully' });
+            } catch (error) {
+                displayError('statusResult', error);
+            }
+        });
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            if (authToken) {
+                displayResult('statusResult', { message: 'Auth token found in localStorage', token: authToken.substring(0, 50) + '...' });
+            }
+        });
+    </script>
+</body>
+</html>

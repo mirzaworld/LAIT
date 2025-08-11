@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 
 # Import all routes for easy importing
 from .auth import auth_bp
+from .enhanced_auth import enhanced_auth_bp
 # from .invoice import invoice_bp
 from .invoices import invoices_bp
 from .analytics import analytics_bp
@@ -18,7 +19,8 @@ from .enhanced_upload import upload_bp
 
 # List of all blueprints
 blueprints = [
-    (auth_bp, '/api/auth'),
+    (auth_bp, '/api/auth'),  # Legacy auth routes
+    (enhanced_auth_bp, '/api/auth'),  # Enhanced auth with complete user management
     (invoices_bp, None),  # url_prefix already included in blueprint
     (analytics_bp, '/api/analytics'),
     (admin_bp, '/api/admin'),
