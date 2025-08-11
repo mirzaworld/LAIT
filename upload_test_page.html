@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LAIT Upload Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background-color: #cce7ff; border: 1px solid #b3d9ff; color: #004085; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        button { margin: 5px; padding: 8px 16px; cursor: pointer; }
+        input[type="file"] { margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🚀 LAIT Upload Test</h1>
+    <p>Testing the new Upload page with real backend on port 5003</p>
+    
+    <div>
+        <h3>1. Test File Upload</h3>
+        <input type="file" id="fileInput" accept=".pdf,.txt,.doc,.docx">
+        <button onclick="testUpload()">Upload File</button>
+        <div id="upload-result"></div>
+    </div>
+    
+    <div>
+        <h3>2. Backend Health Check</h3>
+        <button onclick="testHealth()">Check Backend Health</button>
+        <div id="health-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5003/api';
+        
+        function logResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            element.innerHTML = `<div class="result ${className}"><pre>${message}</pre></div>`;
+        }
+
+        async function testHealth() {
+            try {
+                logResult('health-result', 'Testing backend health...', 'info');
+                
+                const response = await fetch(`${API_BASE}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                const data = await response.json();
+                logResult('health-result', `Health check: ${response.status}\n${JSON.stringify(data, null, 2)}`, response.ok ? 'success' : 'error');
+            } catch (error) {
+                logResult('health-result', `Health check failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testUpload() {
+            try {
+                const fileInput = document.getElementById('fileInput');
+                const file = fileInput.files[0];
+                
+                if (!file) {
+                    logResult('upload-result', 'Please select a file first', 'error');
+                    return;
+                }
+                
+                logResult('upload-result', `Uploading file: ${file.name} (${file.size} bytes)...`, 'info');
+                
+                // Test with a mock token (you'll need to add authentication first)
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const response = await fetch(`${API_BASE}/invoices/upload`, {
+                    method: 'POST',
+                    // Note: No Authorization header for now - will show auth error
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    logResult('upload-result', `Upload successful!\n${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    logResult('upload-result', `Upload failed: ${response.status}\n${JSON.stringify(data, null, 2)}`, 'error');
+                }
+                
+            } catch (error) {
+                logResult('upload-result', `Upload error: ${error.message}`, 'error');
+            }
+        }
+
+        // Test health on page load
+        window.onload = () => {
+            testHealth();
+        };
+    </script>
+</body>
+</html>
