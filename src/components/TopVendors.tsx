@@ -46,7 +46,7 @@ const TopVendors: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {vendors.slice(0, 5).map((vendor, index) => {
+          {Array.isArray(vendors) && vendors.slice(0, 5).map((vendor, index) => {
             const changePercent = getChangePercent(vendor.performance_score);
             
             return (

@@ -49,13 +49,19 @@ const refreshTokenIfNeeded = async () => {
 
 const getAuthHeaders = (): HeadersInit => {
   const token = getAuthToken();
-  return {
+  const headers: HeadersInit = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
-    'Origin': window.location.origin,
-    // In development, use mock token if no real token is available
-    'Authorization': token ? `Bearer ${token}` : 'Bearer mock-jwt-token-for-development'
   };
+  
+  // In development, always use the mock token for testing
+  if (import.meta.env.DEV) {
+    headers['Authorization'] = 'Bearer mock-jwt-token-for-development';
+  } else if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  return headers;
 };
 
 // Authentication functions
@@ -230,8 +236,9 @@ export const getInvoices = async (status?: string, vendor?: string): Promise<Inv
     }
     
     const data = await response.json();
-    console.log('Invoice data received:', data.length, 'invoices');
-    return data; // Backend returns invoices array directly
+    console.log('Invoice data received:', data);
+    // Backend returns { items: [...] } so we need to access the items property
+    return data.items || [];
   } catch (error) {
     console.error('Error fetching invoices:', error);
     if (error instanceof TypeError && error.message.includes('fetch')) {
@@ -355,7 +362,8 @@ export const getVendors = async (): Promise<Vendor[]> => {
     }
     
     const data = await response.json();
-    return data; // Backend returns vendors array directly
+    // Backend returns { vendors: [...] } so we need to access the vendors property
+    return data.vendors || [];
   } catch (error) {
     console.error('Error fetching vendors:', error);
     throw error;
