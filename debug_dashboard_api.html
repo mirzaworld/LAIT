@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LAIT Frontend API Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        .success { background-color: #d4edda; }
+        .error { background-color: #f8d7da; }
+        .loading { background-color: #fff3cd; }
+        pre { font-size: 12px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔍 LAIT Frontend API Debug</h1>
+    <button onclick="testFrontendAPI()">Test Frontend API Communication</button>
+    <button onclick="clearResults()">Clear Results</button>
+    
+    <div id="results"></div>
+    
+    <script>
+        const API_BASE = 'http://localhost:5003';
+        const resultsDiv = document.getElementById('results');
+        
+        function addResult(title, type, message, data) {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            
+            const emoji = type === 'success' ? '✅' : type === 'error' ? '❌' : '⏳';
+            div.innerHTML = `
+                <strong>${emoji} ${title}</strong><br>
+                ${message}
+                ${data ? `<pre>${JSON.stringify(data, null, 2)}</pre>` : ''}
+            `;
+            resultsDiv.appendChild(div);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+        
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+        }
+        
+        async function testFrontendAPI() {
+            clearResults();
+            addResult('Test Started', 'loading', 'Testing frontend to backend API communication...');
+            
+            // Test 1: Basic fetch to dashboard metrics
+            try {
+                addResult('Dashboard Metrics Test', 'loading', 'Fetching dashboard metrics...');
+                
+                const response = await fetch(`${API_BASE}/api/dashboard/metrics`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer mock-jwt-token-for-development',
+                        'Origin': window.location.origin
+                    },
+                    mode: 'cors'
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', [...response.headers.entries()]);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                const data = await response.json();
+                addResult('Dashboard Metrics Test', 'success', `Status: ${response.status}`, data);
+                
+            } catch (error) {
+                console.error('Dashboard metrics error:', error);
+                addResult('Dashboard Metrics Test', 'error', error.message);
+            }
+            
+            // Test 2: Test notifications endpoint
+            try {
+                addResult('Notifications Test', 'loading', 'Fetching notifications...');
+                
+                const response = await fetch(`${API_BASE}/api/notifications`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer mock-jwt-token-for-development'
+                    },
+                    mode: 'cors'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                addResult('Notifications Test', 'success', `Status: ${response.status}`, data);
+                
+            } catch (error) {
+                console.error('Notifications error:', error);
+                addResult('Notifications Test', 'error', error.message);
+            }
+            
+            // Test 3: Test health endpoint
+            try {
+                addResult('Health Check', 'loading', 'Checking backend health...');
+                
+                const response = await fetch(`${API_BASE}/api/health`, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                addResult('Health Check', 'success', `Status: ${response.status}`, data);
+                
+            } catch (error) {
+                console.error('Health check error:', error);
+                addResult('Health Check', 'error', error.message);
+            }
+            
+            addResult('Test Complete', 'success', 'All API tests completed. Check results above.');
+        }
+        
+        // Auto-run test
+        window.onload = () => {
+            setTimeout(testFrontendAPI, 1000);
+        };
+    </script>
+</body>
+</html>
