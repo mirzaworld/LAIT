@@ -27,7 +27,7 @@ async function testSystem() {
         const testContent = new Blob(['Legal Services Invoice\nVendor: Test Law Firm\nAmount: $50,000\nMatter: Contract Review'], { type: 'text/plain' });
         formData.append('file', testContent, 'test_legal_invoice.txt');
         
-        const uploadResponse = await fetch(`${API_URL}/upload-invoice`, {
+        const uploadResponse = await fetch(`${API_URL}/invoices/upload`, {
             method: 'POST',
             body: formData
         });

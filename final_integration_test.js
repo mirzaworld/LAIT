@@ -47,7 +47,7 @@ async function testFileUpload() {
         const blob = new Blob(['Mock invoice content'], { type: 'application/pdf' });
         formData.append('file', blob, 'test_invoice.pdf');
         
-        const response = await fetch(`${API_URL}/upload-invoice`, {
+        const response = await fetch(`${API_URL}/invoices/upload`, {
             method: 'POST',
             body: formData
         });

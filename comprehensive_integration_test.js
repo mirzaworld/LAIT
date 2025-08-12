@@ -111,7 +111,7 @@ await runTest('File Upload', async () => {
     formData.append('category', 'Legal Services');
     formData.append('description', 'Integration test invoice');
     
-    const response = await fetch(`${API_BASE}/upload-invoice`, {
+    const response = await fetch(`${API_BASE}/invoices/upload`, {
         method: 'POST',
         body: formData
     });
