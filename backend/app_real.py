@@ -27,6 +27,23 @@ import csv
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Try to import pandas (only needed for ML)
+try:
+    import pandas as pd
+    PANDAS_AVAILABLE = True
+except ImportError:
+    logger.warning("⚠️  pandas not available - ML features will be limited")
+    PANDAS_AVAILABLE = False
+
+# Import ML service
+try:
+    from services.ml_service import score_lines as ml_score_lines, get_model_status
+    ML_SERVICE_AVAILABLE = True
+    logger.info("✅ ML service imported successfully")
+except ImportError as e:
+    logger.warning(f"⚠️  ML service not available: {e}")
+    ML_SERVICE_AVAILABLE = False
+
 # Flask app setup
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('JWT_SECRET', 'lait-dev-secret-key-2025')
@@ -422,8 +439,84 @@ def parse_text_content(content: str) -> List[Dict[str, Any]]:
     
     return lines
 
-def calculate_anomaly_score(hours: float, rate: float, line_total: float) -> tuple[float, bool, str]:
-    """Calculate anomaly score and flagging for a line item"""
+def score_invoice_lines(lines_data: List[Dict]) -> tuple[List[Dict], Dict[str, Any]]:
+    """
+    Score invoice lines using ML service with fallback to deterministic scoring
+    
+    Args:
+        lines_data: List of dictionaries containing line item data
+        
+    Returns:
+        Tuple of (scored_lines_data, scoring_metadata)
+    """
+    if not lines_data:
+        return [], {"method": "no_data", "note": "No lines to score"}
+    
+    try:
+        if ML_SERVICE_AVAILABLE and PANDAS_AVAILABLE:
+            # Convert to DataFrame for ML service
+            df = pd.DataFrame(lines_data)
+            
+            # Use ML service
+            scoring_results, metadata = ml_score_lines(df)
+            
+            # Apply scores back to lines_data
+            for i, (score, is_flagged, flag_reason) in enumerate(scoring_results):
+                if i < len(lines_data):
+                    lines_data[i]['anomaly_score'] = score
+                    lines_data[i]['is_flagged'] = is_flagged
+                    lines_data[i]['flag_reason'] = flag_reason
+            
+            logger.info(f"ML scoring completed: {len(scoring_results)} lines scored")
+            return lines_data, metadata
+        
+        else:
+            # Fallback to deterministic scoring
+            reason = "ML service not available"
+            if ML_SERVICE_AVAILABLE and not PANDAS_AVAILABLE:
+                reason = "pandas not available for ML"
+            elif not ML_SERVICE_AVAILABLE:
+                reason = "ML service import failed"
+                
+            metadata = {
+                "method": "deterministic_fallback",
+                "note": "model_fallback",
+                "reason": reason,
+                "lines_scored": len(lines_data)
+            }
+            
+            for line in lines_data:
+                score, is_flagged, flag_reason = calculate_anomaly_score_legacy(
+                    float(line.get('billable_hours', 0)),
+                    float(line.get('rate', 0)),
+                    float(line.get('amount', 0))
+                )
+                line['anomaly_score'] = score
+                line['is_flagged'] = is_flagged
+                line['flag_reason'] = flag_reason
+            
+            logger.info(f"Deterministic fallback scoring completed: {len(lines_data)} lines scored")
+            return lines_data, metadata
+            
+    except Exception as e:
+        logger.error(f"Error in score_invoice_lines: {e}")
+        # Emergency fallback
+        metadata = {
+            "method": "emergency_fallback", 
+            "note": "model_fallback",
+            "error": str(e),
+            "lines_scored": len(lines_data)
+        }
+        
+        for line in lines_data:
+            line['anomaly_score'] = 0.1
+            line['is_flagged'] = False
+            line['flag_reason'] = f"Emergency fallback - error in scoring"
+        
+        return lines_data, metadata
+
+def calculate_anomaly_score_legacy(hours: float, rate: float, line_total: float) -> tuple[float, bool, str]:
+    """Legacy deterministic anomaly scoring (renamed from calculate_anomaly_score)"""
     anomaly_score = (rate / 1000) + (hours / 12) + (line_total / 5000)
     
     flag_reasons = []
@@ -435,7 +528,7 @@ def calculate_anomaly_score(hours: float, rate: float, line_total: float) -> tup
         flag_reasons.append(f"High line total: ${line_total}")
     
     is_flagged = bool(flag_reasons)
-    flag_reason = "; ".join(flag_reasons) if flag_reasons else None
+    flag_reason = "; ".join(flag_reasons) if flag_reasons else "Normal billing pattern"
     
     return anomaly_score, is_flagged, flag_reason
 
@@ -471,6 +564,22 @@ def log_public_requests_updated():
 def health_check():
     """Health check endpoint"""
     return jsonify({'ok': True, 'timestamp': datetime.utcnow().isoformat()})
+
+@app.route('/api/ml/status', methods=['GET'])
+def ml_status():
+    """Get ML model status"""
+    if ML_SERVICE_AVAILABLE:
+        status = get_model_status()
+        status['service_available'] = True
+    else:
+        status = {
+            'service_available': False,
+            'models_loaded': False,
+            'fallback_mode': True,
+            'reason': 'ML service import failed'
+        }
+    
+    return jsonify(status)
 
 @app.route('/api/auth/register', methods=['POST'])
 def register():
@@ -691,17 +800,22 @@ def upload_invoice():
         db.session.add(invoice)
         db.session.flush()  # Get invoice ID
         
+        # Score all lines using ML service (with fallback to deterministic)
+        scored_lines_data, scoring_metadata = score_invoice_lines(lines_data)
+        
         # Process and create line items
         total_amount = 0.0
         flagged_count = 0
         
-        for line_data in lines_data:
+        for line_data in scored_lines_data:
             hours = float(line_data.get('hours', 0))
             rate = float(line_data.get('rate', 0))
             line_total = float(line_data.get('line_total', hours * rate))
             
-            # Calculate anomaly score and flagging
-            anomaly_score, is_flagged, flag_reason = calculate_anomaly_score(hours, rate, line_total)
+            # Get ML scoring results
+            anomaly_score = line_data.get('anomaly_score', 0.0)
+            is_flagged = line_data.get('is_flagged', False)
+            flag_reason = line_data.get('flag_reason', 'No scoring applied')
             
             if is_flagged:
                 flagged_count += 1
@@ -727,16 +841,25 @@ def upload_invoice():
         db.session.commit()
         
         logger.info(f"Invoice processed: ID={invoice.id}, Lines={len(lines_data)}, Flagged={flagged_count}")
+        logger.info(f"Scoring method: {scoring_metadata.get('method', 'unknown')}")
         
-        return jsonify({
+        response_data = {
             'invoice_id': invoice.id,
             'vendor': vendor_name,
             'total_amount': total_amount,
             'lines_processed': len(lines_data),
             'flagged': flagged_count,
             'invoice_number': invoice_number,
-            'date': invoice_date.isoformat() if invoice_date else None
-        }), 201
+            'date': invoice_date.isoformat() if invoice_date else None,
+            'scoring_method': scoring_metadata.get('method', 'unknown')
+        }
+        
+        # Add model fallback note if applicable
+        if scoring_metadata.get('note') == 'model_fallback':
+            response_data['note'] = 'model_fallback'
+            response_data['scoring_info'] = scoring_metadata.get('reason', 'ML models not available')
+        
+        return jsonify(response_data), 201
         
     except Exception as e:
         db.session.rollback()
