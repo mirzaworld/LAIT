@@ -21,6 +21,9 @@ import pdfplumber
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_limiter.errors import RateLimitExceeded
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func, text
 from werkzeug.utils import secure_filename
@@ -47,6 +50,46 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
 CORS(app, origins=['http://localhost:5173', 'http://localhost:3000'])
+
+# Initialize rate limiter with Redis backend (fallback to memory)
+def get_user_id_from_token():
+    """Custom key function to rate limit by user token"""
+    try:
+        if jwt_required(optional=True)():
+            return get_jwt_identity()
+        return get_remote_address(request)
+    except:
+        return get_remote_address(request)
+
+def get_user_token_key():
+    """Get rate limit key from JWT token for authenticated endpoints"""
+    try:
+        from flask_jwt_extended import verify_jwt_in_request
+        verify_jwt_in_request(optional=True)
+        user_id = get_jwt_identity()
+        if user_id:
+            return f"user:{user_id}"
+        return get_remote_address(request)
+    except:
+        return get_remote_address(request)
+
+# Configure limiter with Redis if available, otherwise use memory
+redis_url = os.environ.get('REDIS_URL', 'redis://localhost:6379/1')
+try:
+    limiter = Limiter(
+        key_func=get_remote_address,
+        app=app,
+        storage_uri=redis_url,
+        default_limits=["1000 per hour", "100 per minute"]
+    )
+    logger.info(f"Rate limiter initialized with Redis: {redis_url}")
+except Exception as e:
+    logger.warning(f"Failed to connect to Redis, using memory storage: {e}")
+    limiter = Limiter(
+        key_func=get_remote_address,
+        app=app,
+        default_limits=["1000 per hour", "100 per minute"]
+    )
 
 # Ensure upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -573,6 +616,7 @@ def register():
         return jsonify({'error': 'Registration failed'}), 500
 
 @app.route('/api/auth/login', methods=['POST'])
+@limiter.limit("5 per minute")
 def login():
     """User authentication with bcrypt verification"""
     try:
@@ -635,6 +679,7 @@ def get_current_user():
 
 @app.route('/api/invoices/upload', methods=['POST'])
 @jwt_required()
+@limiter.limit("60 per minute", key_func=get_user_token_key)
 def upload_invoice():
     """Upload and analyze invoice with full text processing"""
     try:
@@ -945,6 +990,15 @@ def not_found(error):
 def internal_error(error):
     db.session.rollback()
     return jsonify({'error': 'Internal server error'}), 500
+
+@app.errorhandler(429)
+def rate_limit_exceeded(error):
+    """Handle rate limit exceeded errors"""
+    return jsonify({
+        'error': 'Rate limit exceeded',
+        'message': 'Too many requests. Please try again later.',
+        'retry_after': getattr(error, 'retry_after', 60)
+    }), 429
 
 @jwt.expired_token_loader
 def expired_token_callback(jwt_header, jwt_payload):
