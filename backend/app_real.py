@@ -684,6 +684,23 @@ def login():
         logger.error(f"Login error: {str(e)}")
         return jsonify({'error': 'Login failed'}), 500
 
+@app.route('/api/auth/me', methods=['GET'])
+@jwt_required
+def get_current_user_info():
+    """Get current user information"""
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        return jsonify({
+            'user': user.to_dict()
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Get user info error: {str(e)}")
+        return jsonify({'error': 'Failed to get user info'}), 500
+
 @app.route('/api/invoices/upload', methods=['POST'])
 @limiter.limit("60 per minute", key_func=get_user_id_for_rate_limit)
 @jwt_required
@@ -902,6 +919,40 @@ def get_invoices():
         logger.error(f"Get invoices error: {str(e)}")
         return jsonify({'error': 'Failed to retrieve invoices'}), 500
 
+@app.route('/api/invoices/<int:invoice_id>', methods=['GET'])
+@jwt_required
+def get_invoice(invoice_id):
+    """Get individual invoice by ID"""
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        invoice = Invoice.query.filter_by(id=invoice_id, user_id=user.id).first()
+        if not invoice:
+            return jsonify({'error': 'Invoice not found'}), 404
+        
+        result = {
+            'id': invoice.id,
+            'vendor_name': invoice.vendor_name,
+            'invoice_number': invoice.invoice_number,
+            'date': invoice.date.isoformat() if invoice.date else None,
+            'total_amount': invoice.total_amount,
+            'lines_processed': invoice.lines_processed,
+            'flagged_lines': invoice.flagged_lines,
+            'status': invoice.status,
+            'filename': invoice.filename,
+            'created_at': invoice.created_at.isoformat(),
+            'ml_risk_score': invoice.ml_risk_score,
+            'compliance_flags': invoice.compliance_flags or []
+        }
+        
+        return jsonify(result), 200
+        
+    except Exception as e:
+        logger.error(f"Get invoice error: {str(e)}")
+        return jsonify({'error': 'Failed to retrieve invoice'}), 500
+
 @app.route('/api/dashboard/metrics', methods=['GET'])
 @jwt_required
 def dashboard_metrics():
@@ -962,6 +1013,199 @@ def dashboard_metrics():
         logger.error(f"Dashboard metrics error: {str(e)}")
         return jsonify({'error': 'Failed to retrieve metrics'}), 500
 
+@app.route('/api/analytics/summary', methods=['GET'])
+@jwt_required
+def analytics_summary():
+    """Get analytics summary for current user"""
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Total spend and invoice count
+        totals = db.session.query(
+            func.sum(Invoice.total_amount).label('total_spend'),
+            func.count(Invoice.id).label('invoices_count')
+        ).filter_by(user_id=user.id).first()
+        
+        total_spend = float(totals.total_spend) if totals.total_spend else 0.0
+        invoices_count = totals.invoices_count or 0
+        
+        return jsonify({
+            'totalSpend': total_spend,
+            'totalInvoices': invoices_count,
+            'avgInvoiceAmount': total_spend / invoices_count if invoices_count > 0 else 0
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Analytics summary error: {str(e)}")
+        return jsonify({'error': 'Failed to retrieve analytics summary'}), 500
+
+@app.route('/api/analytics/spending', methods=['GET'])
+@jwt_required  
+def analytics_spending():
+    """Get spending analytics by timeframe"""
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+            
+        timeframe = request.args.get('timeframe', 'month')
+        
+        # Calculate date range based on timeframe
+        if timeframe == 'week':
+            start_date = datetime.utcnow() - timedelta(days=7)
+        elif timeframe == 'year':
+            start_date = datetime.utcnow() - timedelta(days=365)
+        else:  # default to month
+            start_date = datetime.utcnow() - timedelta(days=30)
+            
+        # Get spending data for the timeframe
+        spending_data = db.session.query(
+            func.date(Invoice.created_at).label('date'),
+            func.sum(Invoice.total_amount).label('amount')
+        ).filter(
+            Invoice.user_id == user.id,
+            Invoice.created_at >= start_date
+        ).group_by(func.date(Invoice.created_at)).all()
+        
+        # Format the data
+        formatted_data = []
+        for row in spending_data:
+            date_str = row.date.strftime('%Y-%m-%d') if row.date else 'Unknown'
+            formatted_data.append({
+                'date': date_str,
+                'amount': float(row.amount) if row.amount else 0.0
+            })
+        
+        return jsonify({'spending': formatted_data}), 200
+        
+    except Exception as e:
+        logger.error(f"Analytics spending error: {str(e)}")
+        return jsonify({'error': 'Failed to retrieve spending analytics'}), 500
+
+@app.route('/api/analytics/vendors', methods=['GET'])
+@jwt_required
+def analytics_vendors():
+    """Get vendor analytics for current user"""
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Get vendor spending data
+        vendor_data = db.session.query(
+            Invoice.vendor_name,
+            func.sum(Invoice.total_amount).label('total_spend'),
+            func.count(Invoice.id).label('invoice_count')
+        ).filter_by(user_id=user.id).group_by(Invoice.vendor_name).all()
+        
+        # Format vendor data
+        vendors = []
+        for row in vendor_data:
+            vendors.append({
+                'name': row.vendor_name or 'Unknown Vendor',
+                'totalSpend': float(row.total_spend) if row.total_spend else 0.0,
+                'invoiceCount': row.invoice_count or 0
+            })
+        
+        # Sort by total spend descending
+        vendors.sort(key=lambda x: x['totalSpend'], reverse=True)
+        
+        return jsonify({'vendors': vendors}), 200
+        
+    except Exception as e:
+        logger.error(f"Analytics vendors error: {str(e)}")
+        return jsonify({'error': 'Failed to retrieve vendor analytics'}), 500
+
+@app.route('/api/notifications', methods=['GET'])
+@jwt_required
+def get_notifications():
+    """Get notifications for current user"""
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # For now, return sample notifications based on user's invoices
+        notifications = []
+        
+        # Check for recent uploads
+        recent_invoices = db.session.query(Invoice)\
+            .filter_by(user_id=user.id)\
+            .order_by(desc(Invoice.created_at))\
+            .limit(3).all()
+            
+        for invoice in recent_invoices:
+            notifications.append({
+                'id': f"upload_{invoice.id}",
+                'type': 'upload_success',
+                'title': 'Invoice Processed',
+                'message': f'Invoice from {invoice.vendor_name or "Unknown"} has been processed',
+                'timestamp': invoice.created_at.isoformat(),
+                'read': False
+            })
+        
+        return jsonify({'notifications': notifications}), 200
+        
+    except Exception as e:
+        logger.error(f"Get notifications error: {str(e)}")
+        return jsonify({'error': 'Failed to retrieve notifications'}), 500
+
+@app.route('/api/notifications/unread-count', methods=['GET'])
+@jwt_required
+def get_unread_count():
+    """Get unread notification count"""
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # For now, return count based on recent activity
+        recent_count = db.session.query(func.count(Invoice.id))\
+            .filter(
+                Invoice.user_id == user.id,
+                Invoice.created_at >= datetime.utcnow() - timedelta(days=1)
+            ).scalar() or 0
+            
+        return jsonify({'count': recent_count}), 200
+        
+    except Exception as e:
+        logger.error(f"Get unread count error: {str(e)}")
+        return jsonify({'error': 'Failed to get unread count'}), 500
+
+@app.route('/api/notifications/<notification_id>/ack', methods=['POST'])
+@jwt_required
+def acknowledge_notification(notification_id):
+    """Acknowledge a notification"""
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # For now, just return success
+        return jsonify({'message': 'Notification acknowledged'}), 200
+        
+    except Exception as e:
+        logger.error(f"Acknowledge notification error: {str(e)}")
+        return jsonify({'error': 'Failed to acknowledge notification'}), 500
+
+@app.route('/api/notifications/mark-all-read', methods=['POST'])
+@jwt_required
+def mark_all_notifications_read():
+    """Mark all notifications as read"""
+    try:
+        user = get_current_user()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # For now, just return success
+        return jsonify({'message': 'All notifications marked as read'}), 200
+        
+    except Exception as e:
+        logger.error(f"Mark all read error: {str(e)}")
+        return jsonify({'error': 'Failed to mark notifications as read'}), 500
+
 # ============================================================================
 # DATABASE INITIALIZATION
 # ============================================================================
@@ -987,11 +1231,21 @@ if __name__ == '__main__':
     logger.info("Starting LAIT Real Backend on port 5003")
     logger.info(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
     logger.info("Available endpoints:")
+    logger.info("  GET  /api/health")
+    logger.info("  GET  /api/ml/status")
     logger.info("  POST /api/auth/register")
     logger.info("  POST /api/auth/login")
+    logger.info("  GET  /api/auth/me")
     logger.info("  POST /api/invoices/upload")
     logger.info("  GET  /api/invoices")
+    logger.info("  GET  /api/invoices/{id}")
     logger.info("  GET  /api/dashboard/metrics")
-    logger.info("  GET  /api/health")
+    logger.info("  GET  /api/analytics/summary")
+    logger.info("  GET  /api/analytics/spending")
+    logger.info("  GET  /api/analytics/vendors")
+    logger.info("  GET  /api/notifications")
+    logger.info("  GET  /api/notifications/unread-count")
+    logger.info("  POST /api/notifications/{id}/ack")
+    logger.info("  POST /api/notifications/mark-all-read")
     
-    app.run(host='0.0.0.0', port=5003, debug=True)
+    app.run(host='0.0.0.0', port=5003, debug=False)

@@ -1,0 +1,52 @@
+FROM python:3.11-slim
+
+# Set metadata
+LABEL maintainer="LAIT Development Team"
+LABEL description="LAIT Backend Production Container"
+LABEL version="1.0.0"
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH="/app/backend:$PYTHONPATH"
+ENV FLASK_ENV=production
+ENV PORT=5003
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app directory
+WORKDIR /app
+
+# Copy requirements first for better layer caching
+COPY backend/requirements.txt /app/backend/requirements.txt
+
+# Install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r /app/backend/requirements.txt
+
+# Copy backend application
+COPY backend/ /app/backend/
+
+# Copy production startup script
+COPY backend/start_gunicorn.sh /app/start_gunicorn.sh
+RUN chmod +x /app/start_gunicorn.sh
+
+# Create non-root user for security
+RUN groupadd -r lait && useradd -r -g lait -d /app -s /sbin/nologin lait
+RUN chown -R lait:lait /app
+USER lait
+
+# Expose the port
+EXPOSE 5003
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:5003/api/health || exit 1
+
+# Set the entrypoint
+ENTRYPOINT ["/app/start_gunicorn.sh"]

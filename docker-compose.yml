@@ -6,7 +6,7 @@ services:
     ports:
       - "5003:5003"
     environment:
-      - FLASK_APP=backend/enhanced_app.py
+      - FLASK_APP=backend/app_real.py
       - FLASK_ENV=development
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/legalspend
       - REDIS_URL=redis://redis:6379/0
@@ -42,7 +42,7 @@ services:
     build: .
     command: celery -A backend.celery_worker.celery worker --loglevel=info
     environment:
-      - FLASK_APP=backend/enhanced_app.py
+      - FLASK_APP=backend/app_real.py
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/legalspend
       - REDIS_URL=redis://redis:6379/0
     depends_on:
