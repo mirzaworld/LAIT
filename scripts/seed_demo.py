@@ -127,8 +127,8 @@ def load_sample_data():
     try:
         with open(SAMPLE_DATA_PATH, 'r') as f:
             data = json.load(f)
-        print_success(f"Loaded sample data: {len(data['invoices'])} invoices")
-        return data['invoices']
+        print_success(f"Loaded sample data: {len(data)} invoices")
+        return data
     except FileNotFoundError:
         print_error(f"Sample data file not found: {SAMPLE_DATA_PATH}")
         return None
@@ -137,39 +137,40 @@ def load_sample_data():
         return None
 
 def create_invoice_via_api(token, invoice_data):
-    """Create an invoice using the upload API endpoint"""
+    """Create an invoice using the upload API endpoint with file simulation"""
     
-    # Prepare invoice data for API
-    api_data = {
-        "vendor": invoice_data["vendor_name"],
-        "invoice_number": invoice_data["invoice_number"], 
-        "date": invoice_data["invoice_date"],
-        "filename": invoice_data["filename"],
-        "lines": []
+    # Create a temporary text file with line items
+    invoice_content = f"Invoice: {invoice_data['matter_id']}\n"
+    invoice_content += f"Client: {invoice_data['client_name']}\n"
+    invoice_content += f"Vendor: {invoice_data['vendor']}\n"
+    invoice_content += f"Date: {invoice_data['invoice_date']}\n"
+    invoice_content += f"Description: {invoice_data['description']}\n"
+    invoice_content += f"Total: ${invoice_data['total_amount']:,.2f}\n\n"
+    
+    # Add line items
+    for line_item in invoice_data['line_items']:
+        invoice_content += f"{line_item}\n"
+    
+    # Create form data as if uploading a file
+    headers = {
+        "Authorization": f"Bearer {token}"
     }
     
-    # Convert lines to API format
-    for line in invoice_data["lines"]:
-        api_line = {
-            "description": line["description"],
-            "amount": line["amount"],
-            "line_number": line["line_number"],
-            "attorney": line.get("attorney", "Unknown"),
-            "billable_hours": line.get("billable_hours", 0),
-            "rate": line.get("rate", 0)
-        }
-        api_data["lines"].append(api_line)
+    # Simulate file upload using multipart form data
+    files = {
+        'file': (f"{invoice_data['matter_id']}.txt", invoice_content, 'text/plain')
+    }
     
-    # Call the upload API with JSON data
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
+    form_data = {
+        'client_name': invoice_data['client_name'],
+        'matter_id': invoice_data['matter_id']
     }
     
     try:
         response = requests.post(
             f"{BACKEND_URL}/api/invoices/upload",
-            json=api_data,
+            files=files,
+            data=form_data,
             headers=headers,
             timeout=30
         )
@@ -177,14 +178,15 @@ def create_invoice_via_api(token, invoice_data):
         if response.status_code in [200, 201]:
             result = response.json()
             invoice_id = result.get('invoice_id') or result.get('id')
-            return True, invoice_id
+            lines_processed = result.get('lines_processed', 0)
+            return True, invoice_id, lines_processed
         else:
-            print_error(f"Failed to create invoice {invoice_data['invoice_number']}: {response.text}")
-            return False, None
+            print_error(f"Failed to create invoice {invoice_data['matter_id']}: {response.text}")
+            return False, None, 0
             
     except requests.exceptions.RequestException as e:
-        print_error(f"API request failed for invoice {invoice_data['invoice_number']}: {e}")
-        return False, None
+        print_error(f"API request failed for invoice {invoice_data['matter_id']}: {e}")
+        return False, None, 0
 
 def seed_invoices(token, invoices_data):
     """Seed all sample invoices"""
@@ -192,23 +194,32 @@ def seed_invoices(token, invoices_data):
     
     success_count = 0
     total_count = len(invoices_data)
+    total_lines = 0
     
     for i, invoice in enumerate(invoices_data, 1):
-        vendor = invoice["vendor_name"]
-        invoice_num = invoice["invoice_number"]
-        line_count = len(invoice["lines"])
+        client = invoice["client_name"]
+        matter_id = invoice["matter_id"]
+        vendor = invoice["vendor"]
+        line_count = len(invoice["line_items"])
         
-        print_info(f"({i}/{total_count}) Creating invoice {invoice_num} from {vendor} ({line_count} lines)...")
+        print_info(f"({i}/{total_count}) Creating invoice {matter_id}")
+        print_info(f"  Client: {client}")
+        print_info(f"  Vendor: {vendor}")
+        print_info(f"  Lines: {line_count}")
         
-        success, invoice_id = create_invoice_via_api(token, invoice)
+        success, invoice_id, lines_processed = create_invoice_via_api(token, invoice)
         if success:
-            print_success(f"Created invoice {invoice_num} (ID: {invoice_id})")
+            print_success(f"✅ Created invoice {matter_id} (ID: {invoice_id}, Lines: {lines_processed})")
             success_count += 1
+            total_lines += lines_processed
         else:
-            print_error(f"Failed to create invoice {invoice_num}")
+            print_error(f"❌ Failed to create invoice {matter_id}")
+        
+        print()  # Add spacing between invoices
     
     print_header("Seeding Summary")
     print_success(f"Successfully created {success_count}/{total_count} invoices")
+    print_success(f"Total lines processed: {total_lines}")
     
     if success_count < total_count:
         print_warning(f"{total_count - success_count} invoices failed to create")
@@ -232,11 +243,11 @@ def get_dashboard_metrics(token):
             metrics = response.json()
             
             print_success("Dashboard metrics loaded:")
-            print(f"  📊 Total Invoices: {metrics.get('total_invoices', 0)}")
-            print(f"  💰 Total Amount: ${metrics.get('total_amount', 0):,.2f}")
+            print(f"  📊 Invoices Count: {metrics.get('invoices_count', 0)}")
+            print(f"  💰 Total Spend: ${metrics.get('total_spend', 0):,.2f}")
             print(f"  📝 Total Lines: {metrics.get('total_lines', 0)}")
             print(f"  🚩 Flagged Lines: {metrics.get('flagged_lines', 0)}")
-            print(f"  ⚖️  Vendors: {metrics.get('vendor_count', 0)}")
+            print(f"  ⚖️  Average Score: {metrics.get('avg_risk_score', 0):.2f}")
             
             flagged_pct = 0
             if metrics.get('total_lines', 0) > 0:
@@ -285,17 +296,31 @@ def main():
     if success_count > 0:
         get_dashboard_metrics(token)
     
-    # Final summary
+    # Final summary with usage instructions
     print_header("Seeding Complete")
     if success_count == len(invoices_data):
         print_success("🎉 All sample data seeded successfully!")
         print_info(f"Demo user: {DEMO_USER['email']} / {DEMO_USER['password']}")
         print_info("You can now:")
         print_info("  1. Login to the frontend with demo credentials")
-        print_info(f"  2. View dashboard metrics: {BACKEND_URL}/api/dashboard/metrics")
-        print_info(f"  3. List invoices: {BACKEND_URL}/api/invoices")
+        print_info(f"  2. View dashboard: http://localhost:5173")
+        print_info(f"  3. API endpoints:")
+        print_info(f"     • Metrics: {BACKEND_URL}/api/dashboard/metrics")
+        print_info(f"     • Invoices: {BACKEND_URL}/api/invoices")
+        
+        # Print the count for Makefile output
+        print_header("COUNT INSERTED")
+        print_success(f"{success_count} invoices inserted successfully")
+        
+        # Show sample curl command with token
+        print_header("Sample API Commands")
+        print_info("To test the API with curl:")
+        print_info(f'export JWT_TOKEN="{token[:50]}..."')
+        print_info(f'curl -H "Authorization: Bearer $JWT_TOKEN" {BACKEND_URL}/api/dashboard/metrics')
+        
     else:
         print_warning("Some invoices failed to seed. Check the errors above.")
+        print_info(f"Successfully inserted: {success_count} invoices")
 
 if __name__ == "__main__":
     main()
