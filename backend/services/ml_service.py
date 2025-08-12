@@ -17,11 +17,21 @@ Version: 1.0.0
 
 import os
 import logging
-import joblib
-import pandas as pd
-import numpy as np
 from pathlib import Path
 from typing import Tuple, List, Dict, Any, Optional
+
+# Try to import ML dependencies with fallback
+try:
+    import joblib
+    import pandas as pd
+    import numpy as np
+    ML_DEPS_AVAILABLE = True
+except ImportError as e:
+    # Create minimal stubs for graceful fallback
+    pd = None
+    np = None
+    joblib = None
+    ML_DEPS_AVAILABLE = False
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -30,11 +40,16 @@ class MLService:
     """ML Service for invoice line scoring and anomaly detection"""
     
     def __init__(self):
-        self.models_dir = Path(__file__).parent.parent.parent / 'models'
+        self.models_dir = Path(__file__).parent.parent / 'models'
         self.iso_forest_model = None
         self.overspend_model = None
         self.models_loaded = False
         self.fallback_mode = True
+        
+        # Check if ML dependencies are available
+        if not ML_DEPS_AVAILABLE:
+            logger.warning("⚠️  ML dependencies (pandas, numpy, joblib) not available - using fallback mode only")
+            return
         
         # Load models on initialization
         self._load_models()
@@ -70,8 +85,11 @@ class MLService:
             logger.error(f"❌ Error loading ML models: {e}")
             logger.info("📊 Falling back to deterministic scoring")
     
-    def _prepare_features(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _prepare_features(self, df):
         """Prepare features for ML models from invoice line DataFrame"""
+        if not ML_DEPS_AVAILABLE:
+            return df
+            
         try:
             # Create a copy to avoid modifying original
             features_df = df.copy()
@@ -130,8 +148,10 @@ class MLService:
                 'rate': df.get('rate', [0] * len(df))
             })
     
-    def _ml_score_lines(self, df: pd.DataFrame) -> List[Tuple[float, bool, str]]:
+    def _ml_score_lines(self, df) -> List[Tuple[float, bool, str]]:
         """Score lines using ML models"""
+        if not ML_DEPS_AVAILABLE:
+            return self._deterministic_score_lines(df)
         try:
             # Prepare features
             features = self._prepare_features(df)
@@ -178,7 +198,7 @@ class MLService:
             # Fall back to deterministic on ML error
             return self._deterministic_score_lines(df)
     
-    def _deterministic_score_lines(self, df: pd.DataFrame) -> List[Tuple[float, bool, str]]:
+    def _deterministic_score_lines(self, df) -> List[Tuple[float, bool, str]]:
         """Fallback deterministic scoring (original logic)"""
         results = []
         
@@ -261,46 +281,99 @@ class MLService:
         logger.info(f"📊 Deterministic scoring completed for {len(results)} lines")
         return results
     
-    def score_lines(self, df: pd.DataFrame) -> Tuple[List[Tuple[float, bool, str]], Dict[str, Any]]:
+    def score_lines(self, df):
         """
-        Main scoring function - uses ML models if available, falls back to deterministic
+        Main scoring function - returns DataFrame with required columns
         
         Args:
-            df: DataFrame with invoice line data
+            df: DataFrame with invoice line data (or list of dicts if pandas unavailable)
         
         Returns:
-            Tuple of (scoring_results, metadata)
-            scoring_results: List of (risk_score, is_flagged, flag_reason) tuples
-            metadata: Dictionary with scoring method info
+            DataFrame with columns: description, hours, rate, line_total, anomaly_score, is_flagged
+            (or list of dicts if pandas unavailable)
         """
+        if not ML_DEPS_AVAILABLE:
+            # Handle case when pandas is not available
+            return self._score_lines_fallback(df)
+            
         if df is None or len(df) == 0:
-            return [], {"method": "no_data", "note": "No lines to score"}
+            return pd.DataFrame(columns=['description', 'hours', 'rate', 'line_total', 'anomaly_score', 'is_flagged'])
         
-        # Metadata about scoring method
-        metadata = {
-            "method": "ml" if self.models_loaded else "deterministic",
-            "models_loaded": self.models_loaded,
-            "lines_scored": len(df)
-        }
+        # Create result DataFrame with required columns
+        result_df = df.copy()
+        
+        # Ensure required columns exist
+        result_df['description'] = result_df.get('description', '').astype(str)
+        result_df['hours'] = pd.to_numeric(result_df.get('billable_hours', 0), errors='coerce').fillna(0)
+        result_df['rate'] = pd.to_numeric(result_df.get('rate', 0), errors='coerce').fillna(0)
+        result_df['line_total'] = pd.to_numeric(result_df.get('amount', 0), errors='coerce').fillna(0)
         
         try:
             if self.models_loaded and not self.fallback_mode:
-                results = self._ml_score_lines(df)
-                metadata["note"] = "ML models used successfully"
+                # Use ML models
+                scoring_results = self._ml_score_lines(df)
+                anomaly_scores = [score for score, _, _ in scoring_results]
+                is_flagged_list = [flagged for _, flagged, _ in scoring_results]
             else:
-                results = self._deterministic_score_lines(df)
-                metadata["note"] = "model_fallback"
-                metadata["reason"] = "ML models not available - using deterministic scoring"
+                # Use deterministic fallback with exact formula from spec
+                anomaly_scores = []
+                is_flagged_list = []
+                
+                for _, row in result_df.iterrows():
+                    rate = float(row['rate'])
+                    hours = float(row['hours'])
+                    line_total = float(row['line_total'])
+                    
+                    # Exact formula from specification
+                    anomaly_score = (rate/1000) + (hours/12) + (line_total/5000)
+                    
+                    # Flag when rate>900 OR hours>10 OR line_total>3000
+                    is_flagged = rate > 900 or hours > 10 or line_total > 3000
+                    
+                    anomaly_scores.append(anomaly_score)
+                    is_flagged_list.append(is_flagged)
             
-            return results, metadata
+            result_df['anomaly_score'] = anomaly_scores
+            result_df['is_flagged'] = is_flagged_list
+            
+            # Return only required columns
+            return result_df[['description', 'hours', 'rate', 'line_total', 'anomaly_score', 'is_flagged']]
             
         except Exception as e:
             logger.error(f"Critical error in score_lines: {e}")
-            # Emergency fallback
-            emergency_results = [(0.1, False, f"Emergency fallback - error: {str(e)[:50]}...")] * len(df)
-            metadata["note"] = "emergency_fallback"
-            metadata["error"] = str(e)
-            return emergency_results, metadata
+            # Emergency fallback with deterministic scoring
+            result_df['anomaly_score'] = (result_df['rate']/1000) + (result_df['hours']/12) + (result_df['line_total']/5000)
+            result_df['is_flagged'] = (result_df['rate'] > 900) | (result_df['hours'] > 10) | (result_df['line_total'] > 3000)
+            return result_df[['description', 'hours', 'rate', 'line_total', 'anomaly_score', 'is_flagged']]
+
+    def _score_lines_fallback(self, data):
+        """Fallback scoring when pandas is not available"""
+        if not data:
+            return []
+        
+        results = []
+        for item in (data if isinstance(data, list) else [data]):
+            description = str(item.get('description', ''))
+            hours = float(item.get('billable_hours', 0))
+            rate = float(item.get('rate', 0))
+            line_total = float(item.get('amount', 0))
+            
+            # Exact formula from specification
+            anomaly_score = (rate/1000) + (hours/12) + (line_total/5000)
+            
+            # Flag when rate>900 OR hours>10 OR line_total>3000
+            is_flagged = rate > 900 or hours > 10 or line_total > 3000
+            
+            results.append({
+                'description': description,
+                'hours': hours,
+                'rate': rate,
+                'line_total': line_total,
+                'anomaly_score': anomaly_score,
+                'is_flagged': is_flagged
+            })
+        
+        return results
     
     def get_model_status(self) -> Dict[str, Any]:
         """Get current status of loaded models"""
@@ -325,15 +398,16 @@ def get_ml_service() -> MLService:
     return _ml_service
 
 # Convenience function for direct use
-def score_lines(df: pd.DataFrame) -> Tuple[List[Tuple[float, bool, str]], Dict[str, Any]]:
+def score_lines(df):
     """
     Score invoice lines using ML service
     
     Args:
-        df: DataFrame with invoice line data
+        df: DataFrame with invoice line data (or list of dicts)
         
     Returns:
-        Tuple of (scoring_results, metadata)
+        DataFrame with columns: description, hours, rate, line_total, anomaly_score, is_flagged
+        (or list of dicts if pandas unavailable)
     """
     service = get_ml_service()
     return service.score_lines(df)

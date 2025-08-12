@@ -47,7 +47,13 @@ except ImportError as e:
 # Flask app setup
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('JWT_SECRET', 'lait-dev-secret-key-2025')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///lait.db')
+
+# Database configuration - prefer Postgres, fallback to SQLite
+database_url = os.getenv('DATABASE_URL', 'sqlite:///lait.db')
+if database_url.startswith('postgres://'):
+    # Fix for Heroku Postgres URLs
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB max file size
 
@@ -453,21 +459,39 @@ def score_invoice_lines(lines_data: List[Dict]) -> tuple[List[Dict], Dict[str, A
         return [], {"method": "no_data", "note": "No lines to score"}
     
     try:
-        if ML_SERVICE_AVAILABLE and PANDAS_AVAILABLE:
-            # Convert to DataFrame for ML service
-            df = pd.DataFrame(lines_data)
+        if ML_SERVICE_AVAILABLE:
+            if PANDAS_AVAILABLE:
+                # Convert to DataFrame for ML service
+                df = pd.DataFrame(lines_data)
+                
+                # Use ML service - now returns DataFrame directly
+                scored_df = ml_score_lines(df)
+                
+                # Convert back to list of dicts and merge with original data
+                for i, (_, row) in enumerate(scored_df.iterrows()):
+                    if i < len(lines_data):
+                        lines_data[i]['anomaly_score'] = float(row['anomaly_score'])
+                        lines_data[i]['is_flagged'] = bool(row['is_flagged'])
+                        lines_data[i]['flag_reason'] = "ML scoring applied" if not row['is_flagged'] else "ML detected anomaly"
+            else:
+                # ML service available but pandas is not - use fallback mode
+                scored_data = ml_score_lines(lines_data)  # This will use fallback mode
+                
+                # Merge scored data back to original
+                for i, scored_item in enumerate(scored_data):
+                    if i < len(lines_data):
+                        lines_data[i]['anomaly_score'] = scored_item['anomaly_score']
+                        lines_data[i]['is_flagged'] = scored_item['is_flagged']
+                        lines_data[i]['flag_reason'] = "ML fallback applied" if not scored_item['is_flagged'] else "ML fallback detected anomaly"
             
-            # Use ML service
-            scoring_results, metadata = ml_score_lines(df)
+            metadata = {
+                "method": "ml",
+                "note": "ML service used successfully",
+                "pandas_available": PANDAS_AVAILABLE,
+                "lines_scored": len(lines_data)
+            }
             
-            # Apply scores back to lines_data
-            for i, (score, is_flagged, flag_reason) in enumerate(scoring_results):
-                if i < len(lines_data):
-                    lines_data[i]['anomaly_score'] = score
-                    lines_data[i]['is_flagged'] = is_flagged
-                    lines_data[i]['flag_reason'] = flag_reason
-            
-            logger.info(f"ML scoring completed: {len(scoring_results)} lines scored")
+            logger.info(f"ML scoring completed: {len(lines_data)} lines scored")
             return lines_data, metadata
         
         else:
@@ -570,16 +594,15 @@ def ml_status():
     """Get ML model status"""
     if ML_SERVICE_AVAILABLE:
         status = get_model_status()
-        status['service_available'] = True
+        return jsonify({
+            "fallback_mode": status.get('fallback_mode', True),
+            "service_available": True
+        })
     else:
-        status = {
-            'service_available': False,
-            'models_loaded': False,
-            'fallback_mode': True,
-            'reason': 'ML service import failed'
-        }
-    
-    return jsonify(status)
+        return jsonify({
+            "fallback_mode": True,
+            "service_available": False
+        })
 
 @app.route('/api/auth/register', methods=['POST'])
 def register():
@@ -592,7 +615,7 @@ def register():
         if not data:
             return create_error_response('Missing request body',
                                        'Send JSON data with email and password',
-                                       code=3101)
+                                       code=3101, status_code=400)
         
         email = data.get('email', '').strip().lower()
         password = data.get('password', '')
@@ -600,7 +623,7 @@ def register():
         if not email or not password:
             return create_error_response('Email and password are required',
                                        'Both email and password must be provided',
-                                       code=3102)
+                                       code=3102, status_code=400)
         
         if len(password) < 6:
             return create_error_response('Password must be at least 6 characters',
@@ -653,7 +676,7 @@ def login():
         if not data:
             return create_error_response('Missing request body', 
                                        'Send JSON data with email and password',
-                                       code=3001)
+                                       code=3001, status_code=400)
         
         email = data.get('email', '').strip().lower()
         password = data.get('password', '')
