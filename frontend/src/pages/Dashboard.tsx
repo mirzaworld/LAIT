@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { DollarSign, FileText, Users, TrendingUp, AlertCircle, Loader2 } from 'lucide-react';
-import api from '../../../src/services/api';
+import api from '../services/api';
 
 interface AnalyticsSummary {
   total_invoices: number;

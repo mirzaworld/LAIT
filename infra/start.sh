@@ -1,63 +1,62 @@
 #!/bin/bash
 
-# LAIT Infrastructure Startup Script
-set -e
+echo "🐳 LAIT Docker Development Stack"
+echo "================================"
+echo ""
 
-echo "🚀 Starting LAIT Infrastructure..."
-
-# Check if Docker is running
-if ! docker info > /dev/null 2>&1; then
-    echo "❌ Docker is not running. Please start Docker first."
+# Check if Docker is installed
+if ! command -v docker &> /dev/null; then
+    echo "❌ Docker is not installed. Please install Docker Desktop first:"
+    echo "   macOS: https://docs.docker.com/docker-for-mac/install/"
+    echo "   Linux: https://docs.docker.com/engine/install/"
+    echo ""
     exit 1
 fi
 
-# Check if docker-compose is available
-if ! command -v docker-compose &> /dev/null; then
-    echo "❌ docker-compose not found. Please install docker-compose."
+# Check if Docker Compose is available
+if ! docker compose version &> /dev/null; then
+    echo "❌ Docker Compose is not available. Please update Docker Desktop."
     exit 1
 fi
 
-# Navigate to infra directory
-cd "$(dirname "$0")"
+echo "✅ Docker is available"
+echo "✅ Docker Compose is available"
+echo ""
 
-# Check if .env file exists
-if [ ! -f "../backend/.env" ]; then
-    echo "📝 Creating .env file from example..."
-    cp .env.example ../backend/.env
-    echo "⚠️  Please edit ../backend/.env with your configuration"
-fi
+# Show the services that will be started
+echo "� Starting LAIT development stack with:"
+echo "   📊 PostgreSQL Database (port 5432)"
+echo "   🔄 Redis Cache (port 6379)"  
+echo "   🔧 API Backend (port 5003)"
+echo "   🌐 Web Frontend (port 5173)"
+echo ""
 
-# Start infrastructure services first
-echo "🏗️  Starting infrastructure services..."
-docker-compose up -d postgres redis minio
+# Start the services
+echo "⚡ Building and starting services..."
+docker compose up -d --build
 
-# Wait for services to be ready
-echo "⏳ Waiting for services to be ready..."
+# Wait a moment for services to start
 sleep 10
 
-# Check service health
-echo "🔍 Checking service health..."
-docker-compose ps
-
-# Start application services
-echo "🚀 Starting application services..."
-docker-compose up -d api worker web
-
-# Run database migration
-echo "🗃️  Running database migration..."
-docker-compose run --rm migrate
-
-# Show service status
-echo "✅ LAIT Infrastructure started successfully!"
 echo ""
-echo "🌐 Services available at:"
-echo "  - Frontend:      http://localhost:3000"
-echo "  - API:           http://localhost:5003"
-echo "  - MinIO Console: http://localhost:9001"
+echo "🎉 LAIT stack is starting up!"
 echo ""
-echo "📊 To view logs: docker-compose logs -f [service]"
-echo "🛑 To stop:      docker-compose down"
-echo ""
+echo "� Service Status:"
+docker compose ps
 
-# Show final status
-docker-compose ps
+echo ""
+echo "🧪 Testing API Health Check:"
+curl -s http://localhost:5003/api/health | python3 -m json.tool || echo "API not ready yet, please wait..."
+
+echo ""
+echo "🔗 Access URLs:"
+echo "   Frontend: http://localhost:5173"
+echo "   API:      http://localhost:5003"
+echo "   Database: postgres://postgres:postgres@localhost:5432/lait"
+echo "   Redis:    redis://localhost:6379"
+echo ""
+echo "� Useful commands:"
+echo "   View logs:    docker compose logs -f"
+echo "   Stop stack:   docker compose down"
+echo "   Restart:      docker compose restart"
+echo ""

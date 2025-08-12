@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { Upload as UploadIcon, FileText, AlertCircle, CheckCircle, Loader2, X, Eye } from 'lucide-react';
-import api from '../../../src/services/api';
+import api from '../services/api';
 
 interface UploadResult {
   message: string;
@@ -37,7 +37,7 @@ const Upload: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check if user is authenticated
-  const authenticated = api.isAuthenticated();
+  const authenticated = api.auth.isAuthenticated();
   const token = localStorage.getItem('lait_token');
 
   // Handle drag and drop

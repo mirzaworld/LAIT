@@ -1,29 +1,34 @@
-# Use an official Python runtime as a parent image
-FROM python:3.10-slim
+# Backend Dockerfile
+FROM python:3.11-slim
 
 # Set working directory
 WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
+    curl \
     build-essential \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY backend/requirements.txt /app/backend/requirements.txt
 
-# Copy the rest of the application
-COPY . .
+# Install Python dependencies
+RUN pip install --no-cache-dir -r backend/requirements.txt
 
-# Set environment variables
-ENV FLASK_APP=app.py
-ENV FLASK_ENV=production
-ENV PYTHONUNBUFFERED=1
+# Copy backend and ml directories
+COPY backend/ /app/backend/
+COPY ml/ /app/ml/
 
-# Expose the port the app runs on
-EXPOSE 5000
+# Create uploads directory
+RUN mkdir -p /app/backend/uploads
 
-# Command to run the application
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "app:app"]
+# Expose port
+EXPOSE 5003
+
+# Set Python path
+ENV PYTHONPATH=/app
+
+# Run the Flask application
+CMD ["python", "backend/app_real.py"]

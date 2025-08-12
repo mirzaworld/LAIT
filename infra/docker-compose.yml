@@ -2,261 +2,76 @@ version: '3.8'
 
 services:
   # PostgreSQL Database
-  postgres:
-    image: postgres:15-alpine
-    container_name: lait_postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: lait_production
-      POSTGRES_USER: lait_user
-      POSTGRES_PASSWORD: lait_password
-      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+  db:
+    image: postgres:15
+    container_name: lait_db
     ports:
       - "5432:5432"
+    environment:
+      POSTGRES_DB: lait
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init-scripts:/docker-entrypoint-initdb.d
-    networks:
-      - lait_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U lait_user -d lait_production"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # Redis Cache & Queue
+  # Redis Cache
   redis:
-    image: redis:7-alpine
+    image: redis:7
     container_name: lait_redis
-    restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    networks:
-      - lait_network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
-      timeout: 3s
-      retries: 3
-    command: redis-server --appendonly yes --requirepass lait_redis_password
-
-  # MinIO Object Storage
-  minio:
-    image: minio/minio:latest
-    container_name: lait_minio
-    restart: unless-stopped
-    environment:
-      MINIO_ROOT_USER: lait_minio
-      MINIO_ROOT_PASSWORD: lait_minio_password
-      MINIO_CONSOLE_ADDRESS: ":9001"
-    ports:
-      - "9000:9000"  # API
-      - "9001:9001"  # Console
-    volumes:
-      - minio_data:/data
-    networks:
-      - lait_network
-    command: server /data
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
+      timeout: 5s
+      retries: 5
 
   # LAIT API Backend
   api:
     build:
-      context: ../backend
-      dockerfile: ../infra/Dockerfile.api
+      context: ..
+      dockerfile: backend/Dockerfile
     container_name: lait_api
-    restart: unless-stopped
     ports:
       - "5003:5003"
+    env_file:
+      - ../.env
     environment:
-      # Database Configuration
-      DATABASE_URL: postgresql://lait_user:lait_password@postgres:5432/lait_production
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: lait_production
-      POSTGRES_USER: lait_user
-      POSTGRES_PASSWORD: lait_password
-      
-      # Redis Configuration
-      REDIS_URL: redis://:lait_redis_password@redis:6379/0
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: lait_redis_password
-      
-      # MinIO Configuration
-      MINIO_ENDPOINT: minio:9000
-      MINIO_ACCESS_KEY: lait_minio
-      MINIO_SECRET_KEY: lait_minio_password
-      MINIO_BUCKET: lait-invoices
-      MINIO_SECURE: "false"
-      
-      # Application Configuration
-      FLASK_ENV: production
-      JWT_SECRET_KEY: your-super-secret-jwt-key-change-in-production
-      API_PORT: 5003
-      CORS_ORIGINS: http://localhost:3000,http://localhost:8080
-      
-      # AI/ML Configuration
-      AI_ANALYSIS_ENABLED: "true"
-      PDF_PROCESSING_ENABLED: "true"
-      
-      # Logging
-      LOG_LEVEL: INFO
-    volumes:
-      - ../backend:/app
-      - api_uploads:/app/uploads
-    networks:
-      - lait_network
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/lait
+      - REDIS_URL=redis://redis:6379
     depends_on:
-      postgres:
+      db:
         condition: service_healthy
       redis:
         condition: service_healthy
-      minio:
-        condition: service_healthy
-    env_file:
-      - ../backend/.env
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5003/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-  # Background Worker
-  worker:
-    build:
-      context: ../backend
-      dockerfile: ../infra/Dockerfile.worker
-    container_name: lait_worker
+    volumes:
+      - ../backend:/app/backend
+      - ../ml:/app/ml
     restart: unless-stopped
-    environment:
-      # Database Configuration
-      DATABASE_URL: postgresql://lait_user:lait_password@postgres:5432/lait_production
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: lait_production
-      POSTGRES_USER: lait_user
-      POSTGRES_PASSWORD: lait_password
-      
-      # Redis Configuration
-      REDIS_URL: redis://:lait_redis_password@redis:6379/0
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: lait_redis_password
-      
-      # MinIO Configuration
-      MINIO_ENDPOINT: minio:9000
-      MINIO_ACCESS_KEY: lait_minio
-      MINIO_SECRET_KEY: lait_minio_password
-      MINIO_BUCKET: lait-invoices
-      MINIO_SECURE: "false"
-      
-      # Worker Configuration
-      WORKER_CONCURRENCY: 4
-      WORKER_LOGLEVEL: INFO
-      CELERY_BROKER_URL: redis://:lait_redis_password@redis:6379/0
-      CELERY_RESULT_BACKEND: redis://:lait_redis_password@redis:6379/1
-      
-      # AI/ML Configuration
-      AI_ANALYSIS_ENABLED: "true"
-      PDF_PROCESSING_ENABLED: "true"
-    volumes:
-      - ../backend:/app
-      - worker_data:/app/worker_data
-    networks:
-      - lait_network
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-    env_file:
-      - ../backend/.env
-    command: python -m celery worker -A app_real.celery --loglevel=info --concurrency=4
 
   # Frontend Web Application
   web:
     build:
       context: ../frontend
-      dockerfile: ../infra/Dockerfile.web
+      dockerfile: Dockerfile
     container_name: lait_web
-    restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "5173:5173"
     environment:
-      VITE_API_BASE: http://localhost:5003
-      VITE_APP_NAME: LAIT
-      VITE_APP_VERSION: 1.0.0
-      NODE_ENV: production
+      - VITE_API_BASE=http://localhost:5003
     volumes:
       - ../frontend:/app
       - /app/node_modules
-    networks:
-      - lait_network
-    depends_on:
-      - api
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    command: npm run dev -- --host 0.0.0.0
+    restart: unless-stopped
 
-  # Database Migration & Setup
-  migrate:
-    build:
-      context: ../backend
-      dockerfile: ../infra/Dockerfile.migrate
-    container_name: lait_migrate
-    environment:
-      DATABASE_URL: postgresql://lait_user:lait_password@postgres:5432/lait_production
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: lait_production
-      POSTGRES_USER: lait_user
-      POSTGRES_PASSWORD: lait_password
-    volumes:
-      - ../backend:/app
-    networks:
-      - lait_network
-    depends_on:
-      postgres:
-        condition: service_healthy
-    env_file:
-      - ../backend/.env
-    command: python setup_database.py
-    profiles:
-      - tools
-
-# Persistent Volume Definitions
 volumes:
   postgres_data:
-    driver: local
-    name: lait_postgres_data
   redis_data:
-    driver: local
-    name: lait_redis_data
-  minio_data:
-    driver: local
-    name: lait_minio_data
-  api_uploads:
-    driver: local
-    name: lait_api_uploads
-  worker_data:
-    driver: local
-    name: lait_worker_data
-
-# Network Definition
-networks:
-  lait_network:
-    driver: bridge
-    name: lait_network
