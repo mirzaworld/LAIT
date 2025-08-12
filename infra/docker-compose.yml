@@ -5,12 +5,13 @@ services:
   db:
     image: postgres:15
     container_name: lait_db
+    restart: unless-stopped
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: lait
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: legalspend
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -23,6 +24,7 @@ services:
   redis:
     image: redis:7
     container_name: lait_redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
@@ -36,25 +38,26 @@ services:
   # LAIT API Backend
   api:
     build:
-      context: ..
-      dockerfile: backend/Dockerfile
+      context: ../backend
+      dockerfile: Dockerfile
     container_name: lait_api
+    restart: unless-stopped
     ports:
       - "5003:5003"
     env_file:
       - ../.env
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/lait
-      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql+psycopg2://postgres:postgres@db:5432/legalspend
+      - REDIS_URL=redis://redis:6379/0
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
     volumes:
-      - ../backend:/app/backend
-      - ../ml:/app/ml
-    restart: unless-stopped
+      - ../backend:/app
+      - ../backend/models:/app/models
+    command: python app_real.py
 
   # Frontend Web Application
   web:
@@ -62,6 +65,7 @@ services:
       context: ../frontend
       dockerfile: Dockerfile
     container_name: lait_web
+    restart: unless-stopped
     ports:
       - "5173:5173"
     environment:
@@ -70,7 +74,8 @@ services:
       - ../frontend:/app
       - /app/node_modules
     command: npm run dev -- --host 0.0.0.0
-    restart: unless-stopped
+    depends_on:
+      - api
 
 volumes:
   postgres_data:

@@ -1,4 +1,140 @@
-# LAIT Infrastructure
+# # LAIT Docker Development Stack
+
+Complete one-command development environment for the LAIT legal intelligence platform.
+
+## 🚀 Quick Start
+
+```bash
+# Copy environment variables
+cp .env.example .env
+
+# Start the development stack
+cd infra && docker compose up -d --build
+
+# Test the API
+curl http://localhost:5003/api/health
+```
+
+## 🐳 Services
+
+| Service | Image | Port | Description |
+|---------|-------|------|-------------|
+| **db** | postgres:15 | 5432 | PostgreSQL database |
+| **redis** | redis:7 | 6379 | Redis cache & sessions |
+| **api** | Custom (backend/) | 5003 | Flask backend API |
+| **web** | Custom (frontend/) | 5173 | Vite dev server |
+
+## 🌍 Access URLs
+
+- **Frontend**: http://localhost:5173 (React + Vite)
+- **Backend API**: http://localhost:5003 (Flask)
+- **Database**: postgresql://postgres:postgres@localhost:5432/legalspend
+- **Redis**: redis://localhost:6379/0
+
+## 📋 Environment Variables
+
+Required in `.env` file:
+
+```env
+APP_ENV=development
+JWT_SECRET=change_me
+DATABASE_URL=postgresql+psycopg2://postgres:postgres@db:5432/legalspend
+REDIS_URL=redis://redis:6379/0
+VITE_API_BASE=http://localhost:5003
+```
+
+## 🔧 Development Features
+
+- **Hot Reload**: Frontend auto-reloads on file changes
+- **Volume Mounting**: Code changes reflect immediately
+- **Database Persistence**: PostgreSQL data persists between restarts
+- **Health Checks**: Services wait for dependencies to be ready
+- **Networking**: Services communicate via Docker network
+
+## 📂 File Structure
+
+```
+infra/
+├── docker-compose.yml    # Main orchestration file
+└── test-stack.sh        # Validation script
+
+backend/
+├── Dockerfile           # Python 3.11 backend image
+├── requirements.txt     # Python dependencies
+└── app_real.py         # Flask application
+
+frontend/
+├── Dockerfile          # Node.js frontend image
+├── package.json        # Node dependencies
+└── src/               # React application
+```
+
+## 🛠️ Commands
+
+```bash
+# Start services (build if needed)
+cd infra && docker compose up -d --build
+
+# View logs
+docker compose logs -f api
+docker compose logs -f web
+
+# Stop services
+docker compose down
+
+# Restart single service
+docker compose restart api
+
+# Shell access
+docker compose exec api bash
+docker compose exec web sh
+
+# Clean rebuild
+docker compose down --volumes
+docker compose up -d --build
+```
+
+## ✅ Verification
+
+Test all services:
+
+```bash
+# Database connectivity
+docker compose exec db psql -U postgres -d legalspend -c "SELECT version();"
+
+# Redis connectivity  
+docker compose exec redis redis-cli ping
+
+# API health
+curl http://localhost:5003/api/health
+
+# Frontend loading
+curl -I http://localhost:5173
+```
+
+## 🐞 Troubleshooting
+
+**Port conflicts:**
+```bash
+# Check port usage
+lsof -i :5003
+lsof -i :5173
+```
+
+**Database issues:**
+```bash
+# Reset database
+docker compose down --volumes
+docker compose up -d db
+```
+
+**Build issues:**
+```bash
+# Force rebuild
+docker compose build --no-cache
+```
+
+Ready for development! 🎉
 
 This directory contains the Docker Compose configuration and related infrastructure files for the LAIT (Legal AI Intelligence Tool) application.
 

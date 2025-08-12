@@ -198,26 +198,20 @@ except:
     fi
 }
 
-# Test 3: Create and upload a tiny text invoice
+# Test 3: Create sample.txt with two lines and upload
 test_invoice_upload() {
     log_step "STEP 2: Invoice Upload"
-    log_info "Creating tiny text invoice for upload test"
+    log_info "Creating sample.txt with two lines for upload test"
     
-    # Create a minimal invoice file
-    local invoice_file="$TEMP_DIR/test_invoice.txt"
+    # Create exactly what the requirements specify: sample.txt with two lines
+    local invoice_file="$TEMP_DIR/sample.txt"
     cat > "$invoice_file" << EOF
-INVOICE #12345
-From: Test Legal Services LLC
-To: LAIT Test Corp
-Date: August 11, 2025
-Amount: $1,500.00
-Description: Legal consultation services
-Hours: 5.0 @ $300/hour
-Total: $1,500.00
+Legal Services: Attorney John Smith, 450/hr, 8.5 hours, Total: $3825.00
+Legal Research: Paralegal Sarah Johnson, 180/hr, 6.0 hours, Total: $1080.00
 EOF
     
-    log_info "Created test invoice file: $invoice_file"
-    log_info "Invoice content:"
+    log_info "Created sample.txt file: $invoice_file"
+    log_info "File content (2 lines):"
     cat "$invoice_file" | sed 's/^/  /'
     
     # Verify JWT token is available
@@ -226,13 +220,15 @@ EOF
         exit 1
     fi
     
-    log_info "Uploading invoice with JWT token: ${JWT_TOKEN:0:20}..."
+    log_info "Uploading sample.txt with JWT token: ${JWT_TOKEN:0:20}..."
     
     local response
     response=$(curl -s -w "\n%{http_code}" \
         -X POST \
         -H "Authorization: Bearer $JWT_TOKEN" \
         -F "file=@$invoice_file" \
+        -F "client_name=Smoke Test Client" \
+        -F "matter_id=SMOKE-001" \
         "$UPLOAD_ENDPOINT" 2>/dev/null || echo -e "\n000")
     
     local http_code
@@ -242,7 +238,26 @@ EOF
     
     if [[ "$http_code" == "201" ]] || [[ "$http_code" == "200" ]]; then
         log_success "Invoice upload successful"
-        log_info "Response preview: $(echo "$body" | head -c 200)..."
+        log_info "Upload response: $body"
+        
+        # Check that lines_processed >= 2
+        local lines_processed
+        lines_processed=$(echo "$body" | python3 -c "
+import sys, json
+try:
+    data = json.load(sys.stdin)
+    lines = data.get('lines_processed', 0)
+    print(lines)
+except:
+    print('0')
+" 2>/dev/null)
+        
+        if [[ "$lines_processed" -ge "2" ]]; then
+            log_success "Upload processed $lines_processed lines (expected >= 2) ✅"
+        else
+            log_error "Upload processed insufficient lines: $lines_processed (expected >= 2)"
+            exit 1
+        fi
         
         # Try to extract invoice ID for verification
         local invoice_id
@@ -251,7 +266,8 @@ import sys, json
 try:
     data = json.load(sys.stdin)
     invoice = data.get('invoice', {})
-    print(invoice.get('id', ''))
+    invoice_id = invoice.get('id') or data.get('invoice_id', '')
+    print(invoice_id)
 except:
     print('')
 " 2>/dev/null)
@@ -266,10 +282,10 @@ except:
     fi
 }
 
-# Test 4: List invoices
+# Test 4: List invoices (verify non-empty)
 test_list_invoices() {
-    log_step "STEP 3: List Invoices"
-    log_info "Retrieving invoice list"
+    log_step "STEP 3: List Invoices (verify non-empty)"
+    log_info "Retrieving invoice list to verify persistence"
     
     if [[ -z "$JWT_TOKEN" ]]; then
         log_error "No JWT token available for listing invoices."
@@ -304,9 +320,10 @@ except:
         
         log_info "Found $invoice_count invoice(s) in the list"
         if [[ "$invoice_count" -gt "0" ]]; then
-            log_success "Invoice list contains uploaded invoice"
+            log_success "Invoice list is non-empty ✅"
         else
-            log_warn "No invoices found in list (may be processing)"
+            log_error "Invoice list is empty - upload may have failed"
+            exit 1
         fi
     else
         log_error "Invoice listing failed. HTTP code: $http_code"
@@ -315,10 +332,10 @@ except:
     fi
 }
 
-# Test 5: Get dashboard metrics
+# Test 5: Get dashboard metrics (verify invoices_count>=1 and total_spend>0)
 test_dashboard_metrics() {
-    log_step "STEP 4: Dashboard Metrics"
-    log_info "Retrieving dashboard analytics"
+    log_step "STEP 4: Dashboard Metrics (verify invoices_count>=1 and total_spend>0)"
+    log_info "Retrieving dashboard analytics for validation"
     
     if [[ -z "$JWT_TOKEN" ]]; then
         log_error "No JWT token available for dashboard metrics."
@@ -338,23 +355,59 @@ test_dashboard_metrics() {
     
     if [[ "$http_code" == "200" ]]; then
         log_success "Dashboard metrics retrieved successfully"
+        log_info "Metrics response: $body"
         
-        # Extract key metrics
-        local metrics_summary
-        metrics_summary=$(echo "$body" | python3 -c "
+        # Extract and validate key metrics
+        local validation_result
+        validation_result=$(echo "$body" | python3 -c "
 import sys, json
 try:
     data = json.load(sys.stdin)
-    total_invoices = data.get('total_invoices', 0)
-    total_amount = data.get('total_amount', 0)
-    total_vendors = data.get('total_vendors', 0)
-    print(f'Invoices: {total_invoices}, Amount: \${total_amount:,.2f}, Vendors: {total_vendors}')
+    # Try different possible field names
+    invoices_count = data.get('invoices_count', data.get('total_invoices', 0))
+    total_spend = data.get('total_spend', data.get('total_amount', 0))
+    
+    print(f'invoices_count={invoices_count}')
+    print(f'total_spend={total_spend}')
+    
+    # Validation
+    if invoices_count >= 1:
+        print('invoices_count_valid=true')
+    else:
+        print('invoices_count_valid=false')
+    
+    if float(total_spend) > 0:
+        print('total_spend_valid=true')
+    else:
+        print('total_spend_valid=false')
+        
 except Exception as e:
-    print(f'Error parsing metrics: {e}')
+    print(f'error={e}')
+    print('invoices_count_valid=false')
+    print('total_spend_valid=false')
 " 2>/dev/null)
         
-        log_info "Dashboard summary: $metrics_summary"
-        log_success "Analytics data is available and properly formatted"
+        log_info "Validation results: $validation_result"
+        
+        # Check validation results
+        local invoices_valid=$(echo "$validation_result" | grep "invoices_count_valid=true" || echo "false")
+        local spend_valid=$(echo "$validation_result" | grep "total_spend_valid=true" || echo "false")
+        
+        if [[ "$invoices_valid" == *"true"* ]]; then
+            log_success "invoices_count >= 1 ✅"
+        else
+            log_error "invoices_count < 1 - dashboard metrics validation failed"
+            exit 1
+        fi
+        
+        if [[ "$spend_valid" == *"true"* ]]; then
+            log_success "total_spend > 0 ✅"
+        else
+            log_error "total_spend <= 0 - dashboard metrics validation failed"
+            exit 1
+        fi
+        
+        log_success "Dashboard metrics validation passed ✅"
     else
         log_error "Dashboard metrics failed. HTTP code: $http_code"
         log_error "Response: $body"
@@ -385,12 +438,17 @@ main() {
     test_dashboard_metrics
     
     # Success message
-    echo -e "\n${GREEN}"
+    echo -e "${GREEN}"
     echo "╔════════════════════════════════════════╗"
     echo "║              SMOKE OK ✅               ║"
     echo "║                                        ║"
-    echo "║   All tests passed successfully!       ║"
-    echo "║   LAIT platform is working correctly   ║"
+    echo "║   All requirements validated:          ║"
+    echo "║   ✅ User registration & JWT           ║"
+    echo "║   ✅ sample.txt with 2 lines created   ║"
+    echo "║   ✅ Upload → lines_processed >= 2     ║"
+    echo "║   ✅ List invoices → non-empty         ║"
+    echo "║   ✅ Metrics → invoices_count >= 1     ║"
+    echo "║   ✅ Metrics → total_spend > 0         ║"
     echo "╚════════════════════════════════════════╝"
     echo -e "${NC}\n"
     

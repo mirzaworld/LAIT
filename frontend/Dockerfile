@@ -1,4 +1,4 @@
-# Frontend Dockerfile for Development
+# LAIT Frontend Dockerfile (Development)
 FROM node:18-alpine
 
 # Set working directory
@@ -15,6 +15,9 @@ COPY . .
 
 # Expose port
 EXPOSE 5173
+
+# Set environment variables
+ENV NODE_ENV=development
 
 # Start development server
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

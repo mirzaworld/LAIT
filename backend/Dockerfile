@@ -1,4 +1,4 @@
-# Backend Dockerfile
+# LAIT Backend Dockerfile (Development)
 FROM python:3.11-slim
 
 # Set working directory
@@ -6,29 +6,28 @@ WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    curl \
-    build-essential \
+    gcc \
+    g++ \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY backend/requirements.txt /app/backend/requirements.txt
+# Copy requirements and install Python dependencies
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r backend/requirements.txt
+# Copy application code
+COPY . .
 
-# Copy backend and ml directories
-COPY backend/ /app/backend/
-COPY ml/ /app/ml/
-
-# Create uploads directory
-RUN mkdir -p /app/backend/uploads
+# Create models directory for ML models
+RUN mkdir -p models
 
 # Expose port
 EXPOSE 5003
 
-# Set Python path
+# Set environment variables
+ENV FLASK_ENV=development
 ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
 
-# Run the Flask application
-CMD ["python", "backend/app_real.py"]
+# Default command (can be overridden in docker-compose)
+CMD ["python", "app_real.py"]
