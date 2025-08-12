@@ -88,6 +88,15 @@ export const auth = {
     return data;
   },
 
+  me: async (token?: string) => {
+    const response = await fetch(`${API}/auth/me`, {
+      method: 'GET',
+      headers: createHeaders(token),
+    });
+    
+    return await handleResponse(response);
+  },
+
   logout: () => {
     localStorage.removeItem('lait_token');
     localStorage.removeItem('token');
