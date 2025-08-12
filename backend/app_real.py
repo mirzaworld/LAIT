@@ -934,7 +934,7 @@ def get_invoice(invoice_id):
         
         result = {
             'id': invoice.id,
-            'vendor_name': invoice.vendor_name,
+            'vendor_name': invoice.vendor.name if invoice.vendor else 'Unknown',
             'invoice_number': invoice.invoice_number,
             'date': invoice.date.isoformat() if invoice.date else None,
             'total_amount': invoice.total_amount,
@@ -943,8 +943,8 @@ def get_invoice(invoice_id):
             'status': invoice.status,
             'filename': invoice.filename,
             'created_at': invoice.created_at.isoformat(),
-            'ml_risk_score': invoice.ml_risk_score,
-            'compliance_flags': invoice.compliance_flags or []
+            'ml_risk_score': getattr(invoice, 'ml_risk_score', None),
+            'compliance_flags': getattr(invoice, 'compliance_flags', [])
         }
         
         return jsonify(result), 200
@@ -1095,16 +1095,16 @@ def analytics_vendors():
         
         # Get vendor spending data
         vendor_data = db.session.query(
-            Invoice.vendor_name,
+            Vendor.name,
             func.sum(Invoice.total_amount).label('total_spend'),
             func.count(Invoice.id).label('invoice_count')
-        ).filter_by(user_id=user.id).group_by(Invoice.vendor_name).all()
+        ).join(Invoice).filter(Invoice.user_id == user.id).group_by(Vendor.name).all()
         
         # Format vendor data
         vendors = []
         for row in vendor_data:
             vendors.append({
-                'name': row.vendor_name or 'Unknown Vendor',
+                'name': row.name or 'Unknown Vendor',
                 'totalSpend': float(row.total_spend) if row.total_spend else 0.0,
                 'invoiceCount': row.invoice_count or 0
             })
@@ -1141,7 +1141,7 @@ def get_notifications():
                 'id': f"upload_{invoice.id}",
                 'type': 'upload_success',
                 'title': 'Invoice Processed',
-                'message': f'Invoice from {invoice.vendor_name or "Unknown"} has been processed',
+                'message': f'Invoice from {invoice.vendor.name if invoice.vendor else "Unknown"} has been processed',
                 'timestamp': invoice.created_at.isoformat(),
                 'read': False
             })
