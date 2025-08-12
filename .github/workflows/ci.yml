@@ -1,27 +1,42 @@
-name: LAIT Platform CI
+name: LAIT Platform CI/CD
 
 on:
   push:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.11'
 
 jobs:
   test:
     runs-on: ubuntu-latest
     
-    strategy:
-      matrix:
-        python-version: [3.11]
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: lait_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
       
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
       uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: ${{ env.PYTHON_VERSION }}
         
     - name: Cache pip dependencies
       uses: actions/cache@v3
@@ -34,70 +49,119 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y curl
+        sudo apt-get install -y curl jq
         
     - name: Install Python dependencies
       run: |
+        cd backend
         python -m pip install --upgrade pip
-        pip install -r backend/requirements.txt
+        pip install -r requirements.txt
         pip install pytest requests
+        echo "✅ Dependencies installed"
         
-    - name: Create test environment file
+    - name: Set up test environment
       run: |
-        echo "APP_ENV=test" > .env
-        echo "JWT_SECRET=test_secret_key" >> .env
-        echo "DATABASE_URL=sqlite:///test_lait.db" >> .env
+        echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/lait_test" > .env
+        echo "JWT_SECRET_KEY=ci-test-secret-key" >> .env
+        echo "FLASK_ENV=testing" >> .env
+        echo "REDIS_URL=redis://localhost:6379/0" >> .env
+        echo "✅ Test environment configured"
         
-    - name: Start backend server
+    - name: Initialize test database
       run: |
         cd backend
+        python -c "
+        from app_real import app, db
+        with app.app_context():
+            db.create_all()
+            print('✅ Test database initialized')
+        "
+        
+    - name: Start backend server in background
+      run: |
+        cd backend
+        echo "🚀 Starting LAIT backend server..."
         python app_real.py &
         BACKEND_PID=$!
         echo "BACKEND_PID=$BACKEND_PID" >> $GITHUB_ENV
+        echo $BACKEND_PID > ../backend.pid
+        echo "Backend PID: $BACKEND_PID"
         
     - name: Wait for API health check
       run: |
-        echo "Waiting for API to be ready..."
-        for i in {1..60}; do
-          if curl -f http://localhost:5003/api/health > /dev/null 2>&1; then
-            echo "API is ready after $i attempts"
+        echo "⏳ Waiting for API to be ready..."
+        max_attempts=60
+        attempt=0
+        
+        while [ $attempt -lt $max_attempts ]; do
+          if curl -f http://localhost:5003/api/health >/dev/null 2>&1; then
+            echo "✅ API is ready after $attempt attempts"
             break
           fi
-          if [ $i -eq 60 ]; then
-            echo "API failed to start within 60 seconds"
+          
+          attempt=$((attempt + 1))
+          if [ $attempt -eq $max_attempts ]; then
+            echo "❌ API failed to start within $max_attempts seconds"
+            echo "Backend logs:"
+            cd backend && ls -la *.log && tail -50 *.log 2>/dev/null || echo "No log files found"
             exit 1
           fi
-          echo "Attempt $i/60: API not ready yet..."
+          
+          echo "Attempt $attempt/$max_attempts: API not ready yet..."
           sleep 1
         done
         
-    - name: Verify API health
+    - name: Verify API health and endpoints
       run: |
-        curl -v http://localhost:5003/api/health
+        echo "🏥 Verifying API health..."
+        curl -v http://localhost:5003/api/health | jq '.' || curl -v http://localhost:5003/api/health
         
-    - name: Run pytest tests
-      run: |
-        pytest tests/test_e2e.py -v
+        echo "🔍 Testing route probe..."
+        python scripts/route_probe.py || true
         
-    - name: Run pytest with quiet mode
+    - name: Run pytest end-to-end tests
       run: |
-        pytest tests/test_e2e.py -q
+        echo "🧪 Running LAIT E2E tests..."
+        pytest tests/test_e2e.py -v --tb=short
+      env:
+        LAIT_API_BASE: http://localhost:5003
+        
+    - name: Run pytest in quiet mode (as specified)
+      run: |
+        echo "🤫 Running pytest in quiet mode..."
+        pytest -q tests/test_e2e.py
+      env:
+        LAIT_API_BASE: http://localhost:5003
         
     - name: Stop backend server
       if: always()
       run: |
-        if [ ! -z "$BACKEND_PID" ]; then
-          kill $BACKEND_PID || true
-        fi
-        # Also kill any remaining processes on port 5003
-        pkill -f "python.*app_real.py" || true
+        echo "🛑 Stopping backend server..."
         
-    - name: Upload test artifacts
+        if [ -f backend.pid ]; then
+          BACKEND_PID=$(cat backend.pid)
+          kill $BACKEND_PID 2>/dev/null || true
+          echo "Killed backend PID: $BACKEND_PID"
+          rm backend.pid
+        fi
+        
+        if [ ! -z "$BACKEND_PID" ]; then
+          kill $BACKEND_PID 2>/dev/null || true
+          echo "Killed backend PID from env: $BACKEND_PID"
+        fi
+        
+        # Kill any remaining processes
+        pkill -f "python.*app_real.py" || true
+        echo "✅ Backend cleanup complete"
+        
+    - name: Upload test artifacts on failure
       if: failure()
       uses: actions/upload-artifact@v3
       with:
-        name: test-logs
+        name: ci-test-logs
         path: |
           backend/*.log
-          test*.db
+          *.log
           .env
+          backend/*.db
+        retention-days: 7
