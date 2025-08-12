@@ -1,0 +1,401 @@
+{
+  "info": {
+    "name": "LAIT Legal Intelligence Platform API",
+    "description": "Complete API collection for the LAIT Legal Intelligence Platform. Includes authentication, invoice processing, and dashboard analytics endpoints.\n\n## Getting Started\n1. Set your API base URL in the collection variables\n2. Register a new user or login with existing credentials\n3. The auth token will be automatically set for subsequent requests\n4. Test invoice upload and dashboard functionality\n\n## Authentication\nAll protected endpoints require a Bearer token. The collection automatically manages tokens after login.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "lait-api-collection-2025",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    }
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5003",
+      "description": "API base URL (change to production URL when needed)",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "description": "JWT access token (auto-populated after login)",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken", 
+      "value": "",
+      "description": "JWT refresh token (auto-populated after login)",
+      "type": "string"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-set Authorization header if token exists",
+          "const token = pm.collectionVariables.get('accessToken');",
+          "if (token) {",
+          "  pm.request.headers.add({",
+          "    key: 'Authorization',", 
+          "    value: `Bearer ${token}`",
+          "  });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & System",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "health"]
+            },
+            "description": "Basic health check to verify API is running"
+          },
+          "response": []
+        },
+        {
+          "name": "API Documentation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/openapi.json",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "openapi.json"]
+            },
+            "description": "Get OpenAPI 3.0 specification for the API"
+          },
+          "response": []
+        },
+        {
+          "name": "ML Service Status",
+          "request": {
+            "method": "GET", 
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/ml/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ml", "status"]
+            },
+            "description": "Check ML service availability and fallback status"
+          },
+          "response": []
+        }
+      ],
+      "description": "System health and status endpoints"
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const response = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken', response.access_token);",
+                  "  pm.collectionVariables.set('refreshToken', response.refresh_token);",
+                  "  console.log('✅ User registered and tokens saved');",
+                  "} else {",
+                  "  console.log('❌ Registration failed:', pm.response.text());",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"demo@lait.ai\",\n  \"password\": \"SecurePassword123\",\n  \"first_name\": \"Demo\",\n  \"last_name\": \"User\",\n  \"company\": \"LAIT Demo Corp\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Register a new user account. Automatically saves access and refresh tokens."
+          },
+          "response": []
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const response = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken', response.access_token);",
+                  "  pm.collectionVariables.set('refreshToken', response.refresh_token);",
+                  "  console.log('✅ Login successful and tokens saved');",
+                  "  console.log('Access token expires in:', response.expires_in, 'seconds');",
+                  "} else {",
+                  "  console.log('❌ Login failed:', pm.response.text());",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw", 
+              "raw": "{\n  \"email\": \"demo@lait.ai\",\n  \"password\": \"SecurePassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login with email and password. Returns access and refresh tokens."
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const response = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken', response.access_token);",
+                  "  pm.collectionVariables.set('refreshToken', response.refresh_token);",
+                  "  console.log('✅ Token refreshed successfully');",
+                  "} else {",
+                  "  console.log('❌ Token refresh failed:', pm.response.text());",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Use refresh token in request body",
+                  "const refreshToken = pm.collectionVariables.get('refreshToken');",
+                  "if (refreshToken) {",
+                  "  const body = { refresh_token: refreshToken };",
+                  "  pm.request.body = {",
+                  "    mode: 'raw',",
+                  "    raw: JSON.stringify(body)",
+                  "  };",
+                  "} else {",
+                  "  console.log('⚠️  No refresh token available - please login first');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "refresh"] 
+            },
+            "description": "Refresh access token using refresh token. Auto-updates tokens."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Get current authenticated user's profile information"
+          },
+          "response": []
+        }
+      ],
+      "description": "User authentication and profile management"
+    },
+    {
+      "name": "Invoice Management", 
+      "item": [
+        {
+          "name": "Upload Invoice (File)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "Invoice file (PDF, TXT, CSV - max 10MB)"
+                },
+                {
+                  "key": "vendor",
+                  "value": "Acme Legal Services",
+                  "type": "text",
+                  "description": "Optional vendor name override"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/invoices/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "invoices", "upload"]
+            },
+            "description": "Upload invoice file for processing. Select a PDF, TXT, or CSV file."
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Invoice (JSON)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization", 
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vendor\": \"Legal Associates LLC\",\n  \"amount\": 2500.00,\n  \"line_items\": [\n    {\n      \"description\": \"Legal research services\",\n      \"amount\": 1200.00,\n      \"rate\": 350.00,\n      \"hours\": 3.43\n    },\n    {\n      \"description\": \"Document review\",\n      \"amount\": 800.00,\n      \"rate\": 400.00,\n      \"hours\": 2.0\n    },\n    {\n      \"description\": \"Court filing fees\",\n      \"amount\": 500.00\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/invoices/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "invoices", "upload"]
+            },
+            "description": "Upload structured invoice data as JSON"
+          },
+          "response": []
+        },
+        {
+          "name": "List Invoices",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/invoices",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "invoices"]
+            },
+            "description": "Get latest 100 invoices for the authenticated user"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Invoice Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/invoices/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "invoices", "1"]
+            },
+            "description": "Get detailed information for a specific invoice (change ID in URL)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Invoice upload, processing, and management"
+    },
+    {
+      "name": "Dashboard & Analytics",
+      "item": [
+        {
+          "name": "Dashboard Metrics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/dashboard/metrics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "dashboard", "metrics"]
+            },
+            "description": "Get comprehensive dashboard metrics including spending analytics, vendor counts, and recent activity"
+          },
+          "response": []
+        }
+      ],
+      "description": "Dashboard metrics and analytics endpoints"
+    }
+  ]
+}

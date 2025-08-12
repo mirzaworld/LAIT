@@ -7,13 +7,14 @@ Port 5003 with JWT auth, bcrypt, SQLAlchemy, PDF parsing
 import os
 import json
 import logging
+import re
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 
 import bcrypt
 import jwt
 import pdfplumber
-from flask import Flask, request, jsonify, g
+from flask import Flask, request, jsonify, g, render_template_string
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_limiter import Limiter
@@ -22,6 +23,10 @@ from werkzeug.utils import secure_filename
 from sqlalchemy import func, desc
 from io import BytesIO, StringIO
 import csv
+from apispec import APISpec
+from apispec.ext.marshmallow import MarshmallowPlugin
+from apispec_webframeworks.flask import FlaskPlugin
+from marshmallow import Schema, fields, validate
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -57,7 +62,11 @@ app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB max file size
 
-# Rate limiting setup
+# Enhanced CORS configuration - restrict to configured frontend origins
+FRONTEND_ORIGINS = os.getenv('ALLOWED_ORIGINS', 'http://localhost:3000,http://localhost:5173').split(',')
+logger.info(f"🔒 CORS enabled for origins: {FRONTEND_ORIGINS}")
+
+# Rate limiting setup with enhanced user-based limiting
 def get_user_id_for_rate_limit():
     """Extract user ID from JWT token for rate limiting"""
     auth_header = request.headers.get('Authorization')
@@ -68,23 +77,161 @@ def get_user_id_for_rate_limit():
         token = auth_header.split(' ')[1]
         payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
         return f"user_{payload['user_id']}"
-    except:
+    except Exception as e:
+        # Log security events but don't expose details
+        logger.warning(f"🔒 Rate limit token validation failed for {get_remote_address()}")
         return get_remote_address()
 
+# Initialize limiter with Redis support if available
+redis_url = os.getenv('REDIS_URL', os.getenv('RATE_LIMIT_STORAGE_URL', 'memory://'))
 limiter = Limiter(
     key_func=get_remote_address,
     app=app,
     default_limits=["200 per hour"],
-    storage_uri="memory://"
+    storage_uri=redis_url
 )
 
-# Enable CORS for /api/* routes
-CORS(app, origins=['http://localhost:3000', 'http://localhost:5173'], 
-     resources={r"/api/*": {"origins": "*"}},
+# Enhanced CORS configuration with environment-based origins
+CORS(app, 
+     origins=FRONTEND_ORIGINS,
+     resources={r"/api/*": {"origins": FRONTEND_ORIGINS}},
      supports_credentials=True)
 
 # Database setup
 db = SQLAlchemy(app)
+
+# ============================================================================
+# API DOCUMENTATION SETUP
+# ============================================================================
+
+# OpenAPI specification configuration
+spec = APISpec(
+    title="LAIT Legal Intelligence Platform API",
+    version="1.0.0",
+    openapi_version="3.0.2",
+    info=dict(
+        description="""
+        **LAIT (Legal AI Team) Platform API**
+        
+        A comprehensive legal intelligence platform for invoice processing, vendor management, 
+        and legal spend optimization. This API provides endpoints for user authentication, 
+        invoice upload and processing, dashboard metrics, and vendor analytics.
+        
+        ## Authentication
+        All protected endpoints require a Bearer token in the Authorization header:
+        ```
+        Authorization: Bearer <your_jwt_token>
+        ```
+        
+        ## Rate Limits
+        - General API: 200 requests per hour
+        - Login: 5 attempts per minute
+        - Upload: 30 per minute per user, 5 per minute per token
+        - Token refresh: 10 per minute
+        
+        ## File Upload Support
+        Supported formats: PDF, TXT, CSV (max 10MB)
+        """,
+        contact=dict(name="LAIT Development Team", email="dev@lait.ai"),
+        license=dict(name="MIT License")
+    ),
+    servers=[
+        {"url": "http://localhost:5003", "description": "Development server"},
+        {"url": "https://lait-api.onrender.com", "description": "Production server"}
+    ],
+    plugins=[MarshmallowPlugin(), FlaskPlugin()],
+)
+
+# Security scheme for JWT
+jwt_security_scheme = {
+    "type": "http",
+    "scheme": "bearer",
+    "bearerFormat": "JWT",
+    "description": "JWT token obtained from /api/auth/login or /api/auth/register"
+}
+spec.components.security_scheme("jwt", jwt_security_scheme)
+
+# ============================================================================
+# MARSHMALLOW SCHEMAS FOR API DOCUMENTATION
+# ============================================================================
+
+class UserSchema(Schema):
+    """User model schema"""
+    id = fields.Int(dump_only=True, description="User ID")
+    email = fields.Email(required=True, description="User email address")
+    first_name = fields.Str(description="User first name")
+    last_name = fields.Str(description="User last name") 
+    company = fields.Str(description="User company name")
+    created_at = fields.DateTime(dump_only=True, description="Account creation timestamp")
+
+class LoginSchema(Schema):
+    """Login request schema"""
+    email = fields.Email(required=True, description="User email address")
+    password = fields.Str(required=True, validate=validate.Length(min=6), description="User password (min 6 characters)")
+
+class RegisterSchema(Schema):
+    """User registration schema"""
+    email = fields.Email(required=True, description="User email address")
+    password = fields.Str(required=True, validate=validate.Length(min=6), description="Password (min 6 characters)")
+    first_name = fields.Str(description="First name")
+    last_name = fields.Str(description="Last name")
+    company = fields.Str(description="Company name")
+
+class TokenResponseSchema(Schema):
+    """Token response schema"""
+    access_token = fields.Str(required=True, description="Short-lived access token (15 minutes)")
+    refresh_token = fields.Str(required=True, description="Long-lived refresh token (7 days)")
+    expires_in = fields.Int(required=True, description="Access token expiry in seconds")
+    message = fields.Str(description="Success message")
+    user = fields.Nested(UserSchema, description="User information")
+
+class RefreshTokenSchema(Schema):
+    """Token refresh request schema"""
+    refresh_token = fields.Str(required=True, description="Valid refresh token")
+
+class InvoiceSchema(Schema):
+    """Invoice model schema"""
+    id = fields.Int(dump_only=True, description="Invoice ID")
+    filename = fields.Str(description="Original filename")
+    vendor = fields.Str(description="Vendor/supplier name")
+    amount = fields.Float(description="Total invoice amount")
+    date_processed = fields.DateTime(dump_only=True, description="Processing timestamp")
+    line_items_count = fields.Int(description="Number of line items")
+    total_score = fields.Float(description="AI risk/relevance score")
+    user_id = fields.Int(dump_only=True, description="Owner user ID")
+
+class InvoiceUploadSchema(Schema):
+    """Invoice upload response schema"""
+    message = fields.Str(description="Upload success message")
+    invoice_id = fields.Int(description="Created invoice ID")
+    filename = fields.Str(description="Processed filename")
+    line_items_processed = fields.Int(description="Number of line items processed")
+    total_amount = fields.Float(description="Total amount extracted")
+
+class DashboardMetricsSchema(Schema):
+    """Dashboard metrics schema"""
+    invoices_count = fields.Int(description="Total number of invoices")
+    total_spend = fields.Float(description="Total spending amount")
+    vendors_count = fields.Int(description="Number of unique vendors")
+    avg_invoice_amount = fields.Float(description="Average invoice amount")
+    recent_activity = fields.List(fields.Dict(), description="Recent activity feed")
+
+class ErrorResponseSchema(Schema):
+    """Error response schema"""
+    error = fields.Str(required=True, description="Error message")
+    hint = fields.Str(description="Helpful hint for resolution")
+    code = fields.Int(description="Internal error code")
+
+# Register schemas with APISpec
+spec.components.schema("User", schema=UserSchema)
+spec.components.schema("Login", schema=LoginSchema)
+spec.components.schema("Register", schema=RegisterSchema)
+spec.components.schema("TokenResponse", schema=TokenResponseSchema)
+spec.components.schema("RefreshToken", schema=RefreshTokenSchema)
+spec.components.schema("Invoice", schema=InvoiceSchema)
+spec.components.schema("InvoiceUpload", schema=InvoiceUploadSchema)
+spec.components.schema("DashboardMetrics", schema=DashboardMetricsSchema)
+spec.components.schema("ErrorResponse", schema=ErrorResponseSchema)
 
 # ============================================================================
 # DATABASE MODELS
@@ -169,22 +316,53 @@ class InvoiceLine(db.Model):
 # ============================================================================
 
 def generate_jwt_token(user_id: int) -> str:
-    """Generate JWT token for user"""
+    """Generate legacy JWT token for backward compatibility"""
     payload = {
         'user_id': user_id,
         'exp': datetime.utcnow() + timedelta(days=7),
-        'iat': datetime.utcnow()
+        'iat': datetime.utcnow(),
+        'type': 'legacy'
     }
     return jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
 
+def create_token_pair(user_id: int) -> Dict[str, str]:
+    """Create access and refresh token pair for enhanced security"""
+    now = datetime.utcnow()
+    
+    # Short-lived access token (15 minutes)
+    access_payload = {
+        'user_id': user_id,
+        'exp': now + timedelta(minutes=15),
+        'iat': now,
+        'type': 'access'
+    }
+    access_token = jwt.encode(access_payload, app.config['SECRET_KEY'], algorithm='HS256')
+    
+    # Longer-lived refresh token (7 days)  
+    refresh_payload = {
+        'user_id': user_id,
+        'exp': now + timedelta(days=7),
+        'iat': now,
+        'type': 'refresh'
+    }
+    refresh_token = jwt.encode(refresh_payload, app.config['SECRET_KEY'], algorithm='HS256')
+    
+    return {
+        'access_token': access_token,
+        'refresh_token': refresh_token,
+        'expires_in': 900  # 15 minutes in seconds
+    }
+
 def decode_jwt_token(token: str) -> Optional[Dict]:
-    """Decode and validate JWT token"""
+    """Decode and validate JWT token with enhanced error logging"""
     try:
         payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
         return payload
     except jwt.ExpiredSignatureError:
+        logger.debug("🔒 Token expired")
         return None
-    except jwt.InvalidTokenError:
+    except jwt.InvalidTokenError as e:
+        logger.debug(f"🔒 Invalid token: {type(e).__name__}")
         return None
 
 # ============================================================================
@@ -192,12 +370,20 @@ def decode_jwt_token(token: str) -> Optional[Dict]:
 # ============================================================================
 
 def log_request():
-    """Log incoming requests with user info if available"""
-    user_info = "anonymous"
-    if hasattr(g, 'current_user') and g.current_user:
+    """Enhanced request logging with sensitive data masking"""
+    if hasattr(request, 'user_id'):
+        user_info = f"user_{request.user_id}"
+    elif hasattr(g, 'current_user') and g.current_user:
         user_info = f"user_{g.current_user.id}"
+    else:
+        user_info = "anonymous"
     
-    logger.info(f"{request.method} {request.path} - {user_info} - IP:{get_remote_address()}")
+    # Mask sensitive request data
+    safe_data = {}
+    if request.is_json and request.json:
+        safe_data = mask_sensitive_data(request.json)
+    
+    logger.info(f"📝 {request.method} {request.path} - {user_info} - IP:{get_remote_address()} - Data: {safe_data}")
 
 def create_error_response(error: str, hint: str = None, code: int = 400, status_code: int = None):
     """Create consistent JSON error response"""
@@ -214,20 +400,49 @@ def create_error_response(error: str, hint: str = None, code: int = 400, status_
         
     return jsonify(response_data), status_code
 
+def mask_sensitive_data(data):
+    """Mask sensitive information in logs and responses"""
+    if isinstance(data, dict):
+        masked = {}
+        for key, value in data.items():
+            if key.lower() in ['password', 'token', 'secret', 'key', 'auth', 'authorization']:
+                masked[key] = '***MASKED***'
+            elif key.lower() == 'email' and isinstance(value, str):
+                # Mask email but keep domain visible
+                if '@' in value:
+                    local, domain = value.split('@', 1)
+                    masked[key] = f"{local[:2]}***@{domain}"
+                else:
+                    masked[key] = '***MASKED***'
+            elif isinstance(value, (dict, list)):
+                masked[key] = mask_sensitive_data(value)
+            else:
+                masked[key] = value
+        return masked
+    elif isinstance(data, list):
+        return [mask_sensitive_data(item) for item in data]
+    return data
+
 def validate_file_upload(file):
-    """Validate uploaded file size and type"""
+    """Enhanced file validation with magic number checking and size limits"""
     if not file or not file.filename:
         return create_error_response(
             "No file provided", 
             "Please select a file to upload", 
-            code=1001
+            code=1001,
+            status_code=400
         )
     
-    # Check file size (already handled by Flask MAX_CONTENT_LENGTH, but double-check)
-    if hasattr(file, 'content_length') and file.content_length and file.content_length > 10 * 1024 * 1024:
+    # Read file content for magic number validation
+    file_content = file.read()
+    file.seek(0)  # Reset file pointer
+    
+    # Check file size (enforce 10MB limit)
+    file_size = len(file_content)
+    if file_size > 10 * 1024 * 1024:
         return create_error_response(
             "File too large", 
-            "Maximum file size is 10MB", 
+            f"File size {file_size / (1024*1024):.1f}MB exceeds 10MB limit", 
             code=1002,
             status_code=413
         )
@@ -250,13 +465,59 @@ def validate_file_upload(file):
             status_code=415
         )
     
+    # Enhanced magic number validation
+    if file_size > 0:
+        magic_bytes = file_content[:16]  # First 16 bytes for magic detection
+        
+        if file_ext == '.pdf':
+            # PDF files should start with %PDF
+            if not magic_bytes.startswith(b'%PDF'):
+                return create_error_response(
+                    "Invalid PDF file",
+                    "File extension is .pdf but content is not a valid PDF",
+                    code=1004,
+                    status_code=415
+                )
+        elif file_ext == '.csv':
+            # CSV files should be text-based - check for binary content
+            try:
+                # Try to decode as UTF-8 text
+                sample_text = file_content[:1024].decode('utf-8')
+                # Check for common CSV patterns
+                if not any(char in sample_text for char in [',', ';', '\t', '\n']):
+                    return create_error_response(
+                        "Invalid CSV file",
+                        "File does not appear to contain comma-separated values",
+                        code=1005,
+                        status_code=415
+                    )
+            except UnicodeDecodeError:
+                return create_error_response(
+                    "Invalid CSV file",
+                    "File contains binary data but has .csv extension",
+                    code=1006,
+                    status_code=415
+                )
+        elif file_ext == '.txt':
+            # Text files should be decodable as UTF-8
+            try:
+                file_content.decode('utf-8')
+            except UnicodeDecodeError:
+                return create_error_response(
+                    "Invalid text file",
+                    "File contains binary data but has .txt extension",
+                    code=1007,
+                    status_code=415
+                )
+    
     return None  # No error
 
 def jwt_required(f):
-    """Decorator to require JWT authentication"""
+    """Enhanced decorator to require JWT authentication with security logging"""
     def decorated_function(*args, **kwargs):
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
+            logger.warning(f"🔒 Missing auth header from {get_remote_address()}")
             return create_error_response('Missing or invalid authorization header', 
                                        'Include "Authorization: Bearer <token>" header',
                                        code=2001, status_code=401)
@@ -264,6 +525,7 @@ def jwt_required(f):
         token = auth_header.split(' ')[1]
         payload = decode_jwt_token(token)
         if not payload:
+            logger.warning(f"🔒 Invalid token attempt from {get_remote_address()}")
             return create_error_response('Invalid or expired token',
                                        'Please login again to get a new token',
                                        code=2002, status_code=401)
@@ -272,7 +534,7 @@ def jwt_required(f):
         request.user_id = payload['user_id']
         g.current_user = User.query.get(payload['user_id'])
         
-        # Log the request with user info
+        # Log the request with masked user info
         log_request()
         
         return f(*args, **kwargs)
@@ -586,8 +848,125 @@ def log_public_requests_updated():
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    """Health check endpoint"""
+    """Health check endpoint
+    ---
+    get:
+      tags:
+        - Health
+      summary: API health check
+      description: Check if the API is running and responsive
+      responses:
+        200:
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2025-08-12T15:30:00.123456"
+    """
     return jsonify({'ok': True, 'timestamp': datetime.utcnow().isoformat()})
+
+@app.route('/api/openapi.json', methods=['GET'])
+def get_openapi_spec():
+    """Get OpenAPI specification
+    ---
+    get:
+      tags:
+        - Documentation
+      summary: Get OpenAPI specification
+      description: Returns the complete OpenAPI 3.0 specification for this API
+      responses:
+        200:
+          description: OpenAPI specification
+          content:
+            application/json:
+              schema:
+                type: object
+    """
+    # Add all routes to spec
+    with app.app_context():
+        # Register paths from docstrings
+        for rule in app.url_map.iter_rules():
+            if rule.endpoint != 'static':
+                view_function = app.view_functions[rule.endpoint]
+                if hasattr(view_function, '__doc__') and view_function.__doc__ and '---' in view_function.__doc__:
+                    spec.path(path=rule.rule, operations={}, view_function=view_function)
+    
+    return jsonify(spec.to_dict())
+
+@app.route('/api/docs')
+def swagger_ui():
+    """Swagger UI documentation interface
+    ---
+    get:
+      tags:
+        - Documentation  
+      summary: Interactive API documentation
+      description: Swagger UI interface for testing API endpoints
+      responses:
+        200:
+          description: HTML page with Swagger UI
+          content:
+            text/html:
+              schema:
+                type: string
+    """
+    swagger_ui_html = '''
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>LAIT API Documentation</title>
+        <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui.css" />
+        <style>
+            html { box-sizing: border-box; overflow: -moz-scrollbars-vertical; overflow-y: scroll; }
+            *, *:before, *:after { box-sizing: inherit; }
+            body { margin:0; background: #fafafa; }
+            .swagger-ui .topbar { display: none; }
+            .swagger-ui .info { margin: 20px 0; }
+            .swagger-ui .info .title { color: #2c3e50; font-size: 2.5em; }
+        </style>
+    </head>
+    <body>
+        <div id="swagger-ui"></div>
+        <script src="https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui-bundle.js"></script>
+        <script src="https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui-standalone-preset.js"></script>
+        <script>
+            window.onload = function() {
+                const ui = SwaggerUIBundle({
+                    url: '/api/openapi.json',
+                    dom_id: '#swagger-ui',
+                    deepLinking: true,
+                    presets: [
+                        SwaggerUIBundle.presets.apis,
+                        SwaggerUIStandalonePreset
+                    ],
+                    plugins: [
+                        SwaggerUIBundle.plugins.DownloadUrl
+                    ],
+                    layout: "StandaloneLayout",
+                    defaultModelsExpandDepth: 1,
+                    defaultModelExpandDepth: 1,
+                    docExpansion: "list",
+                    filter: false,
+                    showExtensions: true,
+                    showCommonExtensions: true,
+                    tryItOutEnabled: true
+                });
+            };
+        </script>
+    </body>
+    </html>
+    '''
+    return render_template_string(swagger_ui_html)
 
 @app.route('/api/ml/status', methods=['GET'])
 def ml_status():
@@ -606,7 +985,45 @@ def ml_status():
 
 @app.route('/api/auth/register', methods=['POST'])
 def register():
-    """Register new user with bcrypt password hashing"""
+    """Register new user with bcrypt password hashing
+    ---
+    post:
+      tags:
+        - Authentication
+      summary: Register new user account
+      description: Create a new user account with email and password. Returns access and refresh tokens.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Register'
+            example:
+              email: "user@example.com"
+              password: "securepassword123"
+              first_name: "John"
+              last_name: "Doe"
+              company: "Acme Legal"
+      responses:
+        201:
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        400:
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        409:
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    """
     try:
         # Log request for non-authenticated endpoint
         log_request()
@@ -649,14 +1066,17 @@ def register():
         db.session.add(user)
         db.session.commit()
         
-        # Generate JWT token
-        token = generate_jwt_token(user.id)
+        # Create token pair for enhanced security
+        tokens = create_token_pair(user.id)
         
-        logger.info(f"User registered: {email}")
+        # Log successful registration with masked data
+        safe_user_data = mask_sensitive_data(user.to_dict())
+        logger.info(f"✅ User registered: {safe_user_data['email']} (ID: {user.id})")
+        
         return jsonify({
             'message': 'User registered successfully',
-            'token': token,
-            'user': user.to_dict()
+            'user': user.to_dict(),
+            **tokens
         }), 201
         
     except Exception as e:
@@ -667,7 +1087,48 @@ def register():
 @app.route('/api/auth/login', methods=['POST'])
 @limiter.limit("5 per minute")
 def login():
-    """Login user with bcrypt password verification"""
+    """Login user with bcrypt password verification
+    ---
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user with email and password. Returns access and refresh tokens.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+            example:
+              email: "user@example.com"
+              password: "securepassword123"
+      responses:
+        200:
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        400:
+          description: Missing or invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        429:
+          description: Too many login attempts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    """
     try:
         # Log request for non-authenticated endpoint
         log_request()
@@ -689,18 +1150,24 @@ def login():
         # Find user
         user = User.query.filter_by(email=email).first()
         if not user or not user.check_password(password):
+            # Log failed login attempt with masked email
+            masked_email = mask_sensitive_data({'email': email})['email']
+            logger.warning(f"🔒 Failed login attempt: {masked_email} from {get_remote_address()}")
             return create_error_response('Invalid credentials',
                                        'Check your email and password',
                                        code=3003, status_code=401)
         
-        # Generate JWT token
-        token = generate_jwt_token(user.id)
+        # Create token pair for enhanced security
+        tokens = create_token_pair(user.id)
         
-        logger.info(f"User logged in: {email} (ID: {user.id})")
+        # Log successful login with masked user data
+        safe_user_data = mask_sensitive_data(user.to_dict())
+        logger.info(f"✅ User logged in: {safe_user_data['email']} (ID: {user.id})")
+        
         return jsonify({
             'message': 'Login successful',
-            'token': token,
-            'user': user.to_dict()
+            'user': user.to_dict(),
+            **tokens
         }), 200
         
     except Exception as e:
@@ -710,7 +1177,38 @@ def login():
 @app.route('/api/auth/me', methods=['GET'])
 @jwt_required
 def get_current_user_info():
-    """Get current user information"""
+    """Get current user information
+    ---
+    get:
+      tags:
+        - Authentication
+      summary: Get current user profile
+      description: Retrieve the authenticated user's profile information
+      security:
+        - jwt: []
+      responses:
+        200:
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        401:
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    """
     try:
         user = get_current_user()
         if not user:
@@ -724,11 +1222,216 @@ def get_current_user_info():
         logger.error(f"Get user info error: {str(e)}")
         return jsonify({'error': 'Failed to get user info'}), 500
 
+@app.route('/api/auth/refresh', methods=['POST'])
+@limiter.limit("10 per minute")
+def refresh_token():
+    """Refresh access token using refresh token
+    ---
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      description: Use a valid refresh token to obtain a new access/refresh token pair
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshToken'
+            example:
+              refresh_token: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+      responses:
+        200:
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        400:
+          description: Missing refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        429:
+          description: Too many refresh attempts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    """
+    try:
+        data = request.get_json()
+        if not data or 'refresh_token' not in data:
+            return create_error_response(
+                "Missing refresh token",
+                "Include refresh_token in request body",
+                code=2101,
+                status_code=400
+            )
+        
+        refresh_token = data['refresh_token']
+        payload = decode_jwt_token(refresh_token)
+        
+        if not payload:
+            return create_error_response(
+                "Invalid refresh token",
+                "Refresh token is expired or invalid",
+                code=2102,
+                status_code=401
+            )
+        
+        if payload.get('type') != 'refresh':
+            return create_error_response(
+                "Invalid token type",
+                "Expected refresh token",
+                code=2103,
+                status_code=401
+            )
+        
+        user = User.query.get(payload['user_id'])
+        if not user:
+            return create_error_response(
+                "User not found",
+                "User associated with token no longer exists",
+                code=2104,
+                status_code=404
+            )
+        
+        # Create new token pair
+        tokens = create_token_pair(user.id)
+        
+        logger.info(f"🔄 Token refresh successful for user {user.id}")
+        
+        return jsonify({
+            'message': 'Token refreshed successfully',
+            **tokens
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Token refresh error: {str(e)}")
+        return create_error_response(
+            "Token refresh failed",
+            "Internal server error during token refresh",
+            code=2105,
+            status_code=500
+        )
+
 @app.route('/api/invoices/upload', methods=['POST'])
-@limiter.limit("60 per minute", key_func=get_user_id_for_rate_limit)
+@limiter.limit("30 per minute", key_func=get_user_id_for_rate_limit)
+@limiter.limit("5 per minute", key_func=lambda: request.headers.get('Authorization', '').replace('Bearer ', '')[:20])
 @jwt_required
 def upload_invoice():
-    """Upload and process invoice (file or JSON data)"""
+    """Enhanced upload with per-token rate limiting and strict validation
+    ---
+    post:
+      tags:
+        - Invoices
+      summary: Upload and process invoice
+      description: |
+        Upload an invoice file (PDF, TXT, CSV) or JSON data for processing. 
+        The system will extract line items, vendor information, and calculate risk scores.
+        
+        **File Upload**: Send as multipart/form-data with 'file' field  
+        **JSON Upload**: Send structured invoice data as application/json
+        
+        **Rate Limits**: 30 per minute per user, 5 per minute per token
+      security:
+        - jwt: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Invoice file (PDF, TXT, CSV, max 10MB)
+                vendor:
+                  type: string
+                  description: Override vendor name (optional)
+            example:
+              vendor: "Acme Legal Services"
+          application/json:
+            schema:
+              type: object
+              properties:
+                vendor:
+                  type: string
+                  description: Vendor name
+                  example: "Legal Associates LLC"
+                amount:
+                  type: number
+                  description: Total amount
+                  example: 2500.00
+                line_items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      description:
+                        type: string
+                        example: "Legal research services"
+                      amount:
+                        type: number
+                        example: 500.00
+                      rate:
+                        type: number
+                        example: 350.00
+                      hours:
+                        type: number
+                        example: 1.43
+      responses:
+        200:
+          description: Invoice uploaded and processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoiceUpload'
+        400:
+          description: Invalid request or file format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        413:
+          description: File too large (>10MB)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        415:
+          description: Unsupported file type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        429:
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    """
     try:
         user = get_current_user()
         if not user:
@@ -909,7 +1612,44 @@ def upload_invoice():
 @app.route('/api/invoices', methods=['GET'])
 @jwt_required
 def get_invoices():
-    """Get latest 100 invoices for current user"""
+    """Get latest 100 invoices for current user
+    ---
+    get:
+      tags:
+        - Invoices
+      summary: List user invoices
+      description: Retrieve the latest 100 invoices for the authenticated user, ordered by processing date
+      security:
+        - jwt: []
+      responses:
+        200:
+          description: Invoices retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  invoices:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Invoice'
+                  count:
+                    type: integer
+                    description: Number of invoices returned
+                    example: 15
+        401:
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    """
     try:
         user = get_current_user()
         if not user:
@@ -978,6 +1718,42 @@ def get_invoice(invoice_id):
 
 @app.route('/api/dashboard/metrics', methods=['GET'])
 @jwt_required
+def get_dashboard_metrics():
+    """Get dashboard metrics and analytics for current user
+    ---
+    get:
+      tags:
+        - Dashboard
+      summary: Get dashboard metrics
+      description: |
+        Retrieve comprehensive dashboard metrics including:
+        - Total invoice count and spending
+        - Unique vendor count
+        - Average invoice amount
+        - Recent activity feed
+        - Spending trends and analytics
+      security:
+        - jwt: []
+      responses:
+        200:
+          description: Dashboard metrics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardMetrics'
+        401:
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    """
 def dashboard_metrics():
     """Get dashboard metrics for current user"""
     try:
