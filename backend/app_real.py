@@ -13,9 +13,11 @@ from typing import Dict, List, Optional, Any
 import bcrypt
 import jwt
 import pdfplumber
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from werkzeug.utils import secure_filename
 from sqlalchemy import func, desc
 from io import BytesIO, StringIO
@@ -30,7 +32,28 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('JWT_SECRET', 'lait-dev-secret-key-2025')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///lait.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB max file size
+
+# Rate limiting setup
+def get_user_id_for_rate_limit():
+    """Extract user ID from JWT token for rate limiting"""
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return get_remote_address()
+    
+    try:
+        token = auth_header.split(' ')[1]
+        payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+        return f"user_{payload['user_id']}"
+    except:
+        return get_remote_address()
+
+limiter = Limiter(
+    key_func=get_remote_address,
+    app=app,
+    default_limits=["200 per hour"],
+    storage_uri="memory://"
+)
 
 # Enable CORS for /api/* routes
 CORS(app, origins=['http://localhost:3000', 'http://localhost:5173'], 
@@ -141,20 +164,94 @@ def decode_jwt_token(token: str) -> Optional[Dict]:
     except jwt.InvalidTokenError:
         return None
 
+# ============================================================================
+# ERROR HANDLING & LOGGING HELPERS  
+# ============================================================================
+
+def log_request():
+    """Log incoming requests with user info if available"""
+    user_info = "anonymous"
+    if hasattr(g, 'current_user') and g.current_user:
+        user_info = f"user_{g.current_user.id}"
+    
+    logger.info(f"{request.method} {request.path} - {user_info} - IP:{get_remote_address()}")
+
+def create_error_response(error: str, hint: str = None, code: int = 400, status_code: int = None):
+    """Create consistent JSON error response"""
+    if status_code is None:
+        status_code = code
+    
+    response_data = {
+        "error": error,
+        "code": code
+    }
+    
+    if hint:
+        response_data["hint"] = hint
+        
+    return jsonify(response_data), status_code
+
+def validate_file_upload(file):
+    """Validate uploaded file size and type"""
+    if not file or not file.filename:
+        return create_error_response(
+            "No file provided", 
+            "Please select a file to upload", 
+            code=1001
+        )
+    
+    # Check file size (already handled by Flask MAX_CONTENT_LENGTH, but double-check)
+    if hasattr(file, 'content_length') and file.content_length and file.content_length > 10 * 1024 * 1024:
+        return create_error_response(
+            "File too large", 
+            "Maximum file size is 10MB", 
+            code=1002,
+            status_code=413
+        )
+    
+    # Check file extension
+    filename = secure_filename(file.filename.lower())
+    allowed_extensions = {'.pdf', '.txt', '.csv'}
+    file_ext = None
+    
+    for ext in allowed_extensions:
+        if filename.endswith(ext):
+            file_ext = ext
+            break
+    
+    if not file_ext:
+        return create_error_response(
+            "Invalid file type", 
+            "Only PDF, TXT, and CSV files are allowed", 
+            code=1003,
+            status_code=415
+        )
+    
+    return None  # No error
+
 def jwt_required(f):
     """Decorator to require JWT authentication"""
     def decorated_function(*args, **kwargs):
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
-            return jsonify({'error': 'Missing or invalid authorization header'}), 401
+            return create_error_response('Missing or invalid authorization header', 
+                                       'Include "Authorization: Bearer <token>" header',
+                                       code=2001, status_code=401)
         
         token = auth_header.split(' ')[1]
         payload = decode_jwt_token(token)
         if not payload:
-            return jsonify({'error': 'Invalid or expired token'}), 401
+            return create_error_response('Invalid or expired token',
+                                       'Please login again to get a new token',
+                                       code=2002, status_code=401)
         
-        # Add user_id to request context
+        # Add user_id to request context and g for logging
         request.user_id = payload['user_id']
+        g.current_user = User.query.get(payload['user_id'])
+        
+        # Log the request with user info
+        log_request()
+        
         return f(*args, **kwargs)
     
     decorated_function.__name__ = f.__name__
@@ -343,6 +440,30 @@ def calculate_anomaly_score(hours: float, rate: float, line_total: float) -> tup
     return anomaly_score, is_flagged, flag_reason
 
 # ============================================================================
+# ERROR HANDLERS & MIDDLEWARE  
+# ============================================================================
+
+# Rate limit error handler
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    """Handle rate limiting errors with consistent JSON response"""
+    return create_error_response(
+        "Rate limit exceeded",
+        f"Too many requests. Try again in {e.retry_after} seconds",
+        code=9001,
+        status_code=429
+    )
+
+# Update before_request to actually log
+@app.before_request
+def log_public_requests_updated():
+    """Log requests to public endpoints (JWT endpoints handle their own logging)"""
+    public_endpoints = ['/api/health', '/api/auth/register', '/api/auth/login']
+    if request.path in public_endpoints and not hasattr(g, 'logged'):
+        log_request()
+        g.logged = True
+
+# ============================================================================
 # API ROUTES
 # ============================================================================
 
@@ -355,23 +476,34 @@ def health_check():
 def register():
     """Register new user with bcrypt password hashing"""
     try:
+        # Log request for non-authenticated endpoint
+        log_request()
+        
         data = request.get_json()
         if not data:
-            return jsonify({'error': 'Missing request body'}), 400
+            return create_error_response('Missing request body',
+                                       'Send JSON data with email and password',
+                                       code=3101)
         
         email = data.get('email', '').strip().lower()
         password = data.get('password', '')
         
         if not email or not password:
-            return jsonify({'error': 'Email and password are required'}), 400
+            return create_error_response('Email and password are required',
+                                       'Both email and password must be provided',
+                                       code=3102)
         
         if len(password) < 6:
-            return jsonify({'error': 'Password must be at least 6 characters'}), 400
+            return create_error_response('Password must be at least 6 characters',
+                                       'Choose a stronger password',
+                                       code=3103)
         
         # Check if user already exists
         existing_user = User.query.filter_by(email=email).first()
         if existing_user:
-            return jsonify({'error': 'User already exists'}), 409
+            return create_error_response('User already exists',
+                                       'Try logging in or use a different email',
+                                       code=3104, status_code=409)
         
         # Create new user
         user = User(
@@ -401,28 +533,38 @@ def register():
         return jsonify({'error': 'Registration failed'}), 500
 
 @app.route('/api/auth/login', methods=['POST'])
+@limiter.limit("5 per minute")
 def login():
     """Login user with bcrypt password verification"""
     try:
+        # Log request for non-authenticated endpoint
+        log_request()
+        
         data = request.get_json()
         if not data:
-            return jsonify({'error': 'Missing request body'}), 400
+            return create_error_response('Missing request body', 
+                                       'Send JSON data with email and password',
+                                       code=3001)
         
         email = data.get('email', '').strip().lower()
         password = data.get('password', '')
         
         if not email or not password:
-            return jsonify({'error': 'Email and password are required'}), 400
+            return create_error_response('Email and password are required',
+                                       'Both email and password must be provided',
+                                       code=3002)
         
         # Find user
         user = User.query.filter_by(email=email).first()
         if not user or not user.check_password(password):
-            return jsonify({'error': 'Invalid credentials'}), 401
+            return create_error_response('Invalid credentials',
+                                       'Check your email and password',
+                                       code=3003, status_code=401)
         
         # Generate JWT token
         token = generate_jwt_token(user.id)
         
-        logger.info(f"User logged in: {email}")
+        logger.info(f"User logged in: {email} (ID: {user.id})")
         return jsonify({
             'message': 'Login successful',
             'token': token,
@@ -434,13 +576,16 @@ def login():
         return jsonify({'error': 'Login failed'}), 500
 
 @app.route('/api/invoices/upload', methods=['POST'])
+@limiter.limit("60 per minute", key_func=get_user_id_for_rate_limit)
 @jwt_required
 def upload_invoice():
     """Upload and process invoice (file or JSON data)"""
     try:
         user = get_current_user()
         if not user:
-            return jsonify({'error': 'User not found'}), 404
+            return create_error_response('User not found', 
+                                       'Please login again',
+                                       code=4001, status_code=404)
         
         lines_data = []
         vendor_name = "Unknown Vendor"
@@ -451,20 +596,34 @@ def upload_invoice():
         # Handle multipart file upload
         if 'file' in request.files:
             file = request.files['file']
-            if file.filename == '':
-                return jsonify({'error': 'No file selected'}), 400
+            
+            # Validate file upload
+            validation_error = validate_file_upload(file)
+            if validation_error:
+                return validation_error
             
             filename = secure_filename(file.filename)
-            file_content = file.read()
+            
+            # Read file content safely (don't log content)
+            try:
+                file_content = file.read()
+                logger.info(f"Processing file upload: {filename} ({len(file_content)} bytes) for user {user.id}")
+            except Exception as e:
+                return create_error_response('Failed to read file',
+                                           'File may be corrupted or too large',
+                                           code=4002, status_code=400)
             
             # Parse based on file type
             if filename.lower().endswith('.pdf'):
                 lines_data = parse_pdf_content(file_content)
             elif filename.lower().endswith(('.txt', '.csv')):
-                content = file_content.decode('utf-8', errors='ignore')
-                lines_data = parse_text_content(content)
-            else:
-                return jsonify({'error': 'Unsupported file type. Use PDF, TXT, or CSV'}), 400
+                try:
+                    content = file_content.decode('utf-8', errors='ignore')
+                    lines_data = parse_text_content(content)
+                except UnicodeDecodeError:
+                    return create_error_response('Invalid file encoding',
+                                               'File must be valid UTF-8 text',
+                                               code=4003, status_code=400)
             
             # Extract vendor from form data if provided
             vendor_name = request.form.get('vendor', filename.split('.')[0].title())
