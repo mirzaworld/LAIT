@@ -2,8 +2,8 @@
 
 const fetch = require('node-fetch');
 
-const API_BASE = 'http://127.0.0.1:5002/api';
-const FRONTEND_ORIGIN = 'http://localhost:5174';
+const API_BASE = 'http://127.0.0.1:5003/api';
+const FRONTEND_ORIGIN = 'http://localhost:5173';
 
 async function testEndpoint(endpoint, description) {
     try {

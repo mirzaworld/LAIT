@@ -91,7 +91,7 @@
         
         async function testUpload() {
             try {
-                log('Testing /api/upload-invoice endpoint...', 'info');
+                log('Testing /api/invoices/upload endpoint...', 'info');
                 
                 // Create a test invoice
                 const testInvoice = {
@@ -104,7 +104,7 @@
                     rate: 500
                 };
                 
-                const response = await fetch(`${API_URL}/upload-invoice`, {
+                const response = await fetch(`${API_URL}/invoices/upload`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

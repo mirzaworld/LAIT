@@ -403,7 +403,7 @@
                     formData.append('vendor', vendor);
                     formData.append('amount', amount);
 
-                    const response = await fetch(`${BASE_URL}/api/upload-invoice`, {
+                    const response = await fetch(`${BASE_URL}/api/invoices/upload`, {
                         method: 'POST',
                         body: formData
                     });
@@ -416,7 +416,7 @@
                     formData.append('vendor', vendor);
                     formData.append('amount', amount);
 
-                    const response = await fetch(`${BASE_URL}/api/upload-invoice`, {
+                    const response = await fetch(`${BASE_URL}/api/invoices/upload`, {
                         method: 'POST',
                         body: formData
                     });

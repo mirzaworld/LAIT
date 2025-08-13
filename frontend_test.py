@@ -45,7 +45,7 @@ def test_backend_endpoints():
     print("🔧 Testing Backend API Endpoints")
     print("=" * 50)
     
-    base_url = "http://localhost:5002"
+    base_url = "http://localhost:5003"
     
     endpoints_to_test = [
         ("/", "GET"),
