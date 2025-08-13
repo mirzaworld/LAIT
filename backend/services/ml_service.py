@@ -1,24 +1,324 @@
-#!/usr/bin/env python3
 """
-LAIT ML Service
-===============
+LAIT ML Service Module
+=====================
 
-Machine Learning service for legal invoice analysis.
-Loads pre-trained models for anomaly detection and overspend classification,
-with fallback to deterministic scoring when models are unavailable.
+Provides machine learning scoring capabilities for legal invoice analysis:
+- Anomaly detection using Isolation Forest
+- Overspend prediction using binary classification
+- Deterministic fallback when models are unavailable
 
-Models:
-- models/iso_forest.pkl: Isolation Forest for anomaly detection
-- models/overspend.pkl: Binary classifier for overspend detection
-
-Author: LAIT Development Team
-Version: 1.0.0
+Usage:
+    from services.ml_service import score_lines, ml_status
+    
+    # Check service status
+    status = ml_status()
+    
+    # Score invoice line items
+    scored_df = score_lines(invoice_dataframe)
 """
 
 import os
+import pickle
 import logging
+import pandas as pd
+import numpy as np
+from typing import Dict, Any, Optional, Tuple
 from pathlib import Path
-from typing import Tuple, List, Dict, Any, Optional
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+# Model paths
+MODELS_DIR = Path(__file__).parent.parent / "models"
+ANOMALY_MODEL_PATH = MODELS_DIR / "iso_forest.pkl" 
+OVERSPEND_MODEL_PATH = MODELS_DIR / "overspend.pkl"
+
+# Global model cache
+_models_cache = {
+    "anomaly": None,
+    "overspend": None,
+    "loaded": False
+}
+
+class MLService:
+    """ML Service for legal invoice analysis."""
+    
+    def __init__(self):
+        self.fallback_mode = True
+        self.models = {}
+        self._load_models()
+    
+    def _load_models(self) -> None:
+        """Load ML models from disk if available."""
+        try:
+            # Create models directory if it doesn't exist
+            MODELS_DIR.mkdir(exist_ok=True)
+            
+            # Try to load anomaly detection model
+            if ANOMALY_MODEL_PATH.exists():
+                try:
+                    with open(ANOMALY_MODEL_PATH, 'rb') as f:
+                        self.models['anomaly'] = pickle.load(f)
+                    logger.info(f"✅ Loaded anomaly detection model from {ANOMALY_MODEL_PATH}")
+                except Exception as e:
+                    logger.warning(f"⚠️  Failed to load anomaly model: {e}")
+            else:
+                logger.info(f"📂 Anomaly model not found at {ANOMALY_MODEL_PATH}")
+            
+            # Try to load overspend prediction model
+            if OVERSPEND_MODEL_PATH.exists():
+                try:
+                    with open(OVERSPEND_MODEL_PATH, 'rb') as f:
+                        self.models['overspend'] = pickle.load(f)
+                    logger.info(f"✅ Loaded overspend prediction model from {OVERSPEND_MODEL_PATH}")
+                except Exception as e:
+                    logger.warning(f"⚠️  Failed to load overspend model: {e}")
+            else:
+                logger.info(f"📂 Overspend model not found at {OVERSPEND_MODEL_PATH}")
+            
+            # Set mode based on model availability
+            if self.models.get('anomaly') and self.models.get('overspend'):
+                self.fallback_mode = False
+                logger.info("🎯 ML Service: Production mode (models loaded)")
+            else:
+                self.fallback_mode = True
+                logger.info("🔄 ML Service: Fallback mode (using deterministic scoring)")
+                
+        except Exception as e:
+            logger.error(f"❌ Error during model loading: {e}")
+            self.fallback_mode = True
+    
+    def _validate_dataframe(self, df: pd.DataFrame) -> Tuple[bool, str]:
+        """Validate input dataframe structure."""
+        required_columns = ['description', 'hours', 'rate', 'line_total']
+        
+        if df is None or df.empty:
+            return False, "DataFrame is empty"
+        
+        missing_cols = [col for col in required_columns if col not in df.columns]
+        if missing_cols:
+            return False, f"Missing required columns: {missing_cols}"
+        
+        # Check for numeric columns
+        numeric_cols = ['hours', 'rate', 'line_total']
+        for col in numeric_cols:
+            if not pd.api.types.is_numeric_dtype(df[col]):
+                try:
+                    df[col] = pd.to_numeric(df[col], errors='coerce')
+                except:
+                    return False, f"Column '{col}' cannot be converted to numeric"
+        
+        return True, "Valid"
+    
+    def _score_with_models(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Score using trained ML models."""
+        result_df = df.copy()
+        
+        try:
+            # Prepare features for models
+            features = df[['hours', 'rate', 'line_total']].fillna(0)
+            
+            # Anomaly detection
+            if self.models.get('anomaly'):
+                try:
+                    anomaly_scores = self.models['anomaly'].decision_function(features)
+                    # Convert to 0-1 scale (lower scores = more anomalous)
+                    result_df['anomaly_score'] = 1 / (1 + np.exp(-anomaly_scores))
+                except Exception as e:
+                    logger.warning(f"Anomaly model prediction failed: {e}, using fallback")
+                    result_df['anomaly_score'] = self._fallback_anomaly_score(df)
+            else:
+                result_df['anomaly_score'] = self._fallback_anomaly_score(df)
+            
+            # Overspend prediction  
+            if self.models.get('overspend'):
+                try:
+                    overspend_probs = self.models['overspend'].predict_proba(features)
+                    # Get probability of positive class (overspend)
+                    result_df['is_flagged'] = overspend_probs[:, 1] > 0.5
+                except Exception as e:
+                    logger.warning(f"Overspend model prediction failed: {e}, using fallback")
+                    result_df['is_flagged'] = self._fallback_flagging(df)
+            else:
+                result_df['is_flagged'] = self._fallback_flagging(df)
+                
+        except Exception as e:
+            logger.error(f"Model scoring failed: {e}, falling back to deterministic scoring")
+            return self._score_with_fallback(df)
+        
+        return result_df
+    
+    def _score_with_fallback(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Score using deterministic fallback algorithm."""
+        result_df = df.copy()
+        
+        # Deterministic anomaly scoring: (rate/1000) + (hours/12) + (line_total/5000)
+        result_df['anomaly_score'] = (
+            (df['rate'] / 1000.0) + 
+            (df['hours'] / 12.0) + 
+            (df['line_total'] / 5000.0)
+        ).clip(0, 1)  # Normalize to 0-1 range
+        
+        # Deterministic flagging: rate>900 OR hours>10 OR line_total>3000
+        result_df['is_flagged'] = (
+            (df['rate'] > 900) | 
+            (df['hours'] > 10) | 
+            (df['line_total'] > 3000)
+        )
+        
+        return result_df
+    
+    def _fallback_anomaly_score(self, df: pd.DataFrame) -> pd.Series:
+        """Fallback anomaly scoring logic."""
+        return (
+            (df['rate'] / 1000.0) + 
+            (df['hours'] / 12.0) + 
+            (df['line_total'] / 5000.0)
+        ).clip(0, 1)
+    
+    def _fallback_flagging(self, df: pd.DataFrame) -> pd.Series:
+        """Fallback flagging logic."""
+        return (
+            (df['rate'] > 900) | 
+            (df['hours'] > 10) | 
+            (df['line_total'] > 3000)
+        )
+    
+    def score_lines(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Score invoice line items for anomalies and overspend risk.
+        
+        Args:
+            df: DataFrame with columns: description, hours, rate, line_total
+            
+        Returns:
+            DataFrame with added columns: anomaly_score, is_flagged
+            
+        Raises:
+            ValueError: If input DataFrame is invalid
+        """
+        # Validate input
+        is_valid, error_msg = self._validate_dataframe(df)
+        if not is_valid:
+            raise ValueError(f"Invalid input DataFrame: {error_msg}")
+        
+        # Ensure we have a copy to avoid modifying original
+        df_copy = df.copy()
+        
+        # Fill NaN values with defaults
+        df_copy['hours'] = df_copy['hours'].fillna(0)
+        df_copy['rate'] = df_copy['rate'].fillna(0)  
+        df_copy['line_total'] = df_copy['line_total'].fillna(0)
+        df_copy['description'] = df_copy['description'].fillna('Unknown')
+        
+        # Score based on available models
+        if self.fallback_mode:
+            result_df = self._score_with_fallback(df_copy)
+            logger.debug(f"Scored {len(result_df)} lines using fallback mode")
+        else:
+            result_df = self._score_with_models(df_copy)
+            logger.debug(f"Scored {len(result_df)} lines using trained models")
+        
+        # Ensure output columns are present
+        required_output_cols = ['description', 'hours', 'rate', 'line_total', 'anomaly_score', 'is_flagged']
+        for col in required_output_cols:
+            if col not in result_df.columns:
+                logger.warning(f"Missing output column '{col}', adding default values")
+                if col == 'anomaly_score':
+                    result_df[col] = 0.5
+                elif col == 'is_flagged':
+                    result_df[col] = False
+        
+        return result_df[required_output_cols]
+    
+    def ml_status(self) -> Dict[str, Any]:
+        """
+        Get ML service status information.
+        
+        Returns:
+            Dictionary with service status details
+        """
+        return {
+            "service_available": True,
+            "fallback_mode": self.fallback_mode,
+            "models_loaded": {
+                "anomaly": self.models.get('anomaly') is not None,
+                "overspend": self.models.get('overspend') is not None
+            },
+            "model_paths": {
+                "anomaly": str(ANOMALY_MODEL_PATH),
+                "overspend": str(OVERSPEND_MODEL_PATH)
+            },
+            "models_directory": str(MODELS_DIR),
+            "fallback_algorithm": {
+                "anomaly_score": "(rate/1000) + (hours/12) + (line_total/5000)",
+                "is_flagged": "rate>900 OR hours>10 OR line_total>3000"
+            }
+        }
+
+
+# Global service instance
+_ml_service = None
+
+def get_ml_service() -> MLService:
+    """Get or create ML service instance."""
+    global _ml_service
+    if _ml_service is None:
+        _ml_service = MLService()
+    return _ml_service
+
+def score_lines(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Score invoice line items for anomalies and overspend risk.
+    
+    Args:
+        df: DataFrame with columns: description, hours, rate, line_total
+        
+    Returns:
+        DataFrame with columns: description, hours, rate, line_total, anomaly_score, is_flagged
+    """
+    service = get_ml_service()
+    return service.score_lines(df)
+
+def ml_status() -> Dict[str, Any]:
+    """
+    Get ML service status.
+    
+    Returns:
+        Dictionary with service status including fallback_mode and service_available
+    """
+    service = get_ml_service()
+    return service.ml_status()
+
+def reload_models() -> Dict[str, Any]:
+    """
+    Reload ML models from disk.
+    
+    Returns:
+        Updated status after reload attempt
+    """
+    global _ml_service
+    _ml_service = MLService()  # Create new instance to reload models
+    return ml_status()
+
+
+if __name__ == "__main__":
+    # Test the ML service
+    import pandas as pd
+    
+    # Test data
+    test_df = pd.DataFrame({
+        'description': ['Legal research', 'Document review', 'Court filing'],
+        'hours': [8.0, 15.0, 2.0],
+        'rate': [300.0, 1200.0, 500.0],
+        'line_total': [2400.0, 18000.0, 1000.0]
+    })
+    
+    print("Testing ML Service...")
+    print("Status:", ml_status())
+    print("\nScoring test data:")
+    result = score_lines(test_df)
+    print(result)
 
 # Try to import ML dependencies with fallback
 try:

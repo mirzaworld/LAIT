@@ -55,6 +55,14 @@ try:
     from models.enhanced_invoice_analyzer import EnhancedInvoiceAnalyzer
 except ImportError as e:
     print(f"Warning: Model imports failed ({e}). ML features may be limited.")
+
+# Import ML service
+try:
+    from services.ml_service import score_lines, ml_status
+    ML_SERVICE_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: ML service import failed ({e}). ML features will be unavailable.")
+    ML_SERVICE_AVAILABLE = False
     
 # Load environment variables
 load_dotenv()
@@ -281,8 +289,27 @@ def create_app():
     # --------------------------------------------------
     # Existing configuration continues below
     # --------------------------------------------------
-    # Configure app
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@localhost/legalspend')
+    # Configure app with local database fallback
+    database_url = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@localhost/legalspend')
+    
+    # Fix Docker hostname issue for local development
+    if 'db:5432' in database_url and os.getenv('ENVIRONMENT') != 'docker':
+        database_url = database_url.replace('@db:5432', '@localhost:5432')
+        logger.info(f"🔧 Fixed database URL for local development: {database_url[:50]}...")
+    
+    # Fallback to SQLite for local development if PostgreSQL not available
+    if 'postgresql' in database_url and os.getenv('ENVIRONMENT') != 'docker':
+        try:
+            import psycopg2
+            # Test connection
+            test_conn = psycopg2.connect(database_url)
+            test_conn.close()
+            logger.info("✅ PostgreSQL connection successful")
+        except Exception as e:
+            logger.warning(f"⚠️  PostgreSQL unavailable ({e}), falling back to SQLite")
+            database_url = 'sqlite:///lait_local.db'
+    
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-change-in-prod')
 
@@ -390,6 +417,28 @@ def create_app():
     @app.route('/api/health')
     def health_check():
         return jsonify({"status": "healthy", "timestamp": datetime.now(timezone.utc)})
+
+    # ML Service Status Endpoint
+    @app.route('/api/ml/status')
+    def ml_service_status():
+        """Get ML service status including fallback mode and model availability."""
+        if not ML_SERVICE_AVAILABLE:
+            return jsonify({
+                "service_available": False,
+                "error": "ML service not available",
+                "fallback_mode": True
+            }), 503
+        
+        try:
+            status = ml_status()
+            return jsonify(status)
+        except Exception as e:
+            logger.error(f"ML status check failed: {e}")
+            return jsonify({
+                "service_available": False,
+                "error": str(e),
+                "fallback_mode": True
+            }), 500
 
     # --- NEW: Readiness endpoint (step 3) ---
     @app.route('/api/readiness')
@@ -1108,8 +1157,9 @@ if __name__ == '__main__':
         
         print(f"🌐 Starting server on http://{host}:{port}")
         
-        # Use Socket.IO to run the application
-        socketio.run(app, host=host, port=port, debug=debug)
+        # Use Socket.IO to run the application with production safety override
+        # Note: For true production, use gunicorn instead of development server
+        socketio.run(app, host=host, port=port, debug=debug, allow_unsafe_werkzeug=True)
         
     except KeyboardInterrupt:
         print("\n🛑 Server shutdown requested. Exiting gracefully...")
