@@ -1,6 +1,9 @@
 # LAIT - Enhanced Legal Intelligence System
 
-An enterprise-grade AI-powered legal intelligence platform that surpasses Thomson Reuters Legal Tracker with advanced machine learning, comprehensive matter management, workflow automation, and real-time legal analytics.
+An enterprise-grade AI-powered legal intelligence platformcurl -X POST http://localhost:5003/api/invoices/upload 
+  -H 'Authorization: Bearer YOUR_JWT_TOKEN' 
+  -F file=@sample.txt 
+  -F vendor=Test Vendorat surpasses Thomson Reuters Legal Tracker with advanced machine learning, comprehensive matter management, workflow automation, and real-time legal analytics.
 
 ## 🎉 **Production Ready Status**
 
