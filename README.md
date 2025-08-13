@@ -101,7 +101,7 @@ curl -X POST http://localhost:5003/api/legal/search \
 Upload (multipart/form-data):
 
 ```bash
-curl -X POST http://localhost:5003/api/upload-invoice \
+curl -X POST http://localhost:5003/api/invoices/upload \
   -H 'Authorization: Bearer <TOKEN>' \
   -F file=@invoice.pdf
 ```
