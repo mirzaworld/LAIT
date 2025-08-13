@@ -6,7 +6,7 @@ const { execSync } = require('child_process');
 console.log('🧪 LAIT Frontend-Backend Integration Test');
 console.log('==========================================\n');
 
-const API_BASE = 'http://localhost:5002/api';
+const API_BASE = 'http://localhost:5003/api';
 let testsPassed = 0;
 let testsFailed = 0;
 

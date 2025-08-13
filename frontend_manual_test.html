@@ -109,7 +109,7 @@
         }
         
         async function testAPI() {
-            const API_BASE = 'http://localhost:5002/api';
+            const API_BASE = 'http://localhost:5003/api';
             try {
                 const health = await fetch(`${API_BASE}/health`).then(r => r.json());
                 const metrics = await fetch(`${API_BASE}/dashboard/metrics`).then(r => r.json());
@@ -123,7 +123,7 @@
             const resultsDiv = document.getElementById('api-results');
             resultsDiv.innerHTML = '<p>Running tests...</p>';
             
-            const API_BASE = 'http://localhost:5002/api';
+            const API_BASE = 'http://localhost:5003/api';
             const tests = [
                 { name: 'Health', url: `${API_BASE}/health` },
                 { name: 'Metrics', url: `${API_BASE}/dashboard/metrics` },
