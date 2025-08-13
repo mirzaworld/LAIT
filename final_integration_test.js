@@ -4,7 +4,7 @@
 console.log('🚀 LAIT Legal Analytics Platform - Final Integration Test');
 console.log('========================================================');
 
-const API_URL = 'http://localhost:5003/api';
+const API_URL = 'http://localhost:5002/api';
 
 async function runTest(endpoint, description) {
     try {
@@ -47,7 +47,7 @@ async function testFileUpload() {
         const blob = new Blob(['Mock invoice content'], { type: 'application/pdf' });
         formData.append('file', blob, 'test_invoice.pdf');
         
-        const response = await fetch(`${API_URL}/invoices/upload`, {
+        const response = await fetch(`${API_URL}/upload-invoice`, {
             method: 'POST',
             body: formData
         });
@@ -108,7 +108,7 @@ async function runAllTests() {
         console.log(`\n🚀 Deployment URLs:`);
         console.log(`   Frontend (dev): http://localhost:5173`);
         console.log(`   Frontend (prod): http://localhost:54943`);
-        console.log(`   Backend API: http://localhost:5003`);
+        console.log(`   Backend API: http://localhost:5002`);
         
         console.log(`\n💡 Next Steps:`);
         console.log(`   1. Deploy frontend to Vercel/Netlify`);

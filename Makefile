@@ -32,7 +32,7 @@ seed:
 	@echo "🌱 Seeding LAIT demo data..."
 	@echo "Requirement: Backend must be running on localhost:5003"
 	@echo ""
-	$(PYTHON_CMD) scripts/seed_demo.py
+	python3 scripts/seed_demo.py
 
 # Check backend health
 health:

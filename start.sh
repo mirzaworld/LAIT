@@ -13,7 +13,7 @@ echo -e "${BLUE}=== LAIT - Enhanced Legal Intelligence System ===${NC}"
 echo -e "${GREEN}Starting backend and frontend services...${NC}"
 
 # Check if backend server exists
-if [ ! -f ./backend/app_real.py ]; then
+if [ ! -f ./backend/enhanced_app.py ]; then
   echo -e "${YELLOW}Warning: Backend file not found at ./backend/enhanced_app.py${NC}"
   echo "Please make sure your backend is properly set up."
   exit 1

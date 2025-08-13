@@ -15,12 +15,12 @@ services:
       npm run build
     startCommand: |
       export PYTHONPATH=/opt/render/project/src
-      python backend/app_real.py
+      python backend/enhanced_app.py
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
       - key: FLASK_APP
-        value: backend/app_real.py
+        value: backend/enhanced_app.py
       - key: FLASK_ENV
         value: production
       - key: SECRET_KEY

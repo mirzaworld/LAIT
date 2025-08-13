@@ -69,7 +69,7 @@ echo "--------------------"
 check_service "Backend API" "http://localhost:8000/api/analytics/summary"
 backend_running=$?
 
-check_service "Frontend Dev Server" "http://localhost:5173"
+check_service "Frontend Dev Server" "http://localhost:5174"
 frontend_running=$?
 
 if [ $backend_running -ne 0 ] || [ $frontend_running -ne 0 ]; then
@@ -93,7 +93,7 @@ echo "----------------------------"
 
 # Test if frontend can load without JavaScript errors
 echo -n "Testing frontend page load... "
-if curl -s "http://localhost:5173" | grep -q "root"; then
+if curl -s "http://localhost:5174" | grep -q "root"; then
     echo -e "${GREEN}✓ PASS${NC}"
     TESTS_PASSED=$((TESTS_PASSED + 1))
 else

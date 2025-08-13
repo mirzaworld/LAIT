@@ -2,7 +2,7 @@
 console.log('=== LAIT Frontend API Debug ===');
 
 async function testFrontendAPI() {
-    const BASE_URL = 'http://localhost:5003';
+    const BASE_URL = 'http://localhost:5002';
     
     console.log('1. Testing API health...');
     try {

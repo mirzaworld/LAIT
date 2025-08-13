@@ -78,7 +78,7 @@
                 formData.append('category', 'Legal Services');
                 formData.append('description', 'Test invoice from frontend');
                 
-                const response = await fetch(`${API_BASE}/invoices/upload`, {
+                const response = await fetch(`${API_BASE}/upload-invoice`, {
                     method: 'POST',
                     body: formData
                 });

@@ -45,7 +45,7 @@ def test_backend_endpoints():
     print("🔧 Testing Backend API Endpoints")
     print("=" * 50)
     
-    base_url = "http://localhost:5003"
+    base_url = "http://localhost:5002"
     
     endpoints_to_test = [
         ("/", "GET"),
@@ -90,7 +90,7 @@ def test_upload_functionality():
         with open(test_file_path, "rb") as f:
             files = {"file": f}
             response = requests.post(
-                "http://localhost:5003/api/invoices/upload",
+                "http://localhost:5002/api/upload-invoice",
                 files=files,
                 timeout=10
             )
@@ -136,7 +136,7 @@ def check_frontend_console_errors():
     print("   - Progress indicators should show during upload")
     
     print("\n🔗 API Integration:")
-    print("   - Backend should be running on port 5003")
+    print("   - Backend should be running on port 5002")
     print("   - CORS should be configured for localhost:5175")
     print("   - Error handling should show user-friendly messages")
     
@@ -208,7 +208,7 @@ def generate_test_report():
     print()
     print("🌐 Access URLs:")
     print("   • Frontend: http://localhost:5175")
-    print("   • Backend API: http://localhost:5003")
+    print("   • Backend API: http://localhost:5002")
     print("   • Upload Page: http://localhost:5175/invoices/upload")
     print("   • Analytics: http://localhost:5175/analytics")
     print("   • Legal Intelligence: http://localhost:5175/legal-intelligence")

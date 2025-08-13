@@ -6,7 +6,7 @@ const { execSync } = require('child_process');
 console.log('🧪 LAIT Frontend-Backend Integration Test');
 console.log('==========================================\n');
 
-const API_BASE = 'http://localhost:5003/api';
+const API_BASE = 'http://localhost:5002/api';
 let testsPassed = 0;
 let testsFailed = 0;
 
@@ -111,7 +111,7 @@ await runTest('File Upload', async () => {
     formData.append('category', 'Legal Services');
     formData.append('description', 'Integration test invoice');
     
-    const response = await fetch(`${API_BASE}/invoices/upload`, {
+    const response = await fetch(`${API_BASE}/upload-invoice`, {
         method: 'POST',
         body: formData
     });
