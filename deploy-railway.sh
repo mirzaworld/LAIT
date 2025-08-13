@@ -11,7 +11,7 @@ cat > railway.json << 'EOF'
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "export PYTHONPATH=/app && python backend/enhanced_app.py",
+    "startCommand": "export PYTHONPATH=/app && python backend/app_real.py",
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
@@ -36,7 +36,7 @@ cmds = [
 cmds = ["echo 'Build completed'"]
 
 [start]
-cmd = "export PYTHONPATH=/app && python backend/enhanced_app.py"
+cmd = "export PYTHONPATH=/app && python backend/app_real.py"
 EOF
 
 echo "✅ Created Railway deployment configuration"

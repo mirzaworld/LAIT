@@ -4,7 +4,7 @@
 echo "🧹 Cleaning up redundant backend files..."
 
 # Define the main app file we want to keep
-MAIN_APP="enhanced_app.py"
+MAIN_APP="app_real.py"
 
 # Directory to archive old files
 ARCHIVE_DIR="backend/archive"
