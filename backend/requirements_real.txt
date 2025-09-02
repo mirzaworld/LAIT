@@ -9,7 +9,7 @@ Flask-SQLAlchemy==3.1.1
 SQLAlchemy==2.0.23
 SQLAlchemy-Utils==0.41.1  # Database utilities
 psycopg2-binary==2.9.9  # PostgreSQL adapter
-alembic==1.13.1  # Database migrations
+alembic==1.16.5  # Database migrations
 
 # Security and authentication
 bcrypt==4.1.2
