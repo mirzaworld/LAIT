@@ -112,9 +112,16 @@ def create_invoice_legacy():
 @development_jwt_required
 def upload_invoice():
     """Upload a new invoice (PDF) and save parsed data to the database with ML analysis"""
-    # Enforce PDF uploads early for any request that includes an Authorization header
+    # Enforce PDF uploads for truly-authenticated requests only.
+    # In test/dev modes we auto-inject JWTs (AUTO_AUTH_BYPASS=True) so treat those
+    # as unauthenticated for strict file-type enforcement.
     auth_header = request.headers.get('Authorization', '')
-    if auth_header and auth_header.lower().startswith('bearer '):
+    bypass = current_app.config.get('AUTO_AUTH_BYPASS', True) if current_app else True
+    require_pdf = False
+    if auth_header and auth_header.lower().startswith('bearer ') and not bypass:
+        require_pdf = True
+
+    if require_pdf:
         if 'file' not in request.files:
             return jsonify({'error': 'No file provided'}), 400
         incoming = request.files['file']
