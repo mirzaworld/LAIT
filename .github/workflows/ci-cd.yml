@@ -56,12 +56,12 @@ jobs:
 
     - name: Install Node.js dependencies
       run: |
-        cd frontend || exit 0
-        # Prefer `npm ci` when a lockfile is present, otherwise fall back to `npm install`
-        if [ -f ../package-lock.json ] || [ -f package-lock.json ]; then
-          npm ci
+        if [ -d frontend ]; then
+          cd frontend
+          # Prefer a clean install when lockfile exists; otherwise fall back to npm install
+          npm ci || npm install
         else
-          npm install
+          echo "No frontend directory; skipping npm install"
         fi
         
     - name: Run Python tests

@@ -23,12 +23,13 @@ jobs:
 
       - name: Install frontend dependencies (npm)
         run: |
-          # If a package-lock.json exists, prefer `npm ci` for reproducible installs;
-          # otherwise fall back to `npm install` which will create a lockfile.
-          if [ -f package-lock.json ]; then
-            npm ci
+          # If frontend exists, run npm install. Prefer `npm ci` when possible,
+          # but fall back to `npm install` if `npm ci` fails (no lockfile).
+          if [ -d frontend ]; then
+            cd frontend
+            npm ci || npm install
           else
-            npm install
+            echo "No frontend folder found, skipping frontend install"
           fi
 
       - name: Set up Python ${{ matrix.python }}
