@@ -16,6 +16,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install frontend dependencies (npm)
+        run: |
+          # If a package-lock.json exists, prefer `npm ci` for reproducible installs;
+          # otherwise fall back to `npm install` which will create a lockfile.
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+
       - name: Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v4
         with:
