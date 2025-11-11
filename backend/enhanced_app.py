@@ -91,7 +91,12 @@ else:
 # Import ML service (skip if ML disabled)
 if ML_MODE != 'off':
     try:
-        from services.ml_service import score_lines, ml_status
+        # Import a small, well-known public API from the ml service module.
+        # The ml_service module historically exposed multiple names and
+        # implementations; prefer using get_model_status() which is stable
+        # across older/newer variants and is defensive against duplicate
+        # class definitions in the module.
+        from services.ml_service import score_lines, get_model_status
         ML_SERVICE_AVAILABLE = True
     except Exception as e:
         print(f"Warning: ML service import failed ({e}). ML features will be unavailable.")
@@ -501,9 +506,18 @@ def create_app():
                 "error": "ML service not available",
                 "fallback_mode": True
             }), 503
-        
+
+        # Use the exported get_model_status() function (stable) where possible
+        # and guard any exception so tests don't fail because of ML internals.
         try:
-            return ml_status()
+            status = get_model_status()
+            # Ensure response is JSON-serializable and includes expected keys
+            if isinstance(status, dict):
+                status.setdefault('service_available', True)
+                status.setdefault('fallback_mode', status.get('fallback_mode', True))
+                return jsonify(status), 200
+            # If the implementation returned a Flask response already
+            return status
         except Exception as e:
             logger.error(f"ML status check failed: {e}")
             return jsonify({

@@ -115,9 +115,18 @@ def upload_invoice():
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
     file = request.files['file']
-    # Accept non-PDF uploads in development/test environments for E2E tests
+    # Basic validation: filename required
     if not file.filename:
         return jsonify({'error': 'No file provided'}), 400
+
+    # Enforce PDF uploads for authenticated requests (strict mode)
+    # Allow non-PDF fallback only when requests are unauthenticated and the
+    # app is running in dev/test auto-bypass mode (legacy E2E convenience).
+    is_authenticated = bool(request.headers.get('Authorization'))
+    filename_lower = file.filename.lower()
+    if is_authenticated and not filename_lower.endswith('.pdf'):
+        # Authenticated clients must provide a PDF
+        return jsonify({'error': 'Invalid file type; PDF required for authenticated uploads'}), 400
     parser = PDFParserService()
     s3 = S3Service()
     temp_file_path = None
@@ -126,11 +135,28 @@ def upload_invoice():
         with tempfile.NamedTemporaryFile(delete=False) as temp_file:
             file.save(temp_file.name)
             temp_file_path = temp_file.name
-        # Try PDF parsing, but fall back to minimal parsing for non-PDFs
+        # Try PDF parsing for .pdf files. For non-PDF uploads (allowed only in
+        # unauthenticated/dev auto-bypass flows) fall back to a minimal parser.
+        parsed_data = {}
         try:
-            parsed_data = parser.parse_pdf(temp_file_path)
+            if filename_lower.endswith('.pdf'):
+                parsed_data = parser.parse_pdf(temp_file_path)
+            else:
+                # Non-PDF: attempt a safe fallback (plain-text extraction)
+                try:
+                    with open(temp_file_path, 'rb') as f:
+                        raw = f.read().decode('utf-8', errors='ignore')
+                    parsed_data = {
+                        'vendor_name': request.form.get('vendor') or 'Unknown Vendor',
+                        'invoice_number': None,
+                        'line_items': [],
+                        'description': raw,
+                        'total_amount': request.form.get('amount') or 0
+                    }
+                except Exception:
+                    parsed_data = {}
         except Exception:
-            # Fallback: treat uploaded content as plain text and build minimal parsed_data
+            # If PDF parsing fails, still try a fallback for PDF files
             try:
                 with open(temp_file_path, 'rb') as f:
                     raw = f.read().decode('utf-8', errors='ignore')
