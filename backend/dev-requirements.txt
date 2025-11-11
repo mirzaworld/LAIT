@@ -1,0 +1,18 @@
+Flask>=2.2
+Flask-Cors>=3.0
+Flask-JWT-Extended>=4.4
+Flask-Limiter>=2.0
+Flask-SocketIO>=5.3
+python-dotenv>=1.0
+SQLAlchemy>=1.4
+pandas>=2.0
+
+# Small ML deps needed for the minimal dev model trainer
+numpy>=1.24
+scikit-learn>=1.2
+joblib>=1.2
+
+# Note: This is a minimal set for local development with SQLite. The full
+# `backend/requirements.txt` contains heavy ML libraries (torch, transformers)
+# which are not required for a lightweight dev run. Install the full list
+# only if you want to enable ML features.

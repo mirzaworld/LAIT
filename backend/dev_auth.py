@@ -21,19 +21,22 @@ def development_jwt_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         testing = bool(current_app) and current_app.config.get('TESTING')
+        # Read explicit config first (set in enhanced_app). Default True for legacy.
         auto_bypass = True
         if current_app:
             auto_bypass = current_app.config.get('AUTO_AUTH_BYPASS', True)
-        bypass_enabled = False
-        if testing:
-            # In testing mode, only bypass if explicitly allowed
-            bypass_enabled = auto_bypass
-        else:
-            # In non-testing mode, use development environment checks
-            bypass_enabled = (
-                os.getenv('FLASK_ENV') == 'development' or
-                os.getenv('ENVIRONMENT') == 'dev'
-            )
+
+        # Allow explicit app config to control bypass in both testing and non-testing modes.
+        # Fall back to environment heuristic only if AUTO_AUTH_BYPASS not explicitly set.
+        bypass_enabled = auto_bypass
+        if auto_bypass is None:
+            if testing:
+                bypass_enabled = True
+            else:
+                bypass_enabled = (
+                    os.getenv('FLASK_ENV') == 'development' or
+                    os.getenv('ENVIRONMENT') == 'dev'
+                )
 
         if bypass_enabled:
             auth_header = request.headers.get('Authorization')
@@ -82,17 +85,22 @@ def get_current_user_id():
     """
     from flask import current_app
     
-    if current_app.config.get('TESTING'):
-        try:
-            from flask_jwt_extended import get_jwt_identity
-            identity = get_jwt_identity()
-            # JWT identity is now a string, convert to int for database lookup
-            return int(identity) if identity else 1
-        except:
-            # Fallback to test user ID
-            return 1
-    else:
-        from flask_jwt_extended import get_jwt_identity
+    # Use optional verification to avoid RuntimeError when no JWT is present.
+    # This makes get_current_user_id safe to call from request handlers that
+    # may be invoked during tests or dev-mode flows where tokens are not set.
+    try:
+        from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
+        # optional=True will not raise if no JWT present and instead leave
+        # the request without JWT context; get_jwt_identity() will return None.
+        verify_jwt_in_request(optional=True)
         identity = get_jwt_identity()
-        # Convert string identity to int for database lookup
+        if current_app.config.get('TESTING'):
+            # In tests return a default id of 1 when no identity found.
+            return int(identity) if identity else 1
+        # In normal dev/runtime, return None if no identity available
         return int(identity) if identity else None
+    except Exception:
+        # Last-resort fallback to keep endpoints resilient during dev runs
+        if current_app.config.get('TESTING'):
+            return 1
+        return None

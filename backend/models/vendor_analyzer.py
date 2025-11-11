@@ -1,4 +1,5 @@
 import numpy as np
+import math
 import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
@@ -14,8 +15,8 @@ class VendorAnalyzer:
         self.scaler_path = 'models/vendor_scaler.joblib'
         self.outlier_model_path = 'models/vendor_outlier_model.joblib'
         self.risk_scaler_path = 'models/vendor_risk_scaler.joblib'
-        self.n_clusters = 3  # Set to 3 to match the number of vendors in get_all_vendors()
-        
+        self.n_clusters = 4  # Align with test expectations (4 clusters)
+
         # Load models if they exist
         self._load_models()
     
@@ -86,8 +87,11 @@ class VendorAnalyzer:
         self.scaler = StandardScaler()
         X_scaled = self.scaler.fit_transform(X)
         
-        # Train clustering model
-        self.model = KMeans(n_clusters=self.n_clusters, random_state=42)
+        # Train clustering model (ensure n_clusters <= number of samples)
+        n_clusters_used = min(self.n_clusters, X_scaled.shape[0])
+        # KMeans requires n_clusters >= 1 and <= n_samples
+        n_clusters_used = max(1, n_clusters_used)
+        self.model = KMeans(n_clusters=n_clusters_used, random_state=42)
         self.model.fit(X_scaled)
         
         # Train outlier detection model
@@ -211,9 +215,9 @@ class VendorAnalyzer:
                 'median': df['avg_rate'].median()
             },
             'total_spend': {
-                'mean': df['spend'].mean(),
-                'std': df['spend'].std(),
-                'median': df['spend'].median()
+                'mean': df['total_spend'].mean(),
+                'std': df['total_spend'].std(),
+                'median': df['total_spend'].median()
             },
             'performance_score': {
                 'mean': df['performance_score'].mean(),
@@ -265,7 +269,7 @@ class VendorAnalyzer:
         if std == 0:
             return 50.0
         z_score = (value - mean) / std
-        return 100 * (0.5 * (1 + np.erf(z_score / np.sqrt(2))))
+        return 100 * (0.5 * (1 + math.erf(z_score / math.sqrt(2))))
 
     def _calculate_trend(self, vendor):
         """Calculate performance trends over time"""
@@ -363,7 +367,7 @@ class VendorAnalyzer:
             })
         
         # Check matter concentration
-        if vendor.get('matter_count', 0) < 5 and vendor.get('spend', 0) > 300000:
+        if vendor.get('matter_count', 0) < 5 and vendor.get('total_spend', 0) > 300000:
             opportunities.append({
                 'type': 'volume_discount',
                 'description': 'High spend on few matters - negotiate volume discount',

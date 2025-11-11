@@ -1471,7 +1471,8 @@ def create_app():
             if database_available:
                 try:
                     session = get_db_session()
-                    session.execute('SELECT 1')
+                    from sqlalchemy import text
+                    session.execute(text('SELECT 1'))
                     session.close()
                     checks['database'] = {'status': 'healthy', 'message': 'Connected'}
                 except Exception as e:

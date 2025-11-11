@@ -36,6 +36,7 @@ from flask_limiter.util import get_remote_address
 from dotenv import load_dotenv
 from werkzeug.security import check_password_hash
 from sqlalchemy import func, desc
+from sqlalchemy import text
 import threading
 from flask_limiter.errors import RateLimitExceeded
 
@@ -46,22 +47,33 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from db.database import User, Invoice, Vendor, SessionLocal, init_db, get_db_session  # noqa: F401
 from models.db_models import AuditLog  # noqa: F401
 
-# Import ML models and analyzers
-try:
-    from models.invoice_analyzer import InvoiceAnalyzer
-    from models.vendor_analyzer import VendorAnalyzer
-    from models.risk_predictor import RiskPredictor
-    from models.matter_analyzer import MatterAnalyzer
-    from models.enhanced_invoice_analyzer import EnhancedInvoiceAnalyzer
-except ImportError as e:
-    print(f"Warning: Model imports failed ({e}). ML features may be limited.")
+# ML startup mode (auto/on/off)
+ML_MODE = os.getenv('ML_MODE', 'auto').lower()
+print(f"ML_MODE={ML_MODE}")
 
-# Import ML service
-try:
-    from services.ml_service import score_lines, ml_status
-    ML_SERVICE_AVAILABLE = True
-except ImportError as e:
-    print(f"Warning: ML service import failed ({e}). ML features will be unavailable.")
+# Import ML models and analyzers (skip imports if ML explicitly disabled)
+if ML_MODE != 'off':
+    try:
+        from models.invoice_analyzer import InvoiceAnalyzer
+        from models.vendor_analyzer import VendorAnalyzer
+        from models.risk_predictor import RiskPredictor
+        from models.matter_analyzer import MatterAnalyzer
+        from models.enhanced_invoice_analyzer import EnhancedInvoiceAnalyzer
+    except ImportError as e:
+        print(f"Warning: Model imports failed ({e}). ML features may be limited.")
+        # Leave model names undefined so getattr returns None later
+else:
+    print("ML mode is set to 'off' - skipping ML model imports")
+
+# Import ML service (skip if ML disabled)
+if ML_MODE != 'off':
+    try:
+        from services.ml_service import score_lines, ml_status
+        ML_SERVICE_AVAILABLE = True
+    except ImportError as e:
+        print(f"Warning: ML service import failed ({e}). ML features will be unavailable.")
+        ML_SERVICE_AVAILABLE = False
+else:
     ML_SERVICE_AVAILABLE = False
     
 # Load environment variables
@@ -312,6 +324,9 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-key-change-in-prod')
+    # Control automatic auth bypassing in development/testing via env var
+    # Default remains True for legacy dev convenience, but tests can set AUTO_AUTH_BYPASS=false
+    app.config['AUTO_AUTH_BYPASS'] = os.getenv('AUTO_AUTH_BYPASS', 'True').lower() == 'true'
 
     # Dynamic CORS origins from env
     allowed_origins = os.getenv('CORS_ALLOWED_ORIGINS')
@@ -416,7 +431,11 @@ def create_app():
     # API Routes
     @app.route('/api/health')
     def health_check():
-        return jsonify({"status": "healthy", "timestamp": datetime.now(timezone.utc)})
+        return jsonify({
+            "status": "healthy",
+            "timestamp": datetime.now(timezone.utc),
+            "message": "Service is healthy"
+        })
 
     # ML Service Status Endpoint
     @app.route('/api/ml/status')
@@ -430,8 +449,11 @@ def create_app():
             }), 503
         
         try:
-            status = ml_status()
-            return jsonify(status)
+            # ml_status is implemented below as an endpoint that returns a
+            # Flask response (jsonify(...), status_code). Call it directly
+            # so we return the same Response object instead of attempting to
+            # JSON-serialize a Response.
+            return ml_status()
         except Exception as e:
             logger.error(f"ML status check failed: {e}")
             return jsonify({
@@ -448,7 +470,7 @@ def create_app():
         # DB check
         try:
             session = get_db_session()
-            session.execute('SELECT 1')
+            session.execute(text('SELECT 1'))
             session.close()
             details['database'] = {'status': 'ok'}
         except Exception as e:
@@ -470,6 +492,9 @@ def create_app():
         }
         if drift and drift.last_update and not heartbeat_fresh:
             ok = False
+        # Include ML_MODE for diagnostics
+        details['ml_mode'] = ML_MODE
+        details['ml_service_available'] = ML_SERVICE_AVAILABLE
         status = 'ready' if ok else 'degraded'
         code = 200 if ok else 503
         return jsonify({'status': status, 'components': details, 'timestamp': datetime.now(timezone.utc).isoformat() + 'Z'}), code
@@ -486,7 +511,7 @@ def create_app():
         # Database connectivity
         try:
             session = get_db_session()
-            session.execute('SELECT 1')
+            session.execute(text('SELECT 1'))
             session.close()
             checks['database'] = {'status': 'ok'}
         except Exception as e:
@@ -497,6 +522,8 @@ def create_app():
             obj = getattr(app, name, None)
             ml_models[name] = 'loaded' if obj else 'missing'
         checks['ml_models'] = ml_models
+        checks['ml_mode'] = ML_MODE
+        checks['ml_service_available'] = ML_SERVICE_AVAILABLE
         # External services (best-effort / non-blocking quick checks)
         external = {}
         # Simple HTTP reachability for one public site (skip if offline env) with timeout
@@ -843,7 +870,7 @@ def create_app():
 
     # ================== INVOICE ENDPOINTS ==================
     @app.route('/api/invoices', methods=['GET'])
-    @jwt_required(optional=True)
+    @jwt_required()
     def list_invoices():
         try:
             session = get_db_session()
@@ -870,13 +897,14 @@ def create_app():
                     'total': float(inv.amount or 0)
                 })
             session.close()
-            return jsonify({'items': invoices})
+            # Return under the 'invoices' key to be consistent with E2E tests
+            return jsonify({'invoices': invoices})
         except Exception as e:
             logger.error(f"List invoices error: {e}")
             return jsonify({'error': str(e)}), 500
 
     @app.route('/api/invoices/<invoice_id>', methods=['GET'])
-    @jwt_required(optional=True)
+    @jwt_required()
     def invoice_detail(invoice_id):
         try:
             session = get_db_session()
@@ -904,7 +932,7 @@ def create_app():
             return jsonify({'error': str(e)}), 500
 
     @app.route('/api/invoices/<invoice_id>/analyze', methods=['POST'])
-    @jwt_required(optional=True)
+    @jwt_required()
     def analyze_invoice_endpoint(invoice_id):
         try:
             session = get_db_session()
@@ -959,7 +987,7 @@ def create_app():
 
     @limiter.limit(RATE_LIMITS['upload-invoice'])
     @app.route('/api/upload-invoice', methods=['POST'])
-    @jwt_required(optional=True)
+    @jwt_required()
     def upload_invoice():
         try:
             if 'file' not in request.files:

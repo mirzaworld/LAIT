@@ -207,20 +207,56 @@ def summary():
                     'amount': demo_amounts[i]
                 })
                 
+        # Map internal field names to the shape expected by the E2E tests.
+        # Tests expect: total_invoices, total_amount, total_vendors, monthly_spending,
+        # top_vendors, recent_invoices, spending_by_month
+
+        # Build recent_invoices list (recent by date)
+        recent_invoices = []
+        recent_q = session.query(Invoice).order_by(desc(Invoice.created_at)).limit(5).all()
+        for invoice in recent_q:
+            recent_invoices.append({
+                'id': invoice.id,
+                'vendor': invoice.vendor.name if invoice.vendor else 'Unknown',
+                'amount': float(invoice.amount),
+                'date': invoice.date.isoformat() if invoice.date else None,
+                'status': invoice.status or 'processing'
+            })
+
+        # Build top_vendors mapping (name + total)
+        top_vendors = []
+        top_q = session.query(Vendor.name, func.sum(Invoice.amount).label('total_spend'))\
+            .join(Invoice)\
+            .filter(Invoice.date >= date_from_obj, Invoice.date <= date_to_obj)\
+            .group_by(Vendor.name)\
+            .order_by(desc('total_spend'))\
+            .limit(5)\
+            .all()
+        for v in top_q:
+            top_vendors.append({'name': v[0], 'total_spend': float(v[1] or 0)})
+
+        # spending_by_month should be an array of month/amount maps
+        spending_by_month = []
+        for m in monthly_spend:
+            # monthly_spend entries are {'period': 'YYYY-MM', 'amount': value}
+            spending_by_month.append({'period': m.get('period') or m.get('month') or m.get('period'), 'amount': float(m.get('amount', 0))})
+
+        # total_vendors (distinct vendor count in range)
+        total_vendors = session.query(func.count(func.distinct(Invoice.vendor_id)))\
+            .filter(Invoice.date >= date_from_obj, Invoice.date <= date_to_obj)\
+            .scalar() or 0
+
         return jsonify({
-            'total_spend': total_spend,
-            'spend_change_percentage': spend_change_pct,
-            'invoice_count': invoice_count,
-            'active_matters': active_matters_count,
-            'risk_factors_count': risk_factors_count,
-            'high_risk_invoices_count': high_risk_invoices_count,
-            'avg_processing_time': avg_processing_time,
+            'total_invoices': int(invoice_count),
+            'total_amount': float(total_spend),
+            'total_vendors': int(total_vendors),
+            'monthly_spending': float(monthly_spend[-1]['amount']) if monthly_spend else 0.0,
+            'top_vendors': top_vendors,
+            'recent_invoices': recent_invoices,
+            'spending_by_month': spending_by_month,
             'date_range': {
                 'from': date_from,
                 'to': date_to
-            },
-            'trend_data': {
-                'monthly_spend': monthly_spend
             }
         })
         

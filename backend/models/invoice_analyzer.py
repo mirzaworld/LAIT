@@ -659,7 +659,8 @@ class InvoiceAnalyzer:
             Q1 = np.percentile(hours, 25)
             Q3 = np.percentile(hours, 75)
             IQR = Q3 - Q1
-            upper_bound = Q3 + 2 * IQR  # More lenient threshold
+            # Use standard boxplot rule (1.5 * IQR) for outlier detection
+            upper_bound = Q3 + 1.5 * IQR
             
             return hours.flatten() > upper_bound
 

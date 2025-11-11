@@ -1,1 +1,51 @@
-
+invoice_id,vendor_id,vendor_name,matter_type,invoice_number,date,total_amount,status
+1,3,Legal Solutions Inc,Regulatory Compliance,INV-2024-0001,2024-11-22,15155.085744763881,pending
+2,1,Smith & Associates,Contract Review,INV-2025-0002,2025-07-28,33764.5438550617,paid
+3,2,Johnson Legal,Regulatory Compliance,INV-2025-0003,2025-04-15,2724.1182038027605,paid
+4,1,Smith & Associates,Contract Review,INV-2024-0004,2024-12-23,12118.182981867278,paid
+5,3,Legal Solutions Inc,Regulatory Compliance,INV-2025-0005,2025-06-11,4358.889307154369,paid
+6,2,Johnson Legal,Regulatory Compliance,INV-2025-0006,2025-02-13,13352.49330555379,paid
+7,5,Tech Legal Partners,Contract Review,INV-2025-0007,2025-10-17,3676.468555205178,paid
+8,5,Tech Legal Partners,Litigation,INV-2024-0008,2024-11-10,18628.413558456574,paid
+9,5,Tech Legal Partners,M&A,INV-2025-0009,2025-03-04,21326.716169231953,pending
+10,4,Premier Law Group,Regulatory Compliance,INV-2025-0010,2025-03-14,17513.452538336627,paid
+11,4,Premier Law Group,Litigation,INV-2025-0011,2025-10-15,27625.84039107914,pending
+12,2,Johnson Legal,Patent Filing,INV-2025-0012,2025-08-08,13882.900793008852,pending
+13,2,Johnson Legal,Contract Review,INV-2025-0013,2025-06-30,5156.763869460661,pending
+14,2,Johnson Legal,Patent Filing,INV-2025-0014,2025-10-30,25417.680959577727,paid
+15,1,Smith & Associates,Regulatory Compliance,INV-2025-0015,2025-06-29,9963.69438698123,paid
+16,4,Premier Law Group,Contract Review,INV-2025-0016,2025-10-23,10646.987600896635,pending
+17,5,Tech Legal Partners,Litigation,INV-2025-0017,2025-10-09,7693.024763520992,pending
+18,5,Tech Legal Partners,Patent Filing,INV-2025-0018,2025-03-20,18962.587068472567,pending
+19,3,Legal Solutions Inc,Patent Filing,INV-2024-0019,2024-12-09,5861.7413217315525,paid
+20,5,Tech Legal Partners,M&A,INV-2025-0020,2025-06-15,6632.014057967367,paid
+21,2,Johnson Legal,Contract Review,INV-2025-0021,2025-07-25,8712.784110765238,pending
+22,3,Legal Solutions Inc,Regulatory Compliance,INV-2025-0022,2025-11-03,7562.002721103316,paid
+23,4,Premier Law Group,Regulatory Compliance,INV-2025-0023,2025-01-07,5854.642739910039,paid
+24,4,Premier Law Group,M&A,INV-2025-0024,2025-01-06,49496.84407734813,paid
+25,1,Smith & Associates,M&A,INV-2024-0025,2024-12-07,2465.5623325827955,paid
+26,5,Tech Legal Partners,Patent Filing,INV-2025-0026,2025-05-10,12862.167825422628,paid
+27,1,Smith & Associates,Contract Review,INV-2025-0027,2025-09-15,26148.79505875674,pending
+28,4,Premier Law Group,M&A,INV-2024-0028,2024-12-13,11070.577464848922,paid
+29,3,Legal Solutions Inc,M&A,INV-2024-0029,2024-12-19,30332.550012281004,pending
+30,4,Premier Law Group,M&A,INV-2025-0030,2025-04-24,14171.84943863199,paid
+31,2,Johnson Legal,Litigation,INV-2025-0031,2025-09-23,5098.620653350431,paid
+32,5,Tech Legal Partners,Contract Review,INV-2025-0032,2025-03-28,13250.393498130032,paid
+33,5,Tech Legal Partners,Litigation,INV-2025-0033,2025-09-30,33586.46459041846,pending
+34,1,Smith & Associates,Litigation,INV-2025-0034,2025-09-11,5809.06275151891,paid
+35,3,Legal Solutions Inc,M&A,INV-2025-0035,2025-09-17,4819.29485097734,paid
+36,1,Smith & Associates,Regulatory Compliance,INV-2025-0036,2025-10-11,6773.268320644722,paid
+37,5,Tech Legal Partners,Patent Filing,INV-2025-0037,2025-10-19,33865.52831007557,paid
+38,4,Premier Law Group,Contract Review,INV-2025-0038,2025-02-10,3022.536942677695,paid
+39,4,Premier Law Group,M&A,INV-2025-0039,2025-06-10,10149.19206729646,paid
+40,1,Smith & Associates,Regulatory Compliance,INV-2025-0040,2025-05-16,15830.923276060454,paid
+41,4,Premier Law Group,Litigation,INV-2024-0041,2024-12-31,14162.23000083378,paid
+42,3,Legal Solutions Inc,Regulatory Compliance,INV-2025-0042,2025-06-05,3762.986466369938,paid
+43,5,Tech Legal Partners,M&A,INV-2025-0043,2025-09-19,17028.663931639385,paid
+44,1,Smith & Associates,M&A,INV-2025-0044,2025-08-07,23730.951776342128,paid
+45,3,Legal Solutions Inc,Contract Review,INV-2025-0045,2025-10-03,6969.562688825634,paid
+46,4,Premier Law Group,Litigation,INV-2025-0046,2025-10-09,7578.911360505823,paid
+47,5,Tech Legal Partners,Patent Filing,INV-2025-0047,2025-10-14,8084.39350583101,paid
+48,5,Tech Legal Partners,Patent Filing,INV-2025-0048,2025-05-28,13343.882038081796,paid
+49,5,Tech Legal Partners,Contract Review,INV-2025-0049,2025-10-07,10941.76258606673,paid
+50,4,Premier Law Group,Patent Filing,INV-2025-0050,2025-10-02,13827.37692355006,paid
