@@ -579,6 +579,11 @@ def create_app():
 
         # Data collector
         checks['data_collector'] = 'available' if getattr(app, 'data_collector', None) else 'unavailable'
+        # Backwards-compatible 'realtime' key expected by older tests/clients
+        try:
+            checks['realtime'] = 'available' if getattr(app, 'data_collector', None) else 'unavailable'
+        except Exception:
+            checks['realtime'] = 'unavailable'
 
         # Provide per-model availability mapping expected by tests
         try:
