@@ -44,9 +44,9 @@ jobs:
         python-version: '3.10'
         
     - name: Set up Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '18'
         
     - name: Install Python dependencies
       run: |
@@ -56,8 +56,13 @@ jobs:
 
     - name: Install Node.js dependencies
       run: |
-        cd frontend
-        npm ci
+        cd frontend || exit 0
+        # Prefer `npm ci` when a lockfile is present, otherwise fall back to `npm install`
+        if [ -f ../package-lock.json ] || [ -f package-lock.json ]; then
+          npm ci
+        else
+          npm install
+        fi
         
     - name: Run Python tests
       env:
