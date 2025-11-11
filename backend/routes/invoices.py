@@ -34,11 +34,12 @@ def list_invoices():
                 'total_amount': getattr(inv, 'total_amount', inv.amount),
                 'amount': inv.amount,
                 'status': inv.status or 'processing',
-                'risk_score': inv.risk_score,
+                'risk_score': getattr(inv, 'risk_score', None),
                 'date': inv.date.isoformat() if inv.date else None
             })
-    # Return under the test-expected key name 'invoices' for E2E compatibility
-    return jsonify({'invoices': result})
+
+        # Return under the test-expected key name 'invoices' for E2E compatibility
+        return jsonify({'invoices': result}), 200
     except Exception as e:
         current_app.logger.error(f"List invoices error: {e}")
         return jsonify({'error': str(e)}), 500

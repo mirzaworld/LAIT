@@ -1,3 +1,14 @@
+"""
+Legacy analytics blueprint
+
+This module provides analytics routes as a blueprint. Note: the repository contains a self-contained
+server implementation in `backend/app_real.py` which implements many of the same analytics endpoints.
+
+Policy for now: `app_real.py` is the canonical entrypoint. This blueprint remains available for the
+modular/factory-based app (`backend/app.py`) and is intentionally marked as legacy/auxiliary so
+maintainers don't accidentally duplicate routes during development.
+"""
+
 from flask import Blueprint, request, jsonify
 from sqlalchemy import func, desc, asc, and_, extract, text
 from db.database import get_db_session
