@@ -566,6 +566,18 @@ def create_app():
         # Data collector
         checks['data_collector'] = 'available' if getattr(app, 'data_collector', None) else 'unavailable'
 
+        # Provide per-model availability mapping expected by tests
+        try:
+            checks['ml_models'] = {
+                'invoice_analyzer': 'loaded' if getattr(app, 'invoice_analyzer', None) else 'missing',
+                'enhanced_invoice_analyzer': 'loaded' if getattr(app, 'enhanced_invoice_analyzer', None) else 'missing',
+                'matter_analyzer': 'loaded' if getattr(app, 'matter_analyzer', None) else 'missing',
+                'risk_predictor': 'loaded' if getattr(app, 'risk_predictor', None) else 'missing',
+                'vendor_analyzer': 'loaded' if getattr(app, 'vendor_analyzer', None) else 'missing'
+            }
+        except Exception:
+            checks['ml_models'] = {}
+
         return jsonify({
             'status': 'ok',
             'service': 'enhanced_app',
