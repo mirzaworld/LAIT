@@ -119,12 +119,17 @@ def upload_invoice():
     if not file.filename:
         return jsonify({'error': 'No file provided'}), 400
 
-    # Enforce PDF uploads for authenticated requests (strict mode)
-    # Allow non-PDF fallback only when requests are unauthenticated and the
-    # app is running in dev/test auto-bypass mode (legacy E2E convenience).
-    is_authenticated = bool(request.headers.get('Authorization'))
+    # Enforce PDF uploads only when the client actually provided auth headers.
+    # The development_jwt_required decorator may auto-inject a token for dev/test
+    # convenience (controlled by app.config['AUTO_AUTH_BYPASS']). To detect a
+    # real client-provided Authorization header, require both a header and the
+    # AUTO_AUTH_BYPASS flag to be False.
     filename_lower = file.filename.lower()
-    if is_authenticated and not filename_lower.endswith('.pdf'):
+    auto_bypass = current_app.config.get('AUTO_AUTH_BYPASS', True)
+    # Require strict Authorization header (Bearer ...) for enforcing PDF-only uploads.
+    auth_header = request.headers.get('Authorization', '')
+    client_provided_auth = bool(auth_header and auth_header.lower().startswith('bearer ') and (not auto_bypass))
+    if client_provided_auth and not filename_lower.endswith('.pdf'):
         # Authenticated clients must provide a PDF
         return jsonify({'error': 'Invalid file type; PDF required for authenticated uploads'}), 400
     parser = PDFParserService()

@@ -740,14 +740,18 @@ def search_cases():
         
         # Combine results
         all_cases = local_cases + api_cases
-        
-        return jsonify({
+
+        payload = {
             'cases': all_cases[:20],  # Limit to 20 results
             'total': len(all_cases),
             'query': query,
             'court': court,
             'sources': ['Local Database', 'CourtListener API'] if api_cases else ['Local Database']
-        })
+        }
+        # Ensure compatibility: always include metadata.total_results
+        payload.setdefault('metadata', {})
+        payload['metadata'].setdefault('total_results', payload.get('total', len(payload.get('cases', []))))
+        return jsonify(payload)
         
     except Exception as e:
         logger.error(f"Error searching cases: {str(e)}")
