@@ -49,6 +49,20 @@ def list_invoices():
         return jsonify({'error': str(e)}), 500
     finally:
         session.close()
+                'date': inv.date.isoformat() if inv.date else None
+            })
+
+        # Return under multiple keys for compatibility with tests/clients
+        payload = {
+            'invoices': result,
+            'items': result
+        }
+        return jsonify(payload), 200
+    except Exception as e:
+        current_app.logger.error(f"List invoices error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
 
 @invoices_bp.route('/<int:invoice_id>', methods=['GET'])
 @development_jwt_required
@@ -111,6 +125,17 @@ def create_invoice_legacy():
 @development_jwt_required
 def upload_invoice():
     """Upload a new invoice (PDF) and save parsed data to the database with ML analysis"""
+    # Enforce PDF uploads early for any request that includes an Authorization header
+    auth_header = request.headers.get('Authorization', '')
+    if auth_header and auth_header.lower().startswith('bearer '):
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+        incoming = request.files['file']
+        if not incoming or not getattr(incoming, 'filename', ''):
+            return jsonify({'error': 'No file provided'}), 400
+        if not incoming.filename.lower().endswith('.pdf'):
+            return jsonify({'error': 'Invalid file type; PDF required for authenticated uploads'}), 400
+
     user_id = get_current_user_id()
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
@@ -118,21 +143,7 @@ def upload_invoice():
     # Basic validation: filename required
     if not file.filename:
         return jsonify({'error': 'No file provided'}), 400
-
-    # Enforce PDF uploads only when the client actually provided auth headers.
-    # The development_jwt_required decorator may auto-inject a token for dev/test
-    # convenience (controlled by app.config['AUTO_AUTH_BYPASS']). To detect a
-    # real client-provided Authorization header, require both a header and the
-    # AUTO_AUTH_BYPASS flag to be False.
     filename_lower = file.filename.lower()
-    # Require strict Authorization header (Bearer ...) for enforcing PDF-only uploads.
-    # Tests expect that any real Authorization header (Bearer ...) should trigger
-    # PDF-only enforcement for authenticated clients regardless of AUTO_AUTH_BYPASS.
-    auth_header = request.headers.get('Authorization', '')
-    client_provided_auth = bool(auth_header and auth_header.lower().startswith('bearer '))
-    if client_provided_auth and not filename_lower.endswith('.pdf'):
-        # Authenticated clients must provide a PDF
-        return jsonify({'error': 'Invalid file type; PDF required for authenticated uploads'}), 400
     parser = PDFParserService()
     s3 = S3Service()
     temp_file_path = None
