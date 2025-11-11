@@ -49,20 +49,7 @@ def list_invoices():
         return jsonify({'error': str(e)}), 500
     finally:
         session.close()
-                'date': inv.date.isoformat() if inv.date else None
-            })
 
-        # Return under multiple keys for compatibility with tests/clients
-        payload = {
-            'invoices': result,
-            'items': result
-        }
-        return jsonify(payload), 200
-    except Exception as e:
-        current_app.logger.error(f"List invoices error: {e}")
-        return jsonify({'error': str(e)}), 500
-    finally:
-        session.close()
 
 @invoices_bp.route('/<int:invoice_id>', methods=['GET'])
 @development_jwt_required
