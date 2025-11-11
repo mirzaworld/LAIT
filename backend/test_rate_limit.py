@@ -9,6 +9,9 @@ from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
 
+# Prevent pytest from collecting this script as a test module
+__test__ = False
+
 # Test rate limiter setup
 limiter = Limiter(
     key_func=get_remote_address,

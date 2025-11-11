@@ -288,7 +288,25 @@ def ml_status() -> Dict[str, Any]:
         Dictionary with service status including fallback_mode and service_available
     """
     service = get_ml_service()
-    return service.ml_status()
+    # Backwards-compatible: some MLService variants expose ml_status(), others expose get_model_status()
+    if hasattr(service, 'ml_status') and callable(getattr(service, 'ml_status')):
+        try:
+            return service.ml_status()
+        except Exception:
+            # fall through to next option
+            pass
+    if hasattr(service, 'get_model_status') and callable(getattr(service, 'get_model_status')):
+        try:
+            return service.get_model_status()
+        except Exception:
+            pass
+    # Last-resort status
+    return {
+        'service_available': False,
+        'fallback_mode': True,
+        'models_loaded': False,
+        'note': 'No detailed model status available'
+    }
 
 def reload_models() -> Dict[str, Any]:
     """

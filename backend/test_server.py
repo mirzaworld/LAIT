@@ -10,6 +10,9 @@ import os
 app = Flask(__name__)
 CORS(app)
 
+# Prevent pytest from collecting this script as a test module
+__test__ = False
+
 @app.route('/')
 def root():
     return jsonify({

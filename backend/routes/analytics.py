@@ -257,9 +257,12 @@ def summary():
             .filter(Invoice.date >= date_from_obj, Invoice.date <= date_to_obj)\
             .scalar() or 0
 
+        # Provide multiple key styles for backward compatibility with tests and clients
         return jsonify({
             'total_invoices': int(invoice_count),
+            'invoice_count': int(invoice_count),
             'total_amount': float(total_spend),
+            'total_spend': float(total_spend),
             'total_vendors': int(total_vendors),
             'monthly_spending': float(monthly_spend[-1]['amount']) if monthly_spend else 0.0,
             'top_vendors': top_vendors,
@@ -268,7 +271,9 @@ def summary():
             'date_range': {
                 'from': date_from,
                 'to': date_to
-            }
+            },
+            # legacy alias expected by some clients
+            'monthly': monthly_spend
         })
         
     except Exception as e:
