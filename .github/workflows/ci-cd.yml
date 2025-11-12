@@ -56,12 +56,15 @@ jobs:
 
     - name: Install Node.js dependencies
       run: |
-        if [ -d frontend ]; then
+        # Install repo-level Node dependencies so root devDependencies (e.g. vitest)
+        # are available. Prefer `npm ci` when package-lock.json exists.
+        if [ -f package.json ]; then
+          npm ci || npm install
+        elif [ -d frontend ]; then
           cd frontend
-          # Prefer a clean install when lockfile exists; otherwise fall back to npm install
           npm ci || npm install
         else
-          echo "No frontend directory; skipping npm install"
+          echo "No package.json or frontend directory found; skipping npm install"
         fi
         
     - name: Run Python tests
