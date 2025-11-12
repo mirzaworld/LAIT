@@ -6,7 +6,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Import all routes for easy importing
-from .auth import auth_bp
+# Note: legacy `auth_bp` remains in the repository for reference, but we
+# prefer the enhanced auth blueprint for registration to avoid duplicate
+# routes and to centralize behavior used by tests and production.
 from .enhanced_auth import enhanced_auth_bp
 # from .invoice import invoice_bp
 from .invoices import invoices_bp
@@ -19,7 +21,9 @@ from .enhanced_upload import upload_bp
 
 # List of all blueprints
 blueprints = [
-    (auth_bp, '/api/auth'),  # Legacy auth routes
+    # Register only the enhanced auth blueprint at /api/auth. The legacy
+    # `auth_bp` handlers are kept in-place for now but are not registered
+    # to avoid duplicate endpoints and ambiguity during migration.
     (enhanced_auth_bp, '/api/auth'),  # Enhanced auth with complete user management
     (invoices_bp, None),  # url_prefix already included in blueprint
     (analytics_bp, '/api/analytics'),
