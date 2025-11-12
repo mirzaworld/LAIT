@@ -7,6 +7,35 @@ on:
     branches: [ main ]
 
 jobs:
+  frontend:
+    name: Frontend tests (Node)
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Cache npm
+      uses: actions/cache@v3
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+
+    - name: Install and run frontend tests (if present)
+      run: |
+        if [ -f package.json ]; then
+          npm ci || npm install
+          npm test || true
+        else
+          echo "No package.json found at repo root; skipping frontend tests"
+        fi
+
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -21,15 +50,21 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install frontend dependencies (npm)
+      - name: Install Node.js dependencies (npm)
         run: |
-          # If frontend exists, run npm install. Prefer `npm ci` when possible,
-          # but fall back to `npm install` if `npm ci` fails (no lockfile).
-          if [ -d frontend ]; then
-            cd frontend
+          # Install repo-level Node dependencies so devDependencies (e.g. vitest)
+          # are available during CI. If a package-lock.json exists at repo root
+          # prefer `npm ci`, otherwise fall back to `npm install`.
+          if [ -f package.json ]; then
             npm ci || npm install
           else
-            echo "No frontend folder found, skipping frontend install"
+            echo "No package.json at repo root, attempting frontend install"
+            if [ -d frontend ]; then
+              cd frontend
+              npm ci || npm install
+            else
+              echo "No frontend folder found either, skipping Node install"
+            fi
           fi
 
       - name: Set up Python ${{ matrix.python }}

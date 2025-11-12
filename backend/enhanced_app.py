@@ -317,6 +317,7 @@ def create_app():
                     modified = True
 
             if path == '/api/self-test' and isinstance(data, dict):
+                # Ensure checks exist and include ml_models mapping expected by tests
                 if 'checks' not in data:
                     # Best-effort lightweight checks summary
                     checks = {
@@ -326,6 +327,19 @@ def create_app():
                     }
                     data['checks'] = checks
                     modified = True
+                # Ensure ml_models key exists with per-model loaded/missing flags
+                try:
+                    if 'ml_models' not in data['checks']:
+                        data['checks']['ml_models'] = {
+                            'invoice_analyzer': 'loaded' if getattr(app, 'invoice_analyzer', None) else 'missing',
+                            'enhanced_invoice_analyzer': 'loaded' if getattr(app, 'enhanced_invoice_analyzer', None) else 'missing',
+                            'matter_analyzer': 'loaded' if getattr(app, 'matter_analyzer', None) else 'missing',
+                            'risk_predictor': 'loaded' if getattr(app, 'risk_predictor', None) else 'missing',
+                            'vendor_analyzer': 'loaded' if getattr(app, 'vendor_analyzer', None) else 'missing'
+                        }
+                        modified = True
+                except Exception:
+                    pass
 
             if path == '/api/legal/search' and isinstance(data, dict):
                 if 'metadata' not in data or not isinstance(data.get('metadata'), dict):
@@ -565,6 +579,23 @@ def create_app():
 
         # Data collector
         checks['data_collector'] = 'available' if getattr(app, 'data_collector', None) else 'unavailable'
+        # Backwards-compatible 'realtime' key expected by older tests/clients
+        try:
+            checks['realtime'] = 'available' if getattr(app, 'data_collector', None) else 'unavailable'
+        except Exception:
+            checks['realtime'] = 'unavailable'
+
+        # Provide per-model availability mapping expected by tests
+        try:
+            checks['ml_models'] = {
+                'invoice_analyzer': 'loaded' if getattr(app, 'invoice_analyzer', None) else 'missing',
+                'enhanced_invoice_analyzer': 'loaded' if getattr(app, 'enhanced_invoice_analyzer', None) else 'missing',
+                'matter_analyzer': 'loaded' if getattr(app, 'matter_analyzer', None) else 'missing',
+                'risk_predictor': 'loaded' if getattr(app, 'risk_predictor', None) else 'missing',
+                'vendor_analyzer': 'loaded' if getattr(app, 'vendor_analyzer', None) else 'missing'
+            }
+        except Exception:
+            checks['ml_models'] = {}
 
         return jsonify({
             'status': 'ok',

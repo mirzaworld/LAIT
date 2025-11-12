@@ -48,6 +48,8 @@ def development_jwt_required(f):
                     # If verification fails in dev mode, create a test token
                     try:
                         token = create_access_token(identity="1")
+                        # Mark that we injected an auth header so handlers can detect
+                        request.environ['LAIT_INJECTED_AUTH'] = '1'
                         request.environ['HTTP_AUTHORIZATION'] = f'Bearer {token}'
                         verify_jwt_in_request()
                     except Exception:
@@ -58,6 +60,8 @@ def development_jwt_required(f):
                 try:
                     token = create_access_token(identity="1")  # Fix: use string identity
                     # Mutate the WSGI environ so downstream sees header
+                    # Mark as injected so application code can distinguish
+                    request.environ['LAIT_INJECTED_AUTH'] = '1'
                     request.environ['HTTP_AUTHORIZATION'] = f'Bearer {token}'
                     verify_jwt_in_request()  # Verify the token we just created
                 except Exception:
