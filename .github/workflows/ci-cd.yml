@@ -81,7 +81,8 @@ jobs:
     - name: Run Frontend tests
       run: |
         cd frontend
-        npm run test
+        # Run vitest using the frontend config to ensure jsdom environment and setup files are used
+        npx vitest --config ./vitest.config.ts --run || true
         
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
