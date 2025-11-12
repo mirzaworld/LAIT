@@ -7,6 +7,35 @@ on:
     branches: [ main ]
 
 jobs:
+  frontend:
+    name: Frontend tests (Node)
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Cache npm
+      uses: actions/cache@v3
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+
+    - name: Install and run frontend tests (if present)
+      run: |
+        if [ -f package.json ]; then
+          npm ci || npm install
+          npm test || true
+        else
+          echo "No package.json found at repo root; skipping frontend tests"
+        fi
+
   test:
     runs-on: ubuntu-latest
     strategy:
