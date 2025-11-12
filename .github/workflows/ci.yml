@@ -21,15 +21,21 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install frontend dependencies (npm)
+      - name: Install Node.js dependencies (npm)
         run: |
-          # If frontend exists, run npm install. Prefer `npm ci` when possible,
-          # but fall back to `npm install` if `npm ci` fails (no lockfile).
-          if [ -d frontend ]; then
-            cd frontend
+          # Install repo-level Node dependencies so devDependencies (e.g. vitest)
+          # are available during CI. If a package-lock.json exists at repo root
+          # prefer `npm ci`, otherwise fall back to `npm install`.
+          if [ -f package.json ]; then
             npm ci || npm install
           else
-            echo "No frontend folder found, skipping frontend install"
+            echo "No package.json at repo root, attempting frontend install"
+            if [ -d frontend ]; then
+              cd frontend
+              npm ci || npm install
+            else
+              echo "No frontend folder found either, skipping Node install"
+            fi
           fi
 
       - name: Set up Python ${{ matrix.python }}
