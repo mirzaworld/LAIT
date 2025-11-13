@@ -44,7 +44,17 @@ jobs:
         python-version: '3.10'
         
     - name: Set up Node.js
-      uses: actions/setup-node@v4
+      RUN_ID=19288707393   # <- replace with the id you picked
+      # fetch and save JSON + status code
+      curl -sS -H "Authorization: token $GITHUB_TOKEN" \
+        "https://api.github.com/repos/mirzaworld/LAIT/actions/runs/${RUN_ID}/jobs?per_page=100" \
+        -o jobs.json -w "%{http_code}\n"
+      # show a pretty summary or the raw if error
+      if [ -s jobs.json ]; then
+        jq '.jobs[] | {id, name, status, conclusion, html_url, steps: [.steps[] | {name, number, status, conclusion}]}' jobs.json || cat jobs.json
+      else
+        echo "jobs.json is empty"
+      fi      uses: actions/setup-node@v4
       with:
         node-version: '18'
         
