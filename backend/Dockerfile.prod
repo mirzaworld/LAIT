@@ -7,7 +7,7 @@
 # - Optimized for containerized deployment (Render, Railway, etc.)
 # - Health check endpoint for load balancer integration
 
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 # Metadata
 LABEL maintainer="LAIT Development Team"
